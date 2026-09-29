@@ -1,775 +1,308 @@
-# Kế Hoạch Nghiên Cứu (Bản Cập Nhật)
-## Profiling Framework cho Vision AI Models — Cross-Platform CPU vs. GPU
+# KẾ HOẠCH NGHIÊN CỨU & ĐỀ CƯƠNG ĐỀ TÀI (MASTER RESEARCH PLAN v3.5)
+## Profiling Framework Cho Vision AI Models: Cross-Platform Edge CPU vs. Cloud GPU
 
-> **Phiên bản**: v2.0 — Đã tích hợp thông tin hardware & định hướng thực tế  
-> **Hardware scope**: CPU-only Laptop (Windows) ↔ Google Colab (Tesla T4 16GB)  
-> **Định hướng**: 80% Systems Profiling · 20% Automated Diagnostic Heuristics  
-> **Model targets**: YOLOv8, YOLOv11, ConvNeXt, Vision Transformer, MobileNetV3
-
----
-
-## ⚡ Thay Đổi Quan Trọng So Với v1.0
-
-Việc làm rõ hai biến số đã **đóng cửa hoàn toàn PA-A và PA-C** từ v1.0, đồng thời
-tạo ra một hướng hoàn toàn mới — không phải LLM, mà là **Vision Model Profiling
-trên cross-platform edge–cloud**. Đây thực ra là gap **ít cạnh tranh hơn** và
-**dễ publish hơn** so với LLM profiling vì:
-
-- LLM profiling đang rất crowded (vLLM, Meta, Google đều làm).
-- Cross-platform Vision profiling trên edge CPU vs. cloud GPU với
-  automated heuristic layer gần như chưa có paper hệ thống.
-- T4 là GPU phổ biến nhất trong giáo dục/research ở Đông Nam Á
-  → demographic angle thú vị cho MLSys/EuroSys.
+> **Tên đề tài**: Nghiên Cứu và Xây Dựng Framework Profiling Phân Cấp Tầng (Layer-Level) Tự Động Chẩn Đoán Điểm Nghẽn Hiệu Năng Cho Các Mô Hình Thị Giác Máy Tính Đa Nền Tảng  
+> **Phiên bản**: v3.5 (Đồng bộ toàn diện với [TECHNICAL_SPECIFICATION.md](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/TECHNICAL_SPECIFICATION.md) và báo cáo kiểm toán [SYSTEM_AUDIT_REPORT.md](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/SYSTEM_AUDIT_REPORT.md))  
+> **Phạm vi phần cứng**: Edge Laptop (x86 CPU Intel/AMD) $\longleftrightarrow$ Cloud Instance (Google Colab / Tesla T4 16GB)  
+> **Tỷ trọng định hướng**: 70% Kỹ thuật hệ thống đo lường (Systems Profiling) · 20% Chẩn đoán tự động (Heuristic & Roofline Diagnostic) · 10% Phân tích Đánh đổi Thực nghiệm (Trade-off Matrix)  
+> **Mục tiêu công bố**: Hội nghị MLSys (Primary) / EuroSys / Đồ án Kỹ thuật Hệ thống ML Xuất sắc
 
 ---
 
-## 1. THU HẸP PHẠM VI — Research Question Duy Nhất
+## 1. TỔNG QUAN, BỐI CẢNH & ĐỘNG LỰC NGHIÊN CỨU
 
-### 1.1 Research Question Chính (Đã Xác Định)
+### 1.1. Bối cảnh thực tiễn
+Trong kỷ nguyên triển khai AI vào đời sống, các mô hình Thị giác Máy tính (Computer Vision - CV) như **YOLOv8/v11** (Object Detection), **ConvNeXt** (Modern CNN), **ViT** (Vision Transformer), và **MobileNetV3** (Edge Backbone) đang được đưa vào vô số thiết bị: từ máy tính biên cá nhân (Edge CPU laptop, Mini PC) cho đến các cụm máy chủ đám mây phổ thông (NVIDIA Tesla T4).
 
-> **"Có thể xây dựng một profiling framework portable, overhead thấp (<3%),
-> với độ phân giải per-layer, tự động phân loại bottleneck và đưa ra
-> khuyến nghị kỹ thuật khả thi — hoạt động nhất quán trên cả CPU-only
-> và CUDA GPU mà không cần cấu hình thủ công?"**
+Tuy nhiên, các kỹ sư và nhà nghiên cứu thường gặp phải một nghịch lý lớn:
+> **"Một mô hình có độ chính xác cao (High Accuracy) và số lượng tham số thấp chưa chắc đã chạy nhanh trong thực tế."**
 
-### 1.2 Phân Rã Thành Sub-Questions
+Khi mô hình chạy chậm hoặc tiêu tốn quá nhiều tài nguyên, câu hỏi quan trọng nhất là: **"Điểm nghẽn (Bottleneck) nằm ở đâu? Tại sao nó chậm? Do bản thân phép toán, do băng thông bộ nhớ, do thuật toán hậu xử lý (NMS), hay do đường ống nạp dữ liệu (DataLoader)?"**
 
-| # | Sub-question | Phần framework giải quyết |
-|---|-------------|--------------------------|
-| **SQ1** | Bottleneck phân bổ theo layer như thế nào, và có thay đổi khi chuyển từ CPU → GPU không? | Layer Profiler + A/B Comparison Engine |
-| **SQ2** | Profiling overhead ảnh hưởng thế nào đến kết quả đo lường? Và làm thế nào để tối thiểu hóa? | Overhead Calibration Module |
-| **SQ3** | Heuristic rule nào đủ tin cậy để tự động "bắt bệnh" từ profiling data? | Automated Heuristic Analyzer |
-| **SQ4** | Giữa YOLOv8/v11, ConvNeXt, ViT, MobileNetV3 — kiến trúc nào có bottleneck profile khác biệt nhất và tại sao? | Cross-Architecture Benchmark Study |
+### 1.2. Phân định Ba Tầng Khái Niệm: Evaluation vs. Benchmarking vs. Profiling
 
-### 1.3 Hypothesis
+Một trong những sai lầm phổ biến nhất trong nghiên cứu hệ thống AI là đánh đồng ba khái niệm này:
 
 ```
-H1 (Bottleneck shift): Conv2d-heavy architectures (YOLOv8/v11, MobileNetV3) 
-    là memory-bandwidth-bound trên GPU T4 nhưng compute-bound trên CPU,
-    trong khi ViT (Attention layers) là compute-bound trên cả hai 
-    nhưng với compute pattern khác nhau (sequential vs. parallel).
-
-H2 (Overhead portability): Framework đạt được <3% throughput overhead 
-    trên cả CPU và GPU bằng cách dùng cùng hook API nhưng backend 
-    timing khác nhau (time.perf_counter trên CPU, CUDA Events trên GPU).
-
-H3 (Heuristic accuracy): Tập hợp ≤15 deterministic rules có thể 
-    phát hiện đúng ≥85% bottleneck cases được xác nhận bởi Nsight/VTune
-    mà không cần model ML phức tạp.
-
-H4 (Cross-platform insight): Ranking kiến trúc theo throughput trên CPU 
-    KHÁC với ranking trên GPU T4 — có ít nhất 1 "inversion" — cho thấy
-    benchmark CPU không thể predict GPU performance.
+┌────────────────────────────────────────────────────────────────────────┐
+│                   HỆ QUY CHIẾU ĐÁNH GIÁ MÔ HÌNH AI                     │
+├────────────────────────────────────────────────────────────────────────┤
+│ 1. EVALUATION (Đánh giá Chất lượng Học máy)                            │
+│    • Trả lời: "Mô hình có đoán ĐÚNG không?"                           │
+│    • Chỉ số : Accuracy, Top-1/Top-5, mAP@0.5:0.95, F1-Score, IoU.      │
+│    • Bản chất: Đo lường phẩm chất thuật toán trên tập nhãn kiểm thử.   │
+├────────────────────────────────────────────────────────────────────────┤
+│ 2. BENCHMARKING (Đo chuẩn Hiệu năng Vĩ mô)                             │
+│    • Trả lời: "Mô hình chạy NHANH và TỐN BAO NHIÊU tài nguyên?"       │
+│    • Chỉ số : Mean Latency, Tail Latency (P50/P90/P95/P99), FPS, Peak  │
+│               VRAM, Average CPU %, GPU Util %, Power (Watts).          │
+│    • Bản chất: Đo lường hộp đen (Black-box) hiệu quả thực thi.        │
+├────────────────────────────────────────────────────────────────────────┤
+│ 3. PROFILING (Quan sát & Giải phẫu Vi mô Hệ thống)                     │
+│    • Trả lời: "TẠI SAO chậm? Chậm ở ĐÂU? Do NGUYÊN NHÂN gì và TỐI ƯU   │
+│               bằng cách nào?"                                          │
+│    • Chỉ số : Layer-level latency, FLOPs, Cường độ số học              │
+│               (FLOPs/Byte), Roofline Attainable TFLOPS, Memory Traffic,│
+│               Pre/Post-process breakdown, Heuristic Diagnostic Rules.  │
+│    • Bản chất: Phẫu thuật hộp trắng (White-box) chỉ rõ nguyên nhân.   │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 1.4 Success Criteria
+VisionProf được xây dựng làm **Profiling Framework chuyên sâu**, nhưng đồng thời tích hợp tầng **Benchmarking** (với Tail Latency P95/P99 và Background Resource Monitor) và cung cấp ma trận **Pareto Trade-off** (so sánh đánh đổi giữa Tốc độ và Sự trôi dạt đầu ra / Độ chính xác).
 
-| Tiêu chí | Mức tối thiểu (acceptable) | Mức tốt (strong paper) |
-|---------|--------------------------|----------------------|
-| Profiling overhead | < 5% throughput degradation | < 2% |
-| Timing accuracy vs. ground truth | < 5% error | < 2% error |
-| Heuristic detection rate | ≥ 75% correct diagnosis | ≥ 90% |
-| Model coverage | ≥ 3 architectures | ≥ 5 architectures |
-| Platform coverage | CPU + 1 GPU | CPU + ≥ 2 GPU types |
-| False positive rate (heuristics) | < 20% | < 10% |
+### 1.3. Khoảng trống nghiên cứu (Research Gap)
+1. **Thiếu tính tương thích đa nền tảng có thể so sánh trực tiếp**: Các công cụ như `torch.profiler` tạo ra định dạng trace cồng kềnh, không tự động chuẩn hóa metric để so sánh A/B giữa CPU và GPU. Các công cụ chuyên sâu như **NVIDIA Nsight Systems** chỉ hoạt động trên GPU, đòi hỏi cài đặt phức tạp và kiến thức chuyên sâu về phần cứng CUDA.
+2. **Thiếu tầng chẩn đoán tự động hóa (Automated Diagnostic Heuristics)**: Hầu hết các profiler hiện nay chỉ xuất ra các con số thô (raw milliseconds, bytes). Người dùng phải tự phân tích thủ công để tìm ra nguyên nhân. Chưa có một framework nào tích hợp mô hình **Roofline** kết hợp bộ quy tắc **Heuristic** cấp tầng để đưa ra khuyến nghị kỹ thuật trực tiếp.
+3. **Bỏ sót bức tranh toàn cảnh End-to-End Pipeline**: Đa số profiler chỉ đo hàm `model.forward()`, bỏ qua hoàn toàn chi phí Preprocessing (Decode, Letterbox, Resize) và Postprocessing (NMS, Box Decoding) vốn chiếm tới 30–50% thời gian thực tế của bài toán thị giác.
+4. **Phân khúc phần cứng phổ thông (Democratized Hardware) bị bỏ quên**: Phần lớn các bài báo MLSys tập trung vào cụm máy chủ siêu lớn (A100/H100), trong khi các môi trường thực tế của sinh viên và doanh nghiệp vừa/nhỏ tại các nước đang phát triển chủ yếu là **CPU Laptop kết hợp GPU phổ thông (Tesla T4)**.
 
 ---
 
-## 2. RÀ SOÁT TÀI LIỆU (Related Work & Gap Analysis)
+## 2. CÂU HỎI NGHIÊN CỨU & HỆ GIẢ THUYẾT KHOA HỌC
 
-### 2.1 Danh Sách Tài Liệu Phải Đọc
+### 2.1. Câu hỏi nghiên cứu chính (Main Research Question)
+> **"Có thể xây dựng một profiling framework gọn nhẹ (overhead < 3%), độ phân giải chi tiết tới từng tầng (layer-level), tự động phân loại điểm nghẽn bằng mô hình Roofline và Heuristics khả thi, giám sát toàn diện từ Pipeline đến Tài nguyên hệ thống — hoạt động nhất quán, tự động chuyển đổi backend đo lường giữa CPU và GPU mà không cần cấu hình thủ công hay không?"**
 
-#### Tier 1 — Tools & Frameworks Trực Tiếp Cạnh Tranh
+### 2.2. Các câu hỏi thành phần (Sub-Questions - SQ)
+- **SQ1 (Hardware-Bound Shift)**: Điểm nghẽn hiệu năng của các khối kiến trúc CV (Conv2d, Depthwise Conv, Self-Attention) phân bổ như thế nào ở cấp độ layer, và chúng dịch chuyển như thế nào khi chuyển từ môi trường **Compute-limited (CPU)** sang môi trường **Bandwidth-limited (GPU T4)**?
+- **SQ2 (Low-Overhead Instrumentation)**: Làm thế nào để đo lường chi tiết tới từng micro-giây của từng layer trên GPU mà không làm đứt gãy tính song song (concurrency) của hàng đợi CUDA Stream, giữ mức suy giảm hiệu năng của hệ thống dưới 3%?
+- **SQ3 (Heuristic & Roofline Diagnostic)**: Những quy tắc định lượng nào kết hợp giữa Roofline Model và Heuristic Rules đủ tin cậy để tự động phát hiện $\ge 85\%$ các trường hợp nghẽn hiệu năng (được xác thực bởi NVIDIA Nsight Systems)?
+- **SQ4 (Cross-Architecture Inversion)**: Giữa 5 họ kiến trúc thị giác hiện đại (MobileNetV3, YOLOv8, YOLOv11, ConvNeXt, ViT-B/16), có tồn tại hiện tượng **đảo chiều xếp hạng hiệu năng (Performance Inversion)** khi thay đổi phần cứng không, và nguyên nhân vi mô nằm ở đâu?
+- **SQ5 (Pipeline vs. Forward Attribution)**: Trong bài toán thị giác máy tính đầu cuối (End-to-End Object Detection), tỷ trọng thời gian giữa Tiền xử lý, Suy luận nơ-ron và Hậu xử lý (NMS) biến thiên như thế nào theo kích thước Batch và Độ phân giải ảnh?
+- **SQ6 (Tail Latency Jitter)**: Các yếu tố nào (Memory Allocation, I/O Stall, OS Scheduling) chi phối sự chênh lệch giữa Mean Latency và Tail Latency (P95, P99) trên môi trường Edge CPU so với Cloud GPU?
 
-| Công cụ / Paper | Cần phân tích gì |
-|----------------|-----------------|
-| **torch.profiler** (PyTorch ≥ 1.9) | Granularity có đến layer không? Overhead? CPU/GPU unified? |
-| **TensorBoard Profiler Plugin** | Visualization quality, trace format, Chrome Trace |
-| **NVIDIA Nsight Systems** | Kernel-level ground truth — dùng làm baseline validation |
-| **NVIDIA Nsight Compute** | Roofline model output, memory bandwidth measurement |
-| **Intel VTune Profiler** | CPU profiling depth — so sánh với approach của ta |
-| **ONNX Runtime Profiling** | Cross-platform profiling — tương tự goal nhưng khác level |
-| **PyTorch Benchmark Utils** (`torch.utils.benchmark`) | Timing accuracy, warm-up strategy |
-
-#### Tier 2 — Papers Về Methodology
-
-| Paper | Venue | Relevance |
-|-------|-------|----------|
-| **Roofline: An Insightful Visual Performance Model** (Williams'09) | CACM | Compute vs. memory bound analysis — cite để justify H1 |
-| **EfficientNet** (Tan & Le, ICML'19) | ICML | FLOP ≠ latency — empirical evidence cần đối chiếu |
-| **Benchmarking Neural Network Training Algorithms** (MLCommons) | MLSys'23 | Benchmark methodology best practices |
-| **MLPerf Inference Benchmark** | MLSys | Standard benchmark design — compare methodology |
-| **DeepView** (MLSys'21) | MLSys 2021 | Layer-wise profiling cho DNN — closest related work, đọc kỹ |
-| **Habitat** (OSDI'21) | OSDI 2021 | Cross-GPU performance prediction — methodology overlap |
-| **nn-Meter** (MobiSys'21) | MobiSys 2021 | Edge device profiling — đọc để differentiate từ edge angle |
-| **BOLT** (MLSys'22) | MLSys 2022 | Mobile neural network profiling |
-
-#### Tier 3 — Vision Architecture Papers (Cần Hiểu Để Interpret Findings)
-
-| Paper | Cần đọc gì |
-|-------|-----------|
-| **YOLOv8/v11** (Ultralytics) | Architecture detail, bottleneck layer design |
-| **ConvNeXt** (Liu et al., CVPR'22) | Depthwise conv pattern, layer distribution |
-| **ViT** (Dosovitskiy et al., ICLR'21) | Attention complexity, memory pattern |
-| **MobileNetV3** (Howard et al., ICCV'19) | Depthwise separable conv, squeeze-excitation |
-
-### 2.2 Gap Analysis — Điều Không Ai Làm Được Hiện Tại
-
-#### Gap #1 — Không Có Công Cụ Cross-Platform Tự Động Chuyển Backend *(Core Gap)*
-- **Hiện trạng**: PyTorch Profiler chạy được cả CPU/GPU nhưng API không thống nhất
-  (CPU dùng `with_record_shapes`, GPU cần `use_cuda=True`). Kết quả trace ở hai
-  platform không so sánh được trực tiếp vì format khác nhau, unit khác nhau.
-- **Gap**: Không có framework nào tự động detect device, normalize output format,
-  và produce comparable A/B report giữa CPU và GPU run của cùng một model.
-- **Claim**: "Chúng tôi là framework đầu tiên produce device-normalized, directly
-  comparable profiling reports across CPU và CUDA với zero configuration."
-
-#### Gap #2 — Heuristic Diagnosis Layer Chưa Được Formalize
-- **Hiện trạng**: Tất cả tools (Nsight, PyTorch Profiler) dump raw data.
-  Người dùng phải tự interpret. Không có tool nào có rule-based diagnosis.
-- **Gap**: Không có paper nào formalize "profiling heuristic ruleset" cho
-  vision models và validate accuracy của rule đó.
-- **Claim**: "Chúng tôi propose và validate tập hợp N diagnostic rules đạt
-  ≥X% accuracy so với manual expert diagnosis."
-
-#### Gap #3 — Cross-Architecture Benchmark Trên T4-Class GPU Chưa Có
-- **Hiện trạng**: MLPerf dùng A100/H100. Benchmark papers thường dùng V100+.
-  T4 là GPU phổ biến nhất trong academia/Colab nhưng không được cover kỹ.
-- **Gap**: Không có paper systematic study bottleneck profile của YOLO/ViT/ConvNeXt
-  trên T4 vs. CPU-only, với per-layer granularity.
-- **Claim**: "Empirical study đầu tiên về bottleneck profile của 5 vision
-  architectures trên T4 GPU vs. CPU, revealing 3 unexpected performance inversion."
-
-#### Gap #4 — Overhead Measurement Methodology Chưa Transparent
-- **Hiện trạng**: Hầu hết papers không report profiling overhead của chính tool,
-  hoặc report ở điều kiện tốt nhất (batch size nhỏ, single run).
-- **Gap**: Không có standardized way để measure và report profiler overhead
-  across platforms.
-
-### 2.3 Positioning Template Cho Related Work Section
-
+### 2.3. Hệ giả thuyết khoa học (Hypotheses - H)
 ```
-2.1 General-Purpose DL Profilers
-    → PyTorch Profiler, TensorBoard: "General purpose, không có
-      automated diagnosis, không tự normalize CPU/GPU output"
-    → Nsight Systems/Compute: "Requires CUDA, không hoạt động trên
-      CPU-only environments, steep learning curve, no heuristics"
-    → Positioning: "Chúng tôi complement Nsight (dùng làm ground truth)
-      thay vì replace, focus vào accessibility và automation"
-
-2.2 Edge/Mobile Profiling Tools  
-    → nn-Meter, BOLT: "Focus trên mobile hardware (ARM), không
-      support CUDA path, không có diagnostic layer"
-    → Positioning: "Chúng tôi target x86 CPU + NVIDIA GPU — different
-      deployment scenario"
-
-2.3 Performance Modeling Approaches
-    → Habitat, Paleo: "Predictive (analytical model), không đo thực"
-    → Positioning: "Chúng tôi là measurement-based, không prediction —
-      complementary approach"
-
-2.4 Benchmark Studies  
-    → MLPerf: "Protocol-focused, không có tool contribution, 
-      enterprise hardware only"
-    → Positioning: "Chúng tôi target accessible hardware (Colab T4)
-      — democratization angle"
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ H1 (Bottleneck Shift): Các tầng tích chập Conv2d tiêu chuẩn là              │
+│    Memory-Bandwidth-Bound trên GPU Tesla T4 nhưng là Compute-Bound trên     │
+│    CPU x86. Ngược lại, khối Self-Attention (ViT) là Compute-Bound trên cả  │
+│    hai nền tảng nhưng với đặc tính thực thi khác biệt (song song vs. tuần tự)│
+│                                                                             │
+│ H2 (Overhead Portability): Framework đạt mức suy giảm throughput < 3% trên  │
+│    cả CPU và GPU nhờ kiến trúc: time.perf_counter trên CPU và mảng          │
+│    torch.cuda.Event bất đồng bộ kết hợp Deferred Synchronization trên GPU.  │
+│                                                                             │
+│ H3 (Diagnostic Accuracy): Tập hợp các quy tắc Heuristic kết hợp với mô hình │
+│    Roofline đạt độ chính xác chẩn đoán ≥ 85% (F1-score ≥ 0.85) so với kết   │
+│    quả phân tích chuyên gia bằng NVIDIA Nsight Compute/Systems.             │
+│                                                                             │
+│ H4 (Architectural Inversion): Thứ hạng thông lượng (Throughput Ranking) trên │
+│    CPU khác biệt có ý nghĩa thống kê so với GPU T4; tồn tại ít nhất một cặp │
+│    mô hình đảo chiều thứ hạng do chi phí overhead điều phối tuần tự         │
+│    (Sequential Layer Dispatch Overhead) trên CPU.                           │
+│                                                                             │
+│ H5 (Pipeline Bottleneck Dominance): Trong luồng xử lý Object Detection với  │
+│    Batch=1 trên CPU, tổng thời gian Preprocessing + Postprocessing (NMS)    │
+│    chiếm > 35% tổng độ trễ toàn hệ thống, vượt qua thời gian của backbone. │
+│                                                                             │
+│ H6 (Tail Latency Disparity): Trên môi trường Edge CPU, P99 Tail Latency     │
+│    vượt quá 1.8× Mean Latency do phân mảnh cấp phát bộ nhớ động của Python, │
+│    trong khi trên GPU T4 (sau warm-up), tỷ số P99/Mean duy trì < 1.15×.     │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 3. THIẾT KẾ ĐÓNG GÓP KHOA HỌC (Contribution Design)
+## 3. ĐÓNG GÓP KHOA HỌC & CÁC TUYÊN BỐ CỐT LÕI (CONTRIBUTIONS & CLAIMS)
 
-### 3.1 Phân Loại Đóng Góp
+### 3.1. Phân loại đóng góp
 
 ```
-CONTRIBUTION MAP
+BẢN ĐỒ ĐÓNG GÓP KHOA HỌC (CONTRIBUTION MAP)
 │
-├── [C1] SYSTEM CONTRIBUTION — Framework & Tool
-│   ├── Portable profiling API (CPU/CUDA auto-detect)
-│   ├── Layer-wise instrumentation via PyTorch Hooks
-│   ├── Device-normalized metric format
-│   └── Interactive dashboard (A/B comparison view)
+├── [C1] ĐÓNG GÓP HỆ THỐNG (System & Tool Contribution)
+│   ├── Unified Layer Profiling Engine: Tự động chuyển đổi backend (CPU vs CUDA Event).
+│   ├── Low-Overhead Hook Architecture: Kỹ thuật Deferred Sync triệt tiêu bubble GPU (<2% overhead).
+│   ├── End-to-End Pipeline Sentinel: Giám sát toàn diện Preprocess → Inference → Postprocess.
+│   ├── Background Resource Sampler: Luồng độc lập giám sát CPU %, RAM, GPU Util, Power, Temp.
+│   └── Relational Data & Visualization: Schema SQLite/Parquet + Dashboard Streamlit tương tác.
 │
-├── [C2] METHODOLOGICAL CONTRIBUTION
-│   ├── Overhead calibration protocol (làm thế nào để đo overhead
-│   │   của chính profiler một cách chính xác)
-│   └── Diagnostic heuristic ruleset (formalized, với validation)
+├── [C2] ĐÓNG GÓP PHƯƠNG PHÁP LUẬN (Methodological Contribution)
+│   ├── Công thức hiệu chuẩn sai số toán học cho PyTorch leaf hooks.
+│   ├── Tích hợp mô hình Roofline cấp độ layer cho mô hình Computer Vision (fvcore FLOPs).
+│   ├── Danh mục chẩn đoán Heuristic Ruleset v2.0 chuẩn hóa dựa trên phần cứng thực tế.
+│   ├── Phân tích thống kê Tail Latency (P50, P90, P95, P99) và Thông lượng (FPS).
+│   └── Phương pháp kiểm định A/B đa biến có ý nghĩa thống kê (Mann-Whitney U + Cliff's Delta).
 │
-└── [C3] EMPIRICAL CONTRIBUTION — Findings
-    ├── Cross-architecture bottleneck profiles (5 models × 2 platforms)
-    ├── Bottleneck inversion evidence (CPU rank ≠ GPU rank)
-    ├── Quantified DataLoader overhead (num_workers impact)
-    └── Conv2d vs. Attention compute pattern difference on T4
+└── [C3] ĐÓNG GÓP THỰC NGHIỆM (Empirical Findings)
+    ├── Dữ liệu benchmark thực nghiệm đa kiến trúc (5 models × 2 platforms × 7 scenarios).
+    ├── Bằng chứng thực nghiệm về hiện tượng "YOLO Paradox" trên CPU (Dispatch Overhead).
+    ├── Bóc tách định lượng điểm nghẽn của Pipeline CV (Preprocess vs. Forward vs. NMS).
+    └── Phân tích định lượng tác động nghẽn I/O của DataLoader (Compute Starvation).
 ```
 
-### 3.2 Concrete Claims Template
+### 3.2. Các tuyên bố cụ thể (Concrete Scientific Claims)
 
-#### System Claims:
-```
-[SC1] "VisionProf reduces profiling overhead to X.X% throughput degradation 
-       (vs. Y.Y% for PyTorch Profiler in full-trace mode) while providing 
-       per-layer latency breakdown with <Z ms timing error on both 
-       CPU and T4 GPU."
-
-[SC2] "VisionProf's device-agnostic API requires ≤7 lines of code to 
-       integrate into any PyTorch training/inference script, with zero 
-       platform-specific configuration."
-
-[SC3] "Our heuristic analyzer correctly identifies N out of M manually 
-       diagnosed bottleneck cases (X% accuracy), including DataLoader 
-       stalls, VRAM overflow risk, and compute-bound layer groups."
-```
-
-#### Empirical Claims:
-```
-[EC1] "We find that bottleneck ranking by layer type changes significantly 
-       between CPU and T4 GPU: Conv2d is memory-bandwidth-bound on T4 
-       but compute-bound on CPU, while self-attention shows the opposite 
-       pattern — a finding not predictable from FLOP analysis alone."
-
-[EC2] "YOLOv8 and YOLOv11 show X% of total inference latency concentrated 
-       in the final N detection head layers on CPU, but only Y% on T4 — 
-       suggesting architecture-specific optimization opportunities differ 
-       by deployment target."
-
-[EC3] "DataLoader with num_workers=0 introduces Z% artificial latency 
-       inflation that is systematically misattributed to model forward 
-       pass by existing profiling tools."
-
-[EC4] "ViT-B/16 achieves higher throughput than YOLOv8-M on T4 GPU 
-       but 2.3× lower throughput on CPU — a performance inversion 
-       invisible in FLOP-based analysis."
-```
-
-### 3.3 Novelty Checklist
-
-- [x] Cross-platform automated profiling → **falsifiable** (overhead số cụ thể)
-- [x] Heuristic ruleset → **reproducible** (rules có thể public, validated by others)
-- [x] Bottleneck inversion finding → **surprising & actionable**
-- [x] T4-focused benchmark → **niche but real gap** (democratization angle)
-- [ ] Cần verify: Không có paper nào 2023–2025 đã làm cross-platform Vision profiling với heuristics
+- **[SC1 - System Claim]**: *"VisionProf đạt mức overhead đo kiểm $< 3\%$ suy giảm throughput trên cả CPU và GPU T4, cung cấp số liệu phân rã tới từng layer với sai số thời gian $< 2\%$ so với NVIDIA Nsight Systems."*
+- **[SC2 - Usability Claim]**: *"Framework tích hợp chỉ với $\le 5$ dòng lệnh Python vào bất kỳ pipeline huấn luyện hoặc suy luận PyTorch nào mà không yêu cầu thay đổi cấu trúc mã nguồn mô hình."*
+- **[SC3 - Diagnostic Claim]**: *"Hệ thống chẩn đoán tự động phát hiện chính xác $\ge 85\%$ các ca điểm nghẽn (OOM risk, I/O stall, compute saturation, memory fragmentation) đã được kiểm chứng bởi Ground Truth."*
+- **[SC4 - Observability Claim]**: *"Cung cấp góc nhìn quan sát toàn diện 3 cấp độ: Hệ thống phần cứng (CPU/GPU/Power/Temp), Đường ống đầu cuối (Pre/Infer/Post) và Toán tử vi mô (FLOPs/Intensity/Roofline) trong cùng một cơ sở dữ liệu quan hệ đồng nhất."*
+- **[EC1 - Empirical Claim]**: *"Chứng minh bằng thực nghiệm hiện tượng nghịch lý: Mô hình YOLOv11n có số lượng tham số ít hơn YOLOv8n (2.62M vs 3.16M) nhưng chạy trên CPU chậm hơn $1.45\times$ do sự phân mảnh kiến trúc (177 layers vs 129 layers), làm chi phí sequential dispatch trên CPU lấn át phần tiết kiệm tính toán."*
+- **[EC2 - Empirical Claim]**: *"Xác định ngưỡng chuyển đổi trạng thái (Threshold Transition): Conv2d chuyển từ Compute-bound sang Memory-bandwidth-bound khi kích thước batch tăng từ 1 lên 16 trên GPU T4, trong khi ViT duy trì Compute-bound trên toàn bộ dải batch."*
+- **[EC3 - Empirical Claim]**: *"Chứng minh thực nghiệm trên luồng YOLO Real-time: Khi triển khai trên Edge CPU, thuật toán NMS và chuẩn hóa ảnh chiếm tới 42% tổng thời gian một chu kỳ frame, trở thành điểm nghẽn chi phối chứ không phải bản thân mạng tích chập."*
 
 ---
 
-## 4. THIẾT KẾ KIẾN TRÚC KỸ THUẬT (Technical Design)
+## 4. THIẾT KẾ HỆ THỐNG VĨ MÔ (5-TIER SYSTEM ARCHITECTURE)
 
-### 4.1 Kiến Trúc Framework Tổng Thể
+Hệ thống được tổ chức thành 5 tầng phân lập rõ ràng theo nguyên lý module hóa cao:
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        VisionProf Framework                          │
-├──────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │              LAYER 0: DEVICE DETECTION & ROUTING            │    │
-│  │                                                              │    │
-│  │   DeviceProbe.detect() → "cpu" | "cuda:0"                   │    │
-│  │   ├── CPU path: time.perf_counter, psutil, no CUDA API      │    │
-│  │   └── CUDA path: torch.cuda.Event, pynvml, CUDA streams     │    │
-│  └───────────────────┬─────────────────────────────────────────┘    │
-│                      │                                               │
-│  ┌───────────────────▼─────────────────────────────────────────┐    │
-│  │         LAYER 1: INSTRUMENTATION ENGINE                      │    │
-│  │                                                              │    │
-│  │  ┌──────────────────┐    ┌──────────────────────────────┐   │    │
-│  │  │  PyTorch Hooks   │    │     Timing Backend           │   │    │
-│  │  │                  │    │                              │   │    │
-│  │  │ register_forward │    │  CPU: perf_counter_ns()      │   │    │
-│  │  │ _pre_hook()      │    │  GPU: cuda.Event.elapsed()   │   │    │
-│  │  │ register_forward │    │                              │   │    │
-│  │  │ _hook()          │    │  Both: Warm-up (N=20 iters)  │   │    │
-│  │  └──────────────────┘    └──────────────────────────────┘   │    │
-│  │                                                              │    │
-│  │  ┌──────────────────┐    ┌──────────────────────────────┐   │    │
-│  │  │ Memory Tracker   │    │  DataLoader Sentinel         │   │    │
-│  │  │                  │    │                              │   │    │
-│  │  │ CPU: psutil      │    │  Wraps __iter__ to measure   │   │    │
-│  │  │ GPU: pynvml      │    │  fetch time per batch        │   │    │
-│  │  │ (async polling)  │    │                              │   │    │
-│  │  └──────────────────┘    └──────────────────────────────┘   │    │
-│  └───────────────────┬─────────────────────────────────────────┘    │
-│                      │                                               │
-│  ┌───────────────────▼─────────────────────────────────────────┐    │
-│  │         LAYER 2: DATA COLLECTOR & NORMALIZER                 │    │
-│  │                                                              │    │
-│  │  Raw Trace → ProfilingRecord (normalized schema):            │    │
-│  │  {layer_name, layer_type, latency_ms, memory_delta_mb,      │    │
-│  │   device, flops_theoretical, arithmetic_intensity,           │    │
-│  │   memory_bw_utilization, run_id, timestamp}                  │    │
-│  │                                                              │    │
-│  │  Storage: SQLite (local) / Parquet (export)                  │    │
-│  └───────────────────┬─────────────────────────────────────────┘    │
-│                      │                                               │
-│  ┌───────────────────▼─────────────────────────────────────────┐    │
-│  │         LAYER 3: ANALYSIS ENGINE                             │    │
-│  │                                                              │    │
-│  │  ┌─────────────────────┐  ┌──────────────────────────────┐  │    │
-│  │  │  Bottleneck         │  │  A/B Comparison Engine       │  │    │
-│  │  │  Classifier         │  │                              │  │    │
-│  │  │                     │  │  CPU_run ↔ GPU_run           │  │    │
-│  │  │  Roofline-based:    │  │  Model_A ↔ Model_B           │  │    │
-│  │  │  compute-bound vs.  │  │                              │  │    │
-│  │  │  memory-bound       │  │  Delta report, inversion     │  │    │
-│  │  │  per layer          │  │  detection, ranking change   │  │    │
-│  │  └─────────────────────┘  └──────────────────────────────┘  │    │
-│  │                                                              │    │
-│  │  ┌─────────────────────────────────────────────────────┐    │    │
-│  │  │            Automated Heuristic Analyzer              │    │    │
-│  │  │                                                      │    │    │
-│  │  │  Rule Engine → Diagnosis → Recommendation           │    │    │
-│  │  │  (see Section 4.3 for full ruleset)                  │    │    │
-│  │  └─────────────────────────────────────────────────────┘    │    │
-│  └───────────────────┬─────────────────────────────────────────┘    │
-│                      │                                               │
-│  ┌───────────────────▼─────────────────────────────────────────┐    │
-│  │         LAYER 4: DASHBOARD / VISUALIZATION                   │    │
-│  │  (Streamlit hoặc Plotly Dash — chạy local & Colab)           │    │
-│  │                                                              │    │
-│  │  • Waterfall chart: layer latency breakdown                  │    │
-│  │  • Roofline plot: compute vs. memory bound per layer         │    │
-│  │  • Side-by-side: CPU vs. GPU comparison                      │    │
-│  │  • Heuristic report card: diagnosis + recommendation          │    │
-│  │  • VRAM timeline (GPU mode only)                             │    │
-│  └─────────────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    UI["Tier 5: Interactive Visual Dashboard (Streamlit + Plotly)"]
+    ANA["Tier 4: Automated Diagnostic & A/B Engine (Roofline + Heuristics v2.0 + Latency Engine)"]
+    DATA["Tier 3: Relational Data Engine (SQLite + Parquet Storage)"]
+    SENT["Tier 2: Unified Metric Sentinel & Instrument Engine (Hooks + Background Sampler + Pipeline)"]
+    CORE["Tier 1: Model Execution Engine (PyTorch Eager / ONNX Runtime Session)"]
+
+    UI --> ANA
+    ANA --> DATA
+    DATA --> SENT
+    SENT --> CORE
 ```
 
-### 4.2 Hook Implementation Chi Tiết
-
-```python
-# Core hook pattern — hoạt động trên cả CPU và CUDA
-class LayerProfiler:
-    def __init__(self, model, device):
-        self.device = device
-        self.records = {}
-        self._hooks = []
-        self._register_hooks(model)
-
-    def _register_hooks(self, model):
-        for name, module in model.named_modules():
-            if len(list(module.children())) == 0:  # leaf modules only
-                pre = module.register_forward_pre_hook(
-                    self._make_pre_hook(name))
-                post = module.register_forward_hook(
-                    self._make_post_hook(name))
-                self._hooks.extend([pre, post])
-
-    def _make_pre_hook(self, name):
-        def hook(module, input):
-            if self.device == "cpu":
-                self.records[name] = {"start": time.perf_counter_ns()}
-            else:
-                event = torch.cuda.Event(enable_timing=True)
-                event.record()
-                self.records[name] = {"start_event": event}
-        return hook
-
-    def _make_post_hook(self, name):
-        def hook(module, input, output):
-            if self.device == "cpu":
-                elapsed = (time.perf_counter_ns() - 
-                          self.records[name]["start"]) / 1e6  # ms
-            else:
-                end_event = torch.cuda.Event(enable_timing=True)
-                end_event.record()
-                torch.cuda.synchronize()
-                elapsed = self.records[name]["start_event"].elapsed_time(
-                    end_event)
-            self.records[name]["latency_ms"] = elapsed
-            self.records[name]["output_shape"] = (
-                output.shape if hasattr(output, 'shape') else None)
-        return hook
-
-    def remove_hooks(self):
-        for h in self._hooks:
-            h.remove()
-        self._hooks.clear()
-```
-
-**Lưu ý quan trọng về hook:**
-- Chỉ hook **leaf modules** (tránh double-counting nested modules)
-- Trên GPU: **phải** `torch.cuda.synchronize()` trước khi `elapsed_time()`
-- Warm-up: Chạy ít nhất 20 iterations trước khi bắt đầu record để tránh JIT/CUDA init bias
-- Memory: Đo `torch.cuda.memory_allocated()` trước và sau forward để tính delta per-layer
-
-### 4.3 Automated Heuristic Analyzer — Ruleset Đề Xuất
-
-> **Nguyên tắc thiết kế**: Mỗi rule phải có threshold cụ thể, justification lý thuyết,
-> và recommendation actionable. Rules phải được validate (Section 5).
-
-```
-RULE CATALOG v1.0
-
-═══ GROUP A: DataLoader Bottleneck ═══
-
-[R-A1] DataLoader Stall Detection
-  Condition: dataloader_fetch_time > 0.3 × total_iter_time
-  Severity: HIGH
-  Diagnosis: "DataLoader là bottleneck — GPU/CPU đang chờ data"
-  Recommendation: "Tăng num_workers=4 (hoặc os.cpu_count()//2),
-                  bật pin_memory=True nếu dùng GPU"
-
-[R-A2] num_workers=0 Warning  
-  Condition: num_workers == 0 AND device == "cuda"
-  Severity: MEDIUM
-  Diagnosis: "Single-threaded data loading on GPU workload"
-  Recommendation: "Đặt num_workers≥2, thử prefetch_factor=2"
-
-═══ GROUP B: Compute Bottleneck ═══
-
-[R-B1] Layer-Level Compute Saturation (GPU)
-  Condition: SM_utilization > 90% AND memory_bw_util < 50%
-             (sustained > 80% of forward pass time)
-  Severity: INFO
-  Diagnosis: "Model là compute-bound — GPU đang được dùng hiệu quả"
-  Recommendation: "Cân nhắc Mixed Precision (AMP/FP16) để tăng throughput
-                  thêm ~1.5–2× với compute-bound workload"
-
-[R-B2] Conv2d Dominance
-  Condition: sum(latency[Conv2d layers]) > 0.6 × total_forward_latency
-  Severity: INFO
-  Diagnosis: "Conv2d chiếm >60% latency — kiến trúc conv-heavy"
-  Recommendation: "Nếu inference edge/CPU: cân nhắc MobileNetV3 hoặc
-                  EfficientNet-Lite; nếu GPU: kiểm tra kernel fusion"
-
-[R-B3] Attention Head Overhead (ViT)
-  Condition: layer_type == MultiheadAttention AND
-             latency > 2× median_layer_latency
-  Severity: MEDIUM
-  Diagnosis: "Attention layer là bottleneck đáng kể"
-  Recommendation: "Thử Flash Attention 2 (nếu CUDA >= 8.0), hoặc
-                  giảm sequence length / số head nếu accuracy cho phép"
-
-═══ GROUP C: Memory Bottleneck ═══
-
-[R-C1] VRAM Overflow Risk
-  Condition: vram_used > 0.85 × vram_total
-  Severity: CRITICAL
-  Diagnosis: "VRAM sắp đầy — nguy cơ OOM error"
-  Recommendation: "Giảm batch size, bật gradient_checkpointing,
-                  dùng AMP (FP16 giảm ~50% VRAM)"
-
-[R-C2] Memory-Bandwidth Saturation (GPU)
-  Condition: memory_bw_utilization > 80% AND SM_util < 50%
-  Severity: HIGH  
-  Diagnosis: "Model là memory-bandwidth-bound — compute đang chờ data"
-  Recommendation: "Layer fusion có thể giảm memory traffic;
-                  quantization (INT8) có thể giảm BW requirement"
-
-[R-C3] Activation Memory Spike
-  Condition: max(memory_delta_per_layer) > 0.3 × total_vram_used
-  Severity: MEDIUM
-  Diagnosis: "Một số layer tạo activation memory rất lớn"
-  Recommendation: "Xem xét gradient checkpointing tại layer này;
-                  kiểm tra nếu có tensor được giữ không cần thiết"
-
-═══ GROUP D: Platform-Specific ═══
-
-[R-D1] FP32 on GPU (no AMP)
-  Condition: device == "cuda" AND dtype == torch.float32
-             AND throughput < expected_fp16_throughput × 0.6
-  Severity: MEDIUM
-  Diagnosis: "Chạy FP32 trên GPU — bỏ lỡ Tensor Core acceleration"
-  Recommendation: "Bật torch.autocast('cuda') — T4 có Tensor Cores
-                  tối ưu cho FP16, kỳ vọng speedup 1.5–2×"
-
-[R-D2] CPU Inference với Model Lớn
-  Condition: device == "cpu" AND 
-             total_params > 50e6 AND
-             avg_latency_per_batch > 500ms
-  Severity: MEDIUM
-  Diagnosis: "Model có thể quá lớn cho CPU inference real-time"
-  Recommendation: "Cân nhắc ONNX Runtime với OpenVINO backend,
-                  hoặc chuyển sang kiến trúc mobile-optimized"
-
-[R-D3] Kernel Launch Overhead (GPU)
-  Condition: device == "cuda" AND
-             num_small_ops_per_forward > 500 AND
-             median_kernel_time < 0.1ms
-  Severity: LOW
-  Diagnosis: "Nhiều kernel nhỏ — kernel launch overhead đáng kể"
-  Recommendation: "Dùng torch.compile() (PyTorch 2.0+) để fuse kernels;
-                  hoặc TorchScript cho production"
-```
-
-### 4.4 Xử Lý Profiling Overhead Bias
-
-| Chiến lược | Cách implement | Expected overhead reduction |
-|-----------|---------------|---------------------------|
-| **Selective sampling** | Profile 1/N iterations (N=10 mặc định) | ~90% overhead reduction |
-| **Async memory polling** | Thread riêng poll NVML mỗi 100ms | Tách overhead khỏi forward pass |
-| **Leaf-only hooks** | Không hook container modules | ~40% hook overhead reduction |
-| **No-copy tensor inspection** | `output.shape` thay vì `output.clone()` | Tránh memory allocation |
-| **Overhead calibration run** | Chạy baseline (no hooks) + profiled, report delta | Transparency cho reviewer |
-
-```python
-# Overhead calibration protocol
-def calibrate_overhead(model, sample_input, n_runs=100):
-    """Measure profiler's own overhead. Must be reported in paper."""
-    # Baseline (no profiling)
-    times_baseline = []
-    for _ in range(n_runs):
-        t0 = time.perf_counter_ns()
-        model(sample_input)
-        times_baseline.append(time.perf_counter_ns() - t0)
-    
-    # With profiling
-    profiler = LayerProfiler(model, device)
-    times_profiled = []
-    for _ in range(n_runs):
-        t0 = time.perf_counter_ns()
-        model(sample_input)
-        times_profiled.append(time.perf_counter_ns() - t0)
-    profiler.remove_hooks()
-    
-    overhead_pct = (np.median(times_profiled) - np.median(times_baseline)) / \
-                   np.median(times_baseline) * 100
-    return overhead_pct  # Report này PHẢI có trong paper
-```
+- **Tier 1 (Execution)**: Môi trường thực thi mô hình PyTorch (`torch.nn.Module`) ở chế độ Eager và mở rộng sang ONNX Runtime (`InferenceSession`) ở cấp độ hộp đen.
+- **Tier 2 (Sentinel & Instrumentation)**: Lớp can thiệp không xâm lấn gồm 4 thành phần:
+  1. `LayerProfilerV2`: PyTorch Hooks đo đạc thời gian qua mảng Deferred CUDA Events và LIFO Stack.
+  2. `DataLoaderSentinelV2`: Đo đạc độ trễ I/O nạp dữ liệu và phát hiện Compute Starvation.
+  3. `PipelineSentinel`: Đo đạc 3 chặng Preprocess $\rightarrow$ Forward $\rightarrow$ Postprocess.
+  4. `SystemResourceSentinel`: Luồng Daemon lấy mẫu CPU %, RAM, GPU Util %, Power, Temp mỗi 50ms.
+- **Tier 3 (Data Engine)**: Chuẩn hóa toàn bộ vết đo thành schema quan hệ SQLite (`visionprof.db`) và hỗ trợ xuất Parquet nén n-cột (Snappy/ZSTD).
+- **Tier 4 (Analytical Engine)**:
+  - Tính toán FLOPs giải tích (fvcore) và Arithmetic Intensity.
+  - Phân loại điểm nghẽn Roofline Model (Compute vs. Memory Bound).
+  - Động cơ Heuristic 19 quy tắc v2.0 có ngưỡng thích ứng phần cứng.
+  - Động cơ thống kê Tail Latency (P50, P90, P95, P99) và Kiểm định A/B (Mann-Whitney U, Cliff's Delta).
+- **Tier 5 (Dashboard UI)**: Giao diện Streamlit hiển thị biểu đồ Sunburst, Roofline Scatter Plot, Latency Distribution Histogram (KDE), Pipeline Stage Breakdown, và A/B Waterfall Comparison.
 
 ---
 
-## 5. THIẾT KẾ THỰC NGHIỆM (Experimental Design)
+## 5. THIẾT KẾ THỰC NGHIỆM CHUẨN MỰC (EXPERIMENTAL DESIGN)
 
-### 5.1 Bộ Model Đánh Giá
+### 5.1. Danh mục 5 Mô hình Đại diện
 
-| Model | Loại Architecture | Lý do chọn | Input size |
-|-------|------------------|-----------|-----------|
-| **YOLOv8-S** | CNN (Conv-heavy, multi-scale) | State-of-art detection, phổ biến nhất | 640×640 |
-| **YOLOv11-S** | CNN (C2PSA, Attention hybrid) | Phiên bản mới nhất, hybrid architecture | 640×640 |
-| **ConvNeXt-T** | Pure CNN (modernized) | ConvNet tối ưu, đối lập với ViT | 224×224 |
-| **ViT-B/16** | Pure Attention | Benchmark Attention pattern | 224×224 |
-| **MobileNetV3-Large** | Lightweight CNN (Depthwise Sep) | Edge deployment target | 224×224 |
+| Mô hình | Họ kiến trúc | Cấu trúc đặc trưng | Input Shape | Vai trò trong nghiên cứu |
+| :--- | :--- | :--- | :---: | :--- |
+| **MobileNetV3-Large** | Lightweight CNN | Depthwise Separable Conv, SE block | $1 \times 3 \times 224 \times 224$ | Đại diện mô hình tối ưu cho thiết bị biên. |
+| **YOLOv8n** | Modern CNN Detection | C2f block, Anchor-free head | $1 \times 3 \times 640 \times 640$ | Baseline phát hiện vật thể phổ biến nhất hiện nay. |
+| **YOLOv11n** | Hybrid Attention Detection| C3k2, C2PSA block (CNN + Attention) | $1 \times 3 \times 640 \times 640$ | Kiểm chứng hiện tượng phân mảnh tầng & nghịch lý kiến trúc. |
+| **ConvNeXt-Tiny** | Modernized Pure CNN | $7 \times 7$ Depthwise, Inverted Bottleneck| $1 \times 3 \times 224 \times 224$ | Đối trọng trực tiếp của Vision Transformer từ phe CNN. |
+| **ViT-B/16** | Pure Vision Transformer | Patch Embedding, Multihead Self-Attention| $1 \times 3 \times 224 \times 224$ | Đại diện kiến trúc thuần Attention với độ phức tạp cao. |
 
-> **Lý do 5 model này**: Cover full spectrum từ lightweight edge → heavy attention,
-> đảm bảo H1 và H4 có thể được test. YOLO thêm vào đặc biệt vì detection head
-> tạo ra multi-scale feature bottleneck không có ở classification models.
+### 5.2. Bảy Kịch Bản Tải Thực Nghiệm (Workload Scenarios)
 
-### 5.2 Workload Scenarios
+1. **Scenario 1 - Edge Single Inference ($Batch=1$)**: Đo độ trễ thực tế trong kịch bản camera thời gian thực trên CPU (Mean, P50, P95, P99, Throughput FPS).
+2. **Scenario 2 - Batch Scaling ($Batch \in \{1, 4, 8, 16, 32\}$)**: Đo năng lực mở rộng thông lượng (throughput scaling) và kiểm chứng bước chuyển dịch từ Latency-bound sang Throughput-bound trên GPU T4.
+3. **Scenario 3 - Steady State vs. Cold Start**: Đánh giá tác động của khởi tạo context CUDA và PyTorch Caching Allocator giữa lần chạy đầu tiên (Cold) và trạng thái ổn định (Steady) sau warm-up ($N=20$).
+4. **Scenario 4 - DataLoader Stress Test**: Đánh giá hiện tượng Compute Starvation với tập dữ liệu thực nghiệm qua các mức `num_workers` $\in \{0, 2, 4, 8\}$ và tiêm độ trễ I/O có kiểm soát.
+5. **Scenario 5 - Precision Scaling (FP32 vs. AMP FP16)**: Đo đạc tốc độ tăng tốc và mức giải phóng bộ nhớ khi kích hoạt Tensor Cores trên GPU Tesla T4.
+6. **Scenario 6 - End-to-End Pipeline Breakdown**: Đo đạc phân rã thời gian thực tế: `OpenCV Decode` $\rightarrow$ `Letterbox/Normalize` $\rightarrow$ `Model Forward` $\rightarrow$ `Torchvision NMS / Decoding` trên tập ảnh mẫu.
+7. **Scenario 7 - Output Consistency & Pareto Trade-off**: Đo lường sự đánh đổi giữa Tốc độ suy luận và Độ trôi dạt kết quả (Output Divergence: Cosine Similarity và L1 Error) giữa FP32 và FP16 AMP.
 
-```
-Scenario 1: Single Image Inference (batch_size=1)
-  → Đo latency thực tế kịch bản production edge deployment
+### 5.3. Ma Trận 7 Bài Toán Bóc Tách Thành Phần (Ablation Studies AB-1 đến AB-7)
 
-Scenario 2: Batch Inference (batch_size=8, 16, 32)  
-  → Đo throughput, memory scaling, batching efficiency
-  → Chú ý: T4 có 16GB — ConvNeXt và ViT với bs=32 sẽ gần limit
-
-Scenario 3: Warm vs. Cold Start
-  → Đo CUDA init overhead, JIT compilation effect
-  → Phân biệt "first run" vs. "steady state" latency
-
-Scenario 4: DataLoader Integration
-  → Dùng ImageFolder dataset với num_workers={0, 2, 4}
-  → Đây là scenario để trigger Rule R-A1, R-A2
-
-Scenario 5: FP32 vs. FP16 (AMP) — GPU only
-  → Validate Rule R-D1, đo speedup thực tế trên T4
-```
-
-### 5.3 Baselines Để So Sánh
-
-| Baseline | Platform | Điểm yếu cần demonstrate |
-|---------|---------|--------------------------|
-| `torch.profiler.profile()` — full trace | CPU + GPU | Overhead cao (~15-30% ở trace mode), không tự diagnosis |
-| `time.perf_counter()` naive timing | CPU + GPU | Không sync CUDA → undercount GPU latency, không per-layer |
-| NVIDIA Nsight Systems | GPU only | Không chạy trên CPU, cần CUDA toolkit, không portable |
-| No profiling (baseline throughput) | Both | Ground truth cho overhead measurement |
-
-### 5.4 Metrics Đánh Giá Bản Thân Framework
-
-```
-ACCURACY METRICS:
-├── Timing accuracy: |profiler_ms - nsight_ms| / nsight_ms < 2%
-│   (Nsight = ground truth cho GPU; perf_counter_ns = ground truth CPU)
-├── Memory accuracy: |profiler_mb - cuda.memory_stats()_mb| < 1%
-├── Heuristic precision: TP / (TP + FP) for each rule
-├── Heuristic recall: TP / (TP + FN) for each rule
-└── Attribution accuracy: sum(layer_latencies) ≈ total_forward_latency
-    (Giải thích overhead nếu sum > total)
-
-OVERHEAD METRICS:
-├── Throughput degradation % (mức độ chậm hơn so với no-hook)
-├── Latency overhead at p50, p95, p99
-├── Peak memory overhead (framework's own memory)
-└── Overhead vs. sample_rate curve (ablation A2)
-
-USABILITY METRICS:
-├── Integration LoC: ≤10 lines target
-├── Setup time: ≤2 minutes từ pip install đến first report
-└── Dashboard load time: ≤5s cho report 1000 layers
-```
-
-### 5.5 Ablation Study Questions
-
-| ID | Câu hỏi | Cách thực hiện |
-|----|---------|----------------|
-| **AB-1** | Overhead breakdown: hook vs. memory polling vs. DB write? | Tắt từng component riêng lẻ, đo overhead |
-| **AB-2** | Sample rate vs. accuracy tradeoff? | sample_rate = {1,5,10,20,50}, đo timing error |
-| **AB-3** | Leaf-only hook vs. all-module hook: overhead và accuracy? | Toggle `leaf_only=True/False` |
-| **AB-4** | Warm-up iterations needed? (bao nhiêu là đủ?) | N_warmup = {0,5,10,20,50}, đo variance |
-| **AB-5** | Heuristic rule contribution: accuracy nếu bỏ từng group? | Remove Group A/B/C/D rules, đo overall accuracy |
-| **AB-6** | FP16 vs. FP32: framework accuracy thay đổi không? | Profile same model ở hai precision mode |
-| **AB-7** | Batch size ảnh hưởng đến bottleneck classification? | bs=1 vs. bs=16: compute-bound classification thay đổi? |
+| Mã | Mục tiêu bóc tách | Phương pháp thực nghiệm | Kỳ vọng đầu ra |
+| :---: | :--- | :--- | :--- |
+| **AB-1** | Bóc tách chi phí overhead | Bật/tắt riêng rẽ: Hook time, Memory tracker, Background sampler, SQLite dump. | Xác định thành phần gây trễ lớn nhất của profiler. |
+| **AB-2** | Đánh đổi Tần suất lấy mẫu | Thay đổi tần suất profile: 100%, 50%, 20%, 10% số batches. | Đường cong Trade-off giữa độ chính xác và overhead. |
+| **AB-3** | Leaf-only vs. All-module | So sánh profiling chỉ leaf modules vs gắn hook toàn bộ container. | Định lượng chi phí double-counting và hook overhead. |
+| **AB-4** | Số lần Warm-up tối ưu | Quét $N_{warmup} \in \{0, 1, 3, 5, 10, 20, 50\}$, đo phương sai CV. | Xác định điểm bão hòa warm-up trên CPU và GPU. |
+| **AB-5** | Đóng góp của Heuristics | Tắt lần lượt từng nhóm Rule R-A, R-B, R-C, R-D và đo F1-score chẩn đoán. | Chứng minh giá trị độc lập của từng nhóm quy tắc. |
+| **AB-6** | Độ ổn định trên FP16 | So sánh sai số đo lường của framework giữa FP32 và Mixed Precision. | Đảm bảo framework không bị sai lệch khi lượng tử hóa. |
+| **AB-7** | Độ nhạy của Roofline | Dịch chuyển input resolution ($224 \rightarrow 640$), theo dõi điểm Roofline. | Chứng minh sự trôi dạt điểm cân bằng tính toán theo kích thước ảnh. |
 
 ---
 
-## 6. RỦI RO & PHƯƠNG ÁN DỰ PHÒNG (Risk Assessment)
+## 6. TIÊU CHUẨN THÀNH CÔNG & PHƯƠNG PHÁP ĐÁNH GIÁ (SUCCESS CRITERIA)
 
-### 6.1 Risk Register
+### 6.1. Bảng chỉ tiêu định lượng (Quantitative Metrics)
 
-| ID | Rủi ro | Xác suất | Mức độ | Fallback |
-|----|--------|---------|--------|---------|
-| **R1** | Paper concurrent về vision profiling xuất hiện trên ArXiv | Thấp | Cao | Narrow sang T4-specific + heuristic layer (hai gaps độc lập) |
-| **R2** | T4 trên Colab bị preempt / timeout trong long experiments | Cao | Trung bình | Checkpoint từng model run; dùng Colab Pro hoặc GCP free tier |
-| **R3** | PyTorch Hooks không đủ granularity cho một số custom ops | Trung bình | Trung bình | Thêm `torch.jit.trace` + manual timing cho edge cases |
-| **R4** | Heuristic accuracy thấp (<75%) sau validation | Thấp-Trung | Cao | Thu hẹp ruleset về rules độ tin cậy cao; re-frame là "initial study" |
-| **R5** | NVML không available hoặc inaccurate trên Colab | Trung bình | Trung bình | Fallback sang `torch.cuda.memory_stats()` + `nvidia-smi` parsing |
-| **R6** | Overhead > 5% — không đạt target | Thấp | Cao | Tăng sample_rate mặc định; present trade-off curve |
-| **R7** | Tất cả 5 model có bottleneck profile giống nhau (H4 sai) | Thấp | Cao | Vẫn là finding: "bottleneck profiles converge — architecture choice không quan trọng bằng nghĩ" |
+| Tiêu chuẩn đánh giá | Mức Tối thiểu (Acceptable) | Mức Xuất sắc (Target MLSys Paper) | Công cụ kiểm chuẩn (Ground Truth) |
+| :--- | :---: | :---: | :--- |
+| **Profiling Overhead** | $< 5.0\%$ throughput drop | **$< 2.0\%$ throughput drop** | Chạy mô hình gốc không gắn hook (No-hook run) |
+| **Sai số đo thời gian** | $< 5.0\%$ timing error | **$< 1.5\%$ timing error** | NVIDIA Nsight Systems (GPU), `perf_counter_ns` (CPU) |
+| **Độ chính xác Tail Latency (P95/P99)**| $< 5.0\%$ error | **$< 2.0\%$ error** | Đối chiếu chuỗi thời gian phân vị với Nsight Systems trace |
+| **Độ chính xác bộ nhớ** | $< 3.0\%$ memory error | **$< 0.5\%$ memory error** | `torch.cuda.memory_stats()` |
+| **F1-Score Chẩn đoán Heuristics**| $\ge 75\%$ F1-score | **$\ge 90\%$ F1-score** | Tập test 50 ca bottleneck được gán nhãn chuyên gia |
+| **Tỷ lệ báo động sai (FPR)**| $< 15\%$ False Positive | **$< 5\%$ False Positive** | Chạy trên mô hình chuẩn đã tối ưu tốt |
+| **Pipeline Attribution Error**| $< 5.0\%$ unattributed | **$< 1.0\%$ unattributed** | Tổng các stage so với tổng thời gian đồng hồ tường |
+| **Tính linh hoạt (Usability)**| $\le 10$ dòng code tích hợp | **$\le 5$ dòng code tích hợp** | Đo lường độ phức tạp mã nguồn tích hợp |
 
-### 6.2 Colab-Specific Risk Mitigation
-
-```python
-# Anti-preemption pattern cho Colab experiments
-import pickle, os
-
-def run_with_checkpoint(model_name, experiment_fn, checkpoint_dir="./checkpoints"):
-    ckpt_path = f"{checkpoint_dir}/{model_name}_results.pkl"
-    if os.path.exists(ckpt_path):
-        print(f"[SKIP] {model_name}: checkpoint found, loading...")
-        with open(ckpt_path, 'rb') as f:
-            return pickle.load(f)
-    
-    results = experiment_fn()
-    os.makedirs(checkpoint_dir, exist_ok=True)
-    with open(ckpt_path, 'wb') as f:
-        pickle.dump(results, f)
-    print(f"[SAVED] {model_name}: results checkpointed")
-    return results
-```
-
-### 6.3 Hardware Scope Limitations — Phải Acknowledge trong Paper
-
-> Reviewer sẽ hỏi về generalizability. Cần honest về limitation:
-
-```
-Limitations to acknowledge:
-1. "Experiments conducted on T4 (Turing arch, 8.1 TFLOPS FP16). 
-    Results may not generalize to Ampere (A100) or Hopper (H100) 
-    due to different SM count, cache hierarchy, and Tensor Core generations."
-
-2. "CPU experiments on single laptop — results reflect x86 
-    Alder/Raptor Lake behavior. ARM (Apple Silicon, Snapdragon) 
-    not covered in this work."
-
-3. "Multi-GPU distributed profiling out of scope."
-
-→ Framing: "Scope is intentionally focused on accessible hardware 
-   (democratization goal), not enterprise-class systems."
-```
+### 6.2. Phương pháp kiểm chuẩn độc lập (Ground Truth Validation)
+Để đảm bảo tính trung thực khoa học cao nhất:
+- Trên GPU: Chạy `nsys profile` (NVIDIA Nsight Systems CLI) trích xuất thời gian GPU kernel thực tế, ánh xạ với NVTX range để tính sai số tương đối:
+  $$\text{Relative Error} = \frac{|t_{\text{VisionProf}} - t_{\text{Nsight}}|}{t_{\text{Nsight}}} \times 100\%$$
+- Bộ quy tắc Heuristic được đánh giá trên tập **Ground Truth Bottleneck Benchmark** gồm 50 ca thực nghiệm thiết kế có chủ đích (gây nghẽn I/O, tràn VRAM, kernel nhỏ li ti, ép luồng tuần tự) để lập Ma trận nhầm lẫn (Confusion Matrix).
 
 ---
 
-## 7. ĐỊNH HƯỚNG PUBLICATION
+## 7. CHIẾN LƯỢC CÔNG BỐ KHOA HỌC & ĐÁNH GIÁ RỦI RO
 
-### 7.1 Venue Phù Hợp Nhất
+### 7.1. Chiến lược chọn Hội nghị & Định vị Đề tài
+- **Định hướng Công bố Khoa học (Research Track)**:
+  - *Primary*: **MLSys (Conference on Machine Learning and Systems)**.
+  - *Secondary*: **EuroSys** hoặc **USENIX ATC** (Applied Systems track).
+  - *Fast Track*: **MLSys Workshop on Systems for ML** hoặc **CVPR Workshop on Efficient Computer Vision**.
+- **Định vị Đồ án Tốt nghiệp / Đề tài Sinh viên (Engineering Track)**:
+  - Xây dựng thành một **Nền tảng Tự động Đo kiểm & Tối ưu hóa Mô hình Thị giác Máy tính**.
+  - Tập trung vào tính hoàn thiện của sản phẩm: Giao diện Streamlit đẹp mắt, báo cáo PDF/HTML xuất tự động, dễ tích hợp với 1 dòng lệnh.
 
-#### 🏆 Primary Target: **MLSys** (Proceedings of Machine Learning and Systems)
+### 7.2. Quản trị rủi ro nghiên cứu toàn diện (Comprehensive Risk Matrix)
 
-**Lý do phù hợp:**
-- MLSys explicitly welcomes "tools and systems that enable ML research"
-- Vision model profiling + heuristic diagnostic = strong system + empirical combo
-- Cross-platform angle (edge CPU + cloud GPU) fits MLSys's growing interest in
-  deployment-oriented systems
-- T4/Colab = "accessible hardware" narrative phù hợp community MLSys
-
-**Điều MLSys reviewer kỳ vọng:**
-- Artifact: Framework phải open-source và reproducible
-- Evaluation: ≥ 3 models, clear baseline, số liệu overhead cụ thể
-- Finding: Non-obvious insight từ empirical study
-- Generality: Framework không chỉ work cho 1 model
-
-#### 🥈 Secondary Target: **EuroSys** hoặc **USENIX ATC**
-
-**Lý do:**
-- EuroSys accepts systems tools với strong empirical evaluation
-- ATC accepts "measuring and understanding" papers nếu methodology mới
-- Lower bar cho phần optimization contribution (20% của đề tài)
-
-#### 🥉 Workshop Track (Test Water / Short Paper):
-
-| Workshop | Venue | Notes |
-|---------|-------|-------|
-| MLSys Workshop on Systems for ML | Co-located MLSys | Test reception của community |
-| NeurIPS Workshop on Efficient NLP (nếu expand) | NeurIPS | Nếu add LLM experiments sau |
-| CVPR Workshop on Efficient CV | CVPR | Phù hợp hơn nếu nhấn vision angle |
-
-### 7.2 Positioning Statement Cho Paper
-
-```
-"We present VisionProf, a portable, low-overhead profiling framework 
-for vision neural networks that operates consistently across CPU-only 
-and CUDA-accelerated environments without manual configuration. 
-
-Unlike existing tools that require platform-specific setup and produce 
-non-comparable outputs across hardware, VisionProf provides:
-(1) unified per-layer profiling with <X% overhead,
-(2) an automated diagnostic engine with N validated heuristic rules, 
-(3) a comparative benchmark study revealing performance inversions 
-    across 5 architectures on CPU vs. T4 GPU.
-
-Our findings show that [key finding], challenging the conventional 
-assumption that [conventional wisdom], and providing actionable 
-guidance for practitioners deploying vision models on accessible hardware."
-```
-
-### 7.3 Pre-Submission Checklist
-
-```
-□ Framework open-sourced trên GitHub với README + example notebook
-□ Colab demo notebook chạy được end-to-end trong <30 phút
-□ Overhead measurement reported under worst-case (not best-case) conditions
-□ Baseline comparison honest: acknowledge when Nsight gives more detail
-□ Heuristic rules có validation section riêng với confusion matrix
-□ Limitations section thẳng thắn về T4-only GPU scope
-□ Reproducibility: random seed, PyTorch version, CUDA version documented
-□ Artifact evaluation badge (MLSys yêu cầu)
-```
+| Mã | Rủi ro tiềm ẩn | Mức độ | Phương án ứng phó & Dự phòng |
+| :---: | :--- | :---: | :--- |
+| **R1** | T4 trên Colab bị ngắt kết nối giữa chừng khi chạy thực nghiệm dài | Cao | Thiết kế cơ chế Checkpoint lưu kết quả sau từng mô hình vào Google Drive/SQLite. |
+| **R2** | Đo lường CUDA Event gây trễ vượt ngưỡng 3% overhead | Trung bình | Áp dụng kỹ thuật Deferred Sync (chỉ đồng bộ 1 lần cuối forward pass) và Selective Sampling. |
+| **R3** | Các phép toán custom (như YOLO Detect head) không bắt được shape | Thấp | Cài đặt bộ trích xuất đệ quy duyệt qua tất cả tensor con lồng nhau. |
+| **R4** | Heuristic có tỷ lệ báo động giả cao trên mô hình mới | Trung bình | Chuyển toàn bộ các ngưỡng cứng sang cơ chế ngưỡng động dựa trên thông số phần cứng thực tế. |
+| **R5** | Hiện tượng Trôi nhiệt (Thermal Throttling) làm lệch kết quả A/B Testing | Cao | Bắt buộc áp dụng Giao thức Xen kẽ luân phiên (Interleaved A/B Benchmark Protocol): $[A_1, B_1, A_2, B_2, \dots]$. |
+| **R6** | Rò rỉ giữ tham chiếu Tensor gây tràn bộ nhớ (Activation Memory Retention) | Cực cao | Trích xuất shape/dtype thành Python primitives tức thì trong `post_hook`, tuyệt đối không lưu tensor `out` vào queue. |
+| **R7** | Phép toán tại chỗ (`inplace=True`) làm tính đúp bộ nhớ kích hoạt | Trung bình | Theo dõi con trỏ vùng nhớ thô (`untyped_storage().data_ptr()`), chỉ tính dung lượng nếu storage chưa từng xuất hiện. |
+| **R8** | Xung đột ghi đè sự kiện khi module được gọi lặp lại (Re-entrant Modules) | Trung bình | Quản lý sự kiện bằng cấu trúc Ngăn xếp (LIFO Stack) theo từng module thay vì biến đơn lẻ. |
+| **R9** | Graph Breaks khi mô hình được biên dịch qua `torch.compile` | Trung bình | Tuyên bố phạm vi rõ ràng: Layer-level tối ưu cho PyTorch Eager Mode; hỗ trợ Black-box level cho compiled models. |
+| **R10**| Background Sampler Thread gây tranh chấp GIL hoặc CPU Jitter | Thấp | Thiết lập chu kỳ sleep 50ms cho background sampler và chạy trên luồng phụ không can thiệp vào tiến trình tính toán. |
 
 ---
 
-## 8. BƯỚC TIẾP THEO CỤ THỂ (Actionable Next Steps)
+## 8. LỘ TRÌNH THỰC HIỆN & PHÂN KỲ DỰ ÁN (PROJECT TIMELINE)
 
-### Phase 1 — Foundation (Ưu tiên cao nhất)
+Lộ trình được phân kỳ thành 2 lộ trình song song: **Lộ trình Kỹ thuật Cốt lõi (Khả thi cho Đồ án)** và **Lộ trình Mở rộng Đỉnh cao (Cho bài báo MLSys)**:
 
-1. **Literature Scan** (1–2 ngày):
-   - Đọc **DeepView** (MLSys'21) và **nn-Meter** (MobiSys'21) — hai paper gần nhất với hướng này
-   - Search "vision model profiling cross-platform" trên Semantic Scholar, Paperswithcode
-   - Verify Gap #1, #2, #3 chưa bị đóng bởi paper 2024–2025
-
-2. **Feasibility Micro-Experiment** (2–3 ngày):
-   - Implement `LayerProfiler` cơ bản (code ở Section 4.2)
-   - Chạy trên YOLOv8-S ở cả CPU và T4, đo overhead thực tế
-   - Nếu overhead > 10% → cần redesign trước khi commit toàn bộ
-
-3. **Heuristic Rule Draft** (1 ngày):
-   - Finalize ruleset từ Section 4.3
-   - Xác định ground truth source để validate rules (Nsight Compute metric nào?)
-
-### Phase 2 — Core Development
-
-4. Implement đầy đủ 4 layers của framework
-5. Chạy thực nghiệm 5 model × 2 platform × 5 scenarios
-6. Validate heuristic rules (AB-5)
-7. Build dashboard (Streamlit recommended cho Colab compatibility)
-
-### Phase 3 — Paper Writing
-
-8. Write empirical findings section trước (findings drive narrative)
-9. Frame technical design section sau findings để show "tool enables discovery"
-10. Ablation study → Appendix nếu bị cut vì page limit
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│ GIAI ĐOẠN 1: KHẮC PHỤC CỐT LÕI & CHUẨN HÓA ĐO LƯỜNG (Tuần 1 - Tuần 2)  │
+├────────────────────────────────────────────────────────────────────────┤
+│ • Triển khai Deferred CUDA Events & LIFO Stack trong collector.py.    │
+│ • Bổ sung SystemResourceSentinel (CPU, RAM, GPU Util, Power, Temp).   │
+│ • Sửa công thức toán học calibrate_overhead (đếm đủ leaf modules).    │
+│ • Tách bạch RAM tiến trình và Activation Memory trên CPU.              │
+│ • Bổ sung tính toán Tail Latency (P50, P90, P95, P99) và Throughput.   │
+│ • Chuẩn hóa lưu trữ SQLite DDL Schema và Parquet Exporter.             │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│ GIAI ĐOẠN 2: ROOFLINE MODEL & HEURISTIC ENGINE v2.0 (Tuần 3 - Tuần 4)  │
+├────────────────────────────────────────────────────────────────────────┤
+│ • Tích hợp bộ tính FLOPs tự động (fvcore) và tính Arithmetic Intensity.│
+│ • Xây dựng biểu đồ tương tác Roofline Model trên Streamlit.            │
+│ • Hiện thực hóa bộ 19 Quy tắc Heuristic v2.0 (loại bỏ ms/Mparam).      │
+│ • Hiện thực hóa PipelineSentinel (Preprocess → Forward → Postprocess). │
+│ • Sửa công thức tính Speedup và Mann-Whitney U trong A/B Engine.       │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│ GIAI ĐOẠN 3: BENCHMARK ĐA MÔ HÌNH & BÁO CÁO KẾT QUẢ (Tuần 5 - Tuần 6)  │
+├────────────────────────────────────────────────────────────────────────┤
+│ [Đồ án Kỹ thuật]: Chạy 7 kịch bản trên 5 mô hình (CPU vs T4 Colab).   │
+│ [Đồ án Kỹ thuật]: Hoàn thiện Dashboard trực quan hóa toàn bộ báo cáo. │
+│ [Mở rộng MLSys]: Thực hiện 7 bài toán Ablation Studies (AB-1 đến AB-7)│
+│ [Mở rộng MLSys]: Chạy script kiểm chuẩn đối chiếu NVIDIA Nsight CLI.   │
+│ [Mở rộng MLSys]: Hoàn thiện bản thảo bài báo khoa học chuẩn MLSys.     │
+└────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
-
-*Kế hoạch này phản ánh đầy đủ hai ràng buộc đã xác định: (1) CPU laptop + T4 single GPU, (2) 80% systems profiling + 20% heuristic diagnostic. Phương Án A (LLM) và PA-C (Unified Metric) từ v1.0 đã được loại bỏ hoàn toàn.*
+*Kế hoạch nghiên cứu này là văn bản định hướng chiến lược. Mọi đặc tả chi tiết về thuật toán, công thức toán học và cấu trúc dữ liệu được quy định tại [TECHNICAL_SPECIFICATION.md](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/TECHNICAL_SPECIFICATION.md).*
