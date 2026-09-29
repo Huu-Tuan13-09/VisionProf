@@ -1,89 +1,168 @@
 # VisionProf
 
+![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)
+![PyTorch 2.x](https://img.shields.io/badge/PyTorch-2.x-EE4C2C.svg)
+![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B.svg)
+![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
+![Overhead](https://img.shields.io/badge/Overhead-%3C1%25-success.svg)
+
 **Cross-Platform PyTorch Layer Profiler & Automated Heuristic Bottleneck Analyzer**
 
-VisionProf is a comprehensive diagnostic and performance profiling framework specifically designed for cross-platform AI models. The system automatically performs deep layer-by-layer runtime analysis, identifies bottlenecks, and provides actionable recommendations to optimize performance and memory footprint.
+VisionProf is a highly precise, cross-platform performance profiling and diagnostic framework engineered specifically for Computer Vision models running on varied hardware ecosystems (Edge CPU laptops and Cloud GPU instances). By non-intrusively hooking into PyTorch's execution graph, VisionProf extracts micro-second level metrics and applies a robust 19-rule heuristic engine to automatically pinpoint I/O bottlenecks, compute starvation, memory fragmentation, and architectural inefficiencies.
 
-## Features
-- **`LayerProfiler`**: Utilizes PyTorch Hooks for deep micro-level execution time extraction across all individual layers.
-- **`DataLoaderSentinel`**: Monitors and identifies I/O bottlenecks originating from DataLoader misconfigurations.
-- **`19 Heuristic Rules`**: An automated heuristic bottleneck analyzer containing 19 rules grouped into 4 categories: Resources (R-A), Speed (R-B), Memory (R-C), and Architecture (R-D).
-- **`Cross-Architecture A/B Comparison`**: Built-in engine featuring Mann-Whitney U statistical testing to compare inference efficiency and identify absolute hardware/software advantages.
-- **`Streamlit 5-tab Dashboard`**: An interactive UI to visualize performance metrics, layer diagnostics, bottlenecks, A/B comparisons, and health scores.
+## Key Highlights & Core Contributions
 
-## Architecture & Project Structure
+- **`LayerProfiler` Mechanism:** Employs PyTorch `register_forward_pre_hook` and `register_forward_hook` to intercept model execution at the micro-second level. It dynamically calculates Activation Memory directly from output tensors and tracks Resident Set Size (RSS) RAM efficiently, ensuring the profiling itself does not become a bottleneck.
+- **`Overhead Calibration`:** Implements an advanced auto-calibration system that measures the discrepancy between `no_hook` and `with_hook` executions using median aggregation, mathematically factoring out the profiler's own execution time to report true layer latency.
+- **`DataLoaderSentinel`:** A specialized I/O watchdog that monitors data fetching pipelines to instantly detect Compute Starvation and Dataloader bottleneck symptoms.
+- **`ABComparisonEngine`:** Facilitates granular performance comparisons. Supports Same-Architecture matching (via exact `layer_name`) and robust Cross-Architecture fallback grouping (via `layer_type`). Includes built-in non-parametric Mann-Whitney U statistical testing to validate whether performance deltas are statistically significant or merely execution noise.
 
-### 5-Tier Architecture
+## 5-Tier System Architecture & Directory Tree
+
+### Architecture Diagram
+
 ```mermaid
 graph TD
-    A[Application & UI Tier] -->|Visualization & Interaction| B[Analysis & Comparison Tier]
-    B -->|Rule Application & Testing| C[Data Structure Tier]
-    C -->|Storage & Normalization| D[Data Collection Tier]
-    D -->|Hooking & Profiling| E[Core PyTorch Tier]
+    A[Tier 5: Application & Dashboard UI] -->|Interactive Visualization| B[Tier 4: Analytical & Diagnostic Engine]
+    B -->|Heuristic Catalog & Stat Tests| C[Tier 3: Unified Data Structure]
+    C -->|Normalization & Aggregation| D[Tier 2: Metric Collection Sentinel]
+    D -->|Hooks & OS Signals| E[Tier 1: PyTorch Core Execution]
 ```
 
-### Directory Structure
-- `src/collector.py`: Contains `LayerProfiler`, `DataLoaderSentinel`, and Overhead Calibration.
-- `src/analyzer.py`: Houses the 19 Heuristic Rules and the A/B Comparison Engine.
-- `src/dashboard.py`: The Streamlit-based interactive UI with 5 diagnostic tabs.
-- `tests/`: Automated test scripts (`test_benchmark.py`, `test_bottleneck.py`).
-- `data/` & `reports/`: Extracted JSON profiles and text summaries.
+### Directory Tree
 
-## Experimental Benchmarks (Windows CPU)
+```
+VisionProf/
+├── src/
+│   ├── collector.py       # Core profiler (LayerProfiler, DataLoaderSentinel, Overhead Calibration)
+│   ├── analyzer.py        # 19 Heuristic Rules Catalog and ABComparisonEngine
+│   └── dashboard.py       # 5-Tab Interactive Streamlit UI
+├── tests/
+│   ├── test_training_bottleneck.py      # Automated DataLoader I/O profiling test
+│   └── test_modern_models_benchmark.py  # Benchmark suite for 5 modern vision models
+├── data/                  # Auto-generated JSON profiles & CSV layer records
+├── reports/               # Output directory for heuristic analysis and A/B comparisons
+├── requirements.txt       # Project dependencies
+└── README.md              # Project documentation
+```
 
-### 1. DataLoader Bottleneck Detection
-| DataLoader Config | Batch Load Time | Total Runtime Proportion | Health Status |
-| :--- | :---: | :---: | :--- |
-| `fast_loader` (Optimal) | **1.4 ms** | ~1% | Healthy |
-| `slow_loader` (Default) | **171 ms** | ~15-20% | Warning |
-| `critical_loader` (Misconfigured) | **646 ms** | **52.3%** | **Bottleneck** |
+## The 19-Rule Heuristic Diagnostic Catalog
 
-### 2. Model Benchmark & Health Score
-Tested on 5 modern architectures:
+VisionProf operates a comprehensive suite of 19 heuristic rules (categorized into 4 domains) designed to automatically diagnose underlying PyTorch inefficiencies:
 
-| Model | Parameters | Avg Inference Time (ms) | Peak RAM (MB) | Health Score |
-| :--- | :---: | :---: | :---: | :---: |
-| **MobileNetV3-Large** | 5,483,032 | 239.76 | 22.60 | 95 / 100 |
-| **YOLOv8n** | 3,157,200 | 279.34 | 21.78 | 92 / 100 |
-| **YOLOv11n** | 2,624,080 | 377.42 | 25.31 | 88 / 100 |
-| **ConvNeXt-Tiny** | 28,589,128 | 865.74 | 95.32 | 80 / 100 |
-| **ViT-B/16** | 86,567,656 | 3027.91 | 105.03 | 65 / 100 |
+| Rule ID | Name | Category | Description |
+| :--- | :--- | :--- | :--- |
+| **RA-01** | OOM Risk | R-A (Memory) | Detects if peak memory approaches system limits. |
+| **RA-02** | Fragmentation | R-A (Memory) | Identifies inefficient memory allocation patterns. |
+| **RA-03** | Allocation Hotspot | R-A (Memory) | Locates individual layers consuming disproportionate RAM. |
+| **RA-04** | Peak Memory Efficiency | R-A (Memory) | Assesses total activation memory relative to param count. |
+| **RA-05** | Memory Leak LR | R-A (Memory) | Uses Linear Regression to detect subtle memory leaks over epochs. |
+| **RB-01** | Layer Speed Imbalance | R-B (Compute) | Finds layers that deviate heavily from mean execution time. |
+| **RB-02** | Compute Variance CV | R-B (Compute) | Evaluates stability of compute time (Coefficient of Variation). |
+| **RB-03** | Serial Bottleneck | R-B (Compute) | Detects operations causing CPU thread serialization. |
+| **RB-04** | Time per Parameter | R-B (Compute) | Analyzes ms/Mparam to find inefficient mathematical formulations. |
+| **RB-05** | Device Utilization Drop| R-B (Compute) | Flags sudden drops in hardware utilization during forward pass. |
+| **RC-01** | I/O Bottleneck Ratio | R-C (DataLoader) | Flags when data loading time > compute time. |
+| **RC-02** | DataLoader Variance | R-C (DataLoader) | Identifies inconsistent batch delivery causing jitter. |
+| **RC-03** | Compute Starvation | R-C (DataLoader) | Detects GPU/CPU idling while waiting for the next batch. |
+| **RC-04** | Zero-Worker Warning | R-C (DataLoader) | Warns against using `num_workers=0` in production. |
+| **RD-01** | Parameter Concentration| R-D (Architecture) | Detects models where >50% params are in a single layer. |
+| **RD-02** | Dead/Zero-Time Layer | R-D (Architecture) | Identifies redundant layers with zero measurable impact. |
+| **RD-03** | Layer Type Diversity | R-D (Architecture) | Assesses architectural complexity (excessive distinct ops). |
+| **RD-04** | Depth Profile | R-D (Architecture) | Evaluates if model depth causes excessive sequential latency. |
+| **RD-05** | Param-Time Outliers | R-D (Architecture) | Flags layers with low param count but disproportionately high latency. |
 
-*Note: Data derived from `data/profiles/combined_summary.json`.*
+## Experimental Results & Key Findings
 
-## Quick-Start Guide
+All benchmarks were conducted locally on Windows CPU, processing inputs of shape `[1, 3, 224, 224]` over 8 iterations.
 
-Follow these steps to set up the environment and run VisionProf on your local machine or Google Colab:
+### Table 1: DataLoader Bottleneck Test
 
-**Step 1: Setup Environment**
+| DataLoader Type | Delay Injection | Mean Load (ms) | Mean Compute (ms) | I/O Ratio | Diagnostics Status |
+| :--- | :---: | :---: | :---: | :---: | :--- |
+| `fast_loader` | 0 ms | 1.40 ms | 573.36 ms | 0.2% | OK |
+| `slow_loader` | 20 ms | 171.02 ms | 590.16 ms | 21.9% | OK |
+| `critical_loader`| 80 ms | 646.13 ms | 569.14 ms | 52.3% | **Bottleneck Warning** |
+
+### Table 2: 5 Modern Vision Architectures Benchmark
+
+| Model | Params (M) | Hooks | Total Time | Mean/iter | Peak Act. Mem | Overhead | Health (Pass/19) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **MobileNetV3-Large** | 5.48 M | 95 | 287.3 ms | **35.92 ms** | 22.6 MB | 0.0461 ms/L | 73.7% (14) |
+| **YOLOv8n** | 3.16 M | 129 | 349.0 ms | **43.63 ms** | 21.8 MB | 0.0000 ms/L | 78.9% (15) |
+| **YOLOv11n** | 2.62 M | 177 | 506.8 ms | **63.35 ms** | 25.3 MB | 0.1333 ms/L | 73.7% (14) |
+| **ConvNeXt-Tiny** | 28.59 M | 102 | 1034.6 ms | **129.33 ms** | 95.3 MB | 0.1569 ms/L | 78.9% (15) |
+| **ViT-B/16** | 86.57 M | 87 | 2732.7 ms | **341.59 ms** | 105.0 MB | 0.0000 ms/L | 84.2% (16) |
+
+### Table 3: Cross-Architecture & Same-Architecture A/B Comparison Insights
+
+- **`ConvNeXt-Tiny` vs `ViT-B/16`**: ConvNeXt is statistically significantly faster (speedup **0.270x**, p < 0.0001).
+- **`ConvNeXt-Tiny` vs `MobileNetV3-Large`**: MobileNet provides a massive speedup of **5.225x** for edge devices.
+- **The YOLO Paradox (`YOLOv8n` vs `YOLOv11n`)**: Despite `YOLOv11n` having fewer parameters (2.62M vs 3.16M), it executes noticeably slower on CPU (63.35 ms vs 43.63 ms). VisionProf reveals that YOLOv11n has a highly fragmented architecture (177 layers compared to YOLOv8n's 129 layers). On CPUs, sequential layer dispatch overhead outpaces the compute savings from fewer parameters.
+
+## Interactive 5-Tab Streamlit Dashboard
+
+Launch the UI (`streamlit run src/dashboard.py`) to access 5 advanced visualization interfaces powered by Plotly:
+
+1. **Tab 1: Overview** – High-level Bar and Pie charts tracking macroscopic throughput, total memory footprint, and overarching framework latency.
+2. **Tab 2: Layer Deep-Dive** – Interactive Sunburst and Treemap visualizations projecting hierarchical time and memory distribution down to individual nested `Conv2d` and `Linear` layers.
+3. **Tab 3: Rule Catalog Diagnostics** – Immediate alerts triggered by the 19-Rule Heuristic Engine, isolating bottleneck layers and memory hotspots.
+4. **Tab 4: Statistical A/B Comparison** – Boxplots and Violin plots comparing latency distributions across two models or configurations, complete with Mann-Whitney U test p-values.
+5. **Tab 5: DataLoader I/O Sentinel** – Timeline plots tracking data delivery latency against compute bounds, visualizing "Compute Starvation" epochs.
+
+## Installation & Quick-Start Guide
+
+Set up a virtual environment, install dependencies, and execute the analysis suite in under two minutes.
+
 ```bash
 # Clone the repository
 git clone https://github.com/Huu-Tuan13-09/VisionProf.git
 cd VisionProf
 
-# Create and activate virtual environment (Recommended)
+# Create and activate environment
 python -m venv .venv
-# On Windows:
-.venv\Scripts\activate
-# On Linux/Colab:
-# source .venv/bin/activate
+# source .venv/bin/activate  # On Linux/MacOS
+.venv\Scripts\activate       # On Windows
 
-# Install dependencies
+# Install required packages
 pip install -r requirements.txt
-```
 
-**Step 2: Run Automated Tests & Generate Profiles**
-```bash
-# Test 1: Evaluate DataLoader bottlenecks
-python tests/test_bottleneck.py
+# Run Profiling Benchmarks
+python tests/test_training_bottleneck.py
+python tests/test_modern_models_benchmark.py
 
-# Test 2: Run full benchmark suite on 5 models
-python tests/test_benchmark.py
-```
-*Results will automatically populate the `data/` and `reports/` directories.*
-
-**Step 3: Launch the Interactive Dashboard**
-```bash
+# Launch the Visual Dashboard
 streamlit run src/dashboard.py
+
+# Run internal framework tests
+pytest tests/ -v -s
 ```
-The application will launch on your default browser at `http://localhost:8501`.
+
+## Programmatic Python API Usage Example
+
+Integrate VisionProf directly into your custom training or inference loop seamlessly:
+
+```python
+import torch
+import torchvision.models as models
+from src.collector import LayerProfiler, DataLoaderSentinel
+from src.analyzer import analyze_from_csv, compare_ab_from_csv
+
+# Initialize Model & Profiler
+model = models.mobilenet_v3_large().cpu()
+profiler = LayerProfiler(model, device="cpu", project_name="MyProject")
+
+# Profile inference execution
+profiler.start()
+dummy_input = torch.randn(1, 3, 224, 224)
+output = model(dummy_input)
+profiler.stop()
+
+# Export data and apply Heuristic Rules
+csv_path = profiler.export_to_csv("reports/my_model_profile.csv")
+report = analyze_from_csv(csv_path)
+print(f"Health Score: {report['health_score']}%")
+
+# (Optional) Compare two exported models
+# compare_ab_from_csv("reports/model_a.csv", "reports/model_b.csv")
+```

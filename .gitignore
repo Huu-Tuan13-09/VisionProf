@@ -7,3 +7,5 @@ __pycache__/
 *.onnx
 *.zip
 .DS_Store
+research_plan_profiling_framework.md
+BAO_CAO_TIEN_DO_NHOM.md
