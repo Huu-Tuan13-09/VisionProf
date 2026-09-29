@@ -1,0 +1,20 @@
+rule_id,rule_name,category,severity,passed,message,suggestions,affected_layers
+RA-01,OOM Risk Detection,R-A,OK,True,Không có dữ liệu GPU memory để kiểm tra.,,
+RA-02,Memory Fragmentation Risk,R-A,OK,True,✅ Không phát hiện biến động memory bất thường (ngưỡng 500MB).,,
+RA-03,Memory Allocation Hotspot,R-A,OK,True,✅ Memory phân phối hợp lý: Top-5 chiếm 28.4%.,,
+RA-04,Peak Memory Efficiency,R-A,MEDIUM,False,"Memory/param ratio cao: 94.2MB/Mparam (params=5.5M, peak=516.5MB).",Kiểm tra xem có lưu activations thừa không. | Dùng half-precision (fp16/bf16) để giảm bộ nhớ.,
+RA-05,Memory Leak Heuristic,R-A,OK,True,"✅ Không phát hiện xu hướng tăng memory: slope=0.0000MB/iter, R²=nan.",,
+RB-01,Layer Speed Imbalance,R-B,OK,True,✅ Compute phân phối hợp lý: Top-5 chiếm 30.6%.,,
+RB-02,Compute Variance,R-B,MEDIUM,False,17 layers có CV > 0.5 (timing không ổn định). Overall CV=1.668.,Tăng số iteration warmup. | Kiểm tra tác động của background processes (Windows). | Dùng torch.cuda.synchronize() trước/sau đo lường. | Chạy lại trên hệ thống ít tải hơn.,blocks.2.2.se.gate | blocks.2.0.se.conv_reduce | blocks.3.0.bn1.act | blocks.4.0.se.conv_expand | blocks.4.0.se.conv_reduce | global_pool.pool | bn1.act | blocks.4.1.se.conv_reduce | blocks.3.3.conv_pw | blocks.5.0.se.conv_expand
+RB-03,Serial Bottleneck Layer,R-B,OK,True,✅ Không có layer đơn lẻ gây bottleneck (max=11.9%).,,
+RB-04,Time per Parameter Efficiency,R-B,MEDIUM,False,25 layers có ms/Mparam > 5.0 (kém hiệu quả tính toán).,Kiểm tra xem layer có đang chạy trên CPU không. | Xem xét fusing operations (conv+bn+relu) bằng torch.compile. | Các layer attention thường có ms/Mparam cao — dùng Flash Attention.,blocks.1.0.conv_pw | blocks.1.0.conv_pwl | blocks.2.0.conv_pw | blocks.1.1.conv_pwl | blocks.1.1.conv_pw | blocks.2.0.conv_dw | blocks.3.3.conv_dw | blocks.3.2.conv_dw | blocks.3.0.conv_dw | blocks.3.1.conv_dw
+RB-05,CPU Utilization Drop,R-B,OK,True,"('CPU util = 0.0% — CPU-only, ket qua chinh xac tu psutil.',)",,
+RC-01,DataLoader I/O Bottleneck,R-C,OK,True,Không có dữ liệu DataLoader — bỏ qua nhóm R-C.,,
+RC-02,DataLoader Timing Variance,R-C,OK,True,Không có dữ liệu DataLoader — bỏ qua nhóm R-C.,,
+RC-03,Compute Starvation,R-C,OK,True,Không có dữ liệu DataLoader — bỏ qua nhóm R-C.,,
+RC-04,Zero Worker Warning,R-C,OK,True,Không có dữ liệu DataLoader — bỏ qua nhóm R-C.,,
+RD-01,Parameter Concentration,R-D,OK,True,✅ Params phân phối hợp lý: max layer = 23.5%.,,
+RD-02,Dead Layer Detection,R-D,MEDIUM,False,"Phát hiện 32 layer có forward_time ≈ 0ms (có thể là dead layer, short-circuit, hoặc bị cắt bởi conditional).",Kiểm tra các layer này có được kích hoạt đúng không. | Xem xét loại bỏ dead layers để giảm complexity.,act2 | blocks.2.0.se.conv_expand | blocks.2.0.se.gate | blocks.2.1.se.conv_expand | blocks.2.1.se.conv_reduce | blocks.2.1.se.gate | blocks.2.2.se.conv_expand | blocks.2.2.se.conv_reduce | blocks.3.0.bn2.act | blocks.3.1.bn1.act | blocks.3.1.bn2.act | blocks.3.2.bn1.act | blocks.3.2.bn2.act | blocks.3.3.bn1.act | blocks.3.3.bn2.act | blocks.4.0.bn1.act | blocks.4.0.bn2.act | blocks.4.0.se.gate | blocks.4.1.bn1.act | blocks.4.1.bn2.act
+RD-03,Layer Type Distribution,R-D,OK,True,✅ Layer types đa dạng: 6 loại khác nhau.,,
+RD-04,Depth Profile,R-D,OK,True,Mô hình có 95 layer đo được. Avg time/layer=0.142ms. Total params=5.46M.,,
+RD-05,Param-Time Outliers,R-D,MEDIUM,False,20 layers có ms/Mparam > 3.0× median (3.83ms/Mparam). Kém hiệu quả tương đối.,Kiểm tra xem các layer này có đang chạy đúng device không. | Xem xét thay thế bằng layer hiệu quả hơn (ví dụ: depthwise conv).,blocks.1.0.conv_pw | blocks.1.0.conv_pwl | blocks.1.1.conv_pw | blocks.1.1.conv_pwl | blocks.2.0.conv_dw | blocks.2.0.conv_pw | blocks.2.0.conv_pwl | blocks.2.1.conv_dw | blocks.2.1.conv_pw | blocks.2.1.conv_pwl

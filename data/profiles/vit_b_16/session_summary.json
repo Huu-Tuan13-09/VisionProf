@@ -1,0 +1,21 @@
+{
+  "model_name": "ViT-B/16",
+  "model_key": "vit_b_16",
+  "device": "cpu",
+  "total_time_ms": 3027.917,
+  "peak_mem_mb": 105.039,
+  "mem_label": "CPU-RAM",
+  "metadata": {
+    "n_iterations": 8,
+    "n_warmup": 3,
+    "overhead_ms": 0.2506,
+    "param_count": 86567656,
+    "input_shape": [
+      1,
+      3,
+      224,
+      224
+    ]
+  },
+  "n_records": 696
+}

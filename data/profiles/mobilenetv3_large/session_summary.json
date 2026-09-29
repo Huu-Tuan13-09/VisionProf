@@ -1,0 +1,21 @@
+{
+  "model_name": "MobileNetV3-Large",
+  "model_key": "mobilenetv3_large",
+  "device": "cpu",
+  "total_time_ms": 239.76,
+  "peak_mem_mb": 22.605,
+  "mem_label": "CPU-RAM",
+  "metadata": {
+    "n_iterations": 8,
+    "n_warmup": 3,
+    "overhead_ms": 0.0478,
+    "param_count": 5483032,
+    "input_shape": [
+      1,
+      3,
+      224,
+      224
+    ]
+  },
+  "n_records": 760
+}

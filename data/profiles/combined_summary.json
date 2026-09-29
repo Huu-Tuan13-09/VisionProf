@@ -1,0 +1,117 @@
+{
+  "sessions": [
+    {
+      "model_name": "YOLOv8n",
+      "model_key": "yolov8n",
+      "device": "cpu",
+      "total_time_ms": 279.347,
+      "peak_mem_mb": 21.786,
+      "mem_label": "CPU-RAM",
+      "metadata": {
+        "n_iterations": 8,
+        "n_warmup": 3,
+        "overhead_ms": 0.0,
+        "param_count": 3157200,
+        "input_shape": [
+          1,
+          3,
+          224,
+          224
+        ]
+      },
+      "n_records": 1496
+    },
+    {
+      "model_name": "YOLOv11n",
+      "model_key": "yolov11n",
+      "device": "cpu",
+      "total_time_ms": 377.422,
+      "peak_mem_mb": 25.317,
+      "mem_label": "CPU-RAM",
+      "metadata": {
+        "n_iterations": 8,
+        "n_warmup": 3,
+        "overhead_ms": 0.1104,
+        "param_count": 2624080,
+        "input_shape": [
+          1,
+          3,
+          224,
+          224
+        ]
+      },
+      "n_records": 2040
+    },
+    {
+      "model_name": "ConvNeXt-Tiny",
+      "model_key": "convnext_tiny",
+      "device": "cpu",
+      "total_time_ms": 865.745,
+      "peak_mem_mb": 95.32,
+      "mem_label": "CPU-RAM",
+      "metadata": {
+        "n_iterations": 8,
+        "n_warmup": 3,
+        "overhead_ms": 0.0464,
+        "param_count": 28589128,
+        "input_shape": [
+          1,
+          3,
+          224,
+          224
+        ]
+      },
+      "n_records": 816
+    },
+    {
+      "model_name": "ViT-B/16",
+      "model_key": "vit_b_16",
+      "device": "cpu",
+      "total_time_ms": 3027.917,
+      "peak_mem_mb": 105.039,
+      "mem_label": "CPU-RAM",
+      "metadata": {
+        "n_iterations": 8,
+        "n_warmup": 3,
+        "overhead_ms": 0.2506,
+        "param_count": 86567656,
+        "input_shape": [
+          1,
+          3,
+          224,
+          224
+        ]
+      },
+      "n_records": 696
+    },
+    {
+      "model_name": "MobileNetV3-Large",
+      "model_key": "mobilenetv3_large",
+      "device": "cpu",
+      "total_time_ms": 239.76,
+      "peak_mem_mb": 22.605,
+      "mem_label": "CPU-RAM",
+      "metadata": {
+        "n_iterations": 8,
+        "n_warmup": 3,
+        "overhead_ms": 0.0478,
+        "param_count": 5483032,
+        "input_shape": [
+          1,
+          3,
+          224,
+          224
+        ]
+      },
+      "n_records": 760
+    }
+  ],
+  "failed": [],
+  "overheads": {
+    "yolov8n": 0.0,
+    "yolov11n": 0.1104,
+    "convnext_tiny": 0.0464,
+    "vit_b_16": 0.2506,
+    "mobilenetv3_large": 0.0478
+  }
+}

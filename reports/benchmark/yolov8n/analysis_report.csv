@@ -1,0 +1,20 @@
+rule_id,rule_name,category,severity,passed,message,suggestions,affected_layers
+RA-01,OOM Risk Detection,R-A,OK,True,Không có dữ liệu GPU memory để kiểm tra.,,
+RA-02,Memory Fragmentation Risk,R-A,OK,True,✅ Không phát hiện biến động memory bất thường (ngưỡng 500MB).,,
+RA-03,Memory Allocation Hotspot,R-A,OK,True,✅ Memory phân phối hợp lý: Top-5 chiếm 18.7%.,,
+RA-04,Peak Memory Efficiency,R-A,MEDIUM,False,"Memory/param ratio cao: 150.5MB/Mparam (params=3.2M, peak=475.1MB).",Kiểm tra xem có lưu activations thừa không. | Dùng half-precision (fp16/bf16) để giảm bộ nhớ.,
+RA-05,Memory Leak Heuristic,R-A,OK,True,"✅ Không phát hiện xu hướng tăng memory: slope=0.0342MB/iter, R²=0.680.",,
+RB-01,Layer Speed Imbalance,R-B,OK,True,✅ Compute phân phối hợp lý: Top-5 chiếm 16.3%.,,
+RB-02,Compute Variance,R-B,MEDIUM,False,18 layers có CV > 0.5 (timing không ổn định). Overall CV=1.304.,Tăng số iteration warmup. | Kiểm tra tác động của background processes (Windows). | Dùng torch.cuda.synchronize() trước/sau đo lường. | Chạy lại trên hệ thống ít tải hơn.,inner.model.0.act | inner.model.6.m.1.cv2.bn | inner.model.12.cv1.bn | inner.model.13 | inner.model.21.m.0.cv2.bn | inner.model.6.cv2.bn | inner.model.18.cv1.bn | inner.model.22.cv3.1.0.bn | inner.model.10 | inner.model.18.m.0.cv2.conv
+RB-03,Serial Bottleneck Layer,R-B,OK,True,✅ Không có layer đơn lẻ gây bottleneck (max=4.4%).,,
+RB-04,Time per Parameter Efficiency,R-B,MEDIUM,False,40 layers có ms/Mparam > 5.0 (kém hiệu quả tính toán).,Kiểm tra xem layer có đang chạy trên CPU không. | Xem xét fusing operations (conv+bn+relu) bằng torch.compile. | Các layer attention thường có ms/Mparam cao — dùng Flash Attention.,inner.model.2.cv1.conv | inner.model.2.cv2.conv | inner.model.1.conv | inner.model.2.m.0.cv1.conv | inner.model.2.m.0.cv2.conv | inner.model.15.cv2.conv | inner.model.4.cv1.conv | inner.model.22.cv2.0.2 | inner.model.22.cv3.0.2 | inner.model.4.cv2.conv
+RB-05,CPU Utilization Drop,R-B,OK,True,"('CPU util = 0.0% — CPU-only, ket qua chinh xac tu psutil.',)",,
+RC-01,DataLoader I/O Bottleneck,R-C,OK,True,Không có dữ liệu DataLoader — bỏ qua nhóm R-C.,,
+RC-02,DataLoader Timing Variance,R-C,OK,True,Không có dữ liệu DataLoader — bỏ qua nhóm R-C.,,
+RC-03,Compute Starvation,R-C,OK,True,Không có dữ liệu DataLoader — bỏ qua nhóm R-C.,,
+RC-04,Zero Worker Warning,R-C,OK,True,Không có dữ liệu DataLoader — bỏ qua nhóm R-C.,,
+RD-01,Parameter Concentration,R-D,OK,True,✅ Params phân phối hợp lý: max layer = 9.3%.,,
+RD-02,Dead Layer Detection,R-D,OK,True,✅ Không phát hiện dead layer.,,
+RD-03,Layer Type Distribution,R-D,OK,True,✅ Layer types đa dạng: 6 loại khác nhau.,,
+RD-04,Depth Profile,R-D,OK,True,Mô hình có 129 layer đo được. Avg time/layer=0.158ms. Total params=3.16M.,,
+RD-05,Param-Time Outliers,R-D,MEDIUM,False,13 layers có ms/Mparam > 3.0× median (7.60ms/Mparam). Kém hiệu quả tương đối.,Kiểm tra xem các layer này có đang chạy đúng device không. | Xem xét thay thế bằng layer hiệu quả hơn (ví dụ: depthwise conv).,inner.model.1.conv | inner.model.15.cv1.conv | inner.model.15.cv2.conv | inner.model.15.m.0.cv2.conv | inner.model.2.cv1.conv | inner.model.2.cv2.conv | inner.model.2.m.0.cv1.conv | inner.model.2.m.0.cv2.conv | inner.model.22.cv2.0.2 | inner.model.22.cv3.0.2

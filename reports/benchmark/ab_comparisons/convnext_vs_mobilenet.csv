@@ -1,0 +1,11 @@
+layer_name,mean_time_a_ms,mean_time_b_ms,delta_ms,delta_pct,mem_delta_a_mb,mem_delta_b_mb,mem_delta_diff_mb,is_regression,is_improvement,statistical_sig,p_value
+[type] AdaptiveAvgPool2d,0.0449,0.0089,-0.036,-80.22,0.003,0.004,0.001,False,True,True,0.000931
+[type] Conv2d,0.5257,0.2074,-0.3183,-60.55,0.4697,0.2668,-0.2029,False,True,True,0.0
+[type] Flatten,0.0,0.0,0.0,0.0,0.003,0.005,0.002,False,False,False,
+[type] GELU,0.3682,0.0,-0.3682,-100.0,1.8182,0.0,-1.8182,False,False,False,1.0
+[type] Hardsigmoid,0.0,0.0001,0.0001,0.0,0.0,0.002,0.002,False,False,False,1.0
+[type] Hardswish,0.0,0.0008,0.0008,0.0,0.0,0.2745,0.2745,False,False,False,1.0
+[type] LayerNorm,0.066,0.0,-0.066,-100.0,0.4545,0.0,-0.4545,False,False,False,1.0
+[type] LayerNorm2d,0.1588,0.0,-0.1588,-100.0,0.632,0.0,-0.632,False,False,False,1.0
+[type] Linear,1.8314,0.3807,-1.4506,-79.21,1.1057,0.004,-1.1017,False,True,True,5e-06
+[TOTAL],0.8626,0.1418,-0.7207,-83.56,0.0,0.0,0.0,False,True,True,0.0

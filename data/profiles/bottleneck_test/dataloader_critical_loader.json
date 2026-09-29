@@ -1,0 +1,164 @@
+{
+  "description": "critical_loader",
+  "summary": {
+    "total_batches": 30,
+    "total_load_time_ms": 18737.904,
+    "total_compute_time_ms": 17074.224,
+    "mean_load_time_ms": 646.1346,
+    "mean_compute_time_ms": 569.1408,
+    "std_load_time_ms": 14.0077,
+    "std_compute_time_ms": 37.1768,
+    "io_bottleneck_ratio": 0.5232,
+    "peak_ram_mb": 6775.52,
+    "peak_gpu_mem_mb": 6775.52,
+    "worker_count": 0,
+    "batch_size": 8
+  },
+  "batch_detail": [
+    {
+      "batch_index": 0,
+      "load_time_ms": 642.439000075683,
+      "compute_time_ms": 525.6800999632105
+    },
+    {
+      "batch_index": 1,
+      "load_time_ms": 650.1481001032516,
+      "compute_time_ms": 551.6004998935387
+    },
+    {
+      "batch_index": 2,
+      "load_time_ms": 651.0083000175655,
+      "compute_time_ms": 583.9895999524742
+    },
+    {
+      "batch_index": 3,
+      "load_time_ms": 668.1926999008283,
+      "compute_time_ms": 579.9944000318646
+    },
+    {
+      "batch_index": 4,
+      "load_time_ms": 651.0507999919355,
+      "compute_time_ms": 574.7900001006201
+    },
+    {
+      "batch_index": 5,
+      "load_time_ms": 637.0020000031218,
+      "compute_time_ms": 543.1331999134272
+    },
+    {
+      "batch_index": 6,
+      "load_time_ms": 640.0940000312403,
+      "compute_time_ms": 588.7181999860331
+    },
+    {
+      "batch_index": 7,
+      "load_time_ms": 653.972000000067,
+      "compute_time_ms": 561.4246000768617
+    },
+    {
+      "batch_index": 8,
+      "load_time_ms": 666.9266000390053,
+      "compute_time_ms": 571.2191999191418
+    },
+    {
+      "batch_index": 9,
+      "load_time_ms": 624.1979000624269,
+      "compute_time_ms": 584.6648999722674
+    },
+    {
+      "batch_index": 10,
+      "load_time_ms": 635.2690999628976,
+      "compute_time_ms": 573.7913999473676
+    },
+    {
+      "batch_index": 11,
+      "load_time_ms": 654.2095000622794,
+      "compute_time_ms": 531.5440000267699
+    },
+    {
+      "batch_index": 12,
+      "load_time_ms": 647.5841000210494,
+      "compute_time_ms": 556.2795998994261
+    },
+    {
+      "batch_index": 13,
+      "load_time_ms": 646.7039999552071,
+      "compute_time_ms": 571.4096000883728
+    },
+    {
+      "batch_index": 14,
+      "load_time_ms": 643.4946999652311,
+      "compute_time_ms": 579.1078000329435
+    },
+    {
+      "batch_index": 15,
+      "load_time_ms": 635.9514000359923,
+      "compute_time_ms": 552.4692999897525
+    },
+    {
+      "batch_index": 16,
+      "load_time_ms": 633.3114999579266,
+      "compute_time_ms": 589.1924999887124
+    },
+    {
+      "batch_index": 17,
+      "load_time_ms": 651.0471000801772,
+      "compute_time_ms": 568.2475999929011
+    },
+    {
+      "batch_index": 18,
+      "load_time_ms": 614.9394999956712,
+      "compute_time_ms": 575.4720999393612
+    },
+    {
+      "batch_index": 19,
+      "load_time_ms": 641.7464000405744,
+      "compute_time_ms": 560.1437999866903
+    },
+    {
+      "batch_index": 20,
+      "load_time_ms": 659.1477000620216,
+      "compute_time_ms": 549.7558999340981
+    },
+    {
+      "batch_index": 21,
+      "load_time_ms": 660.1676000282168,
+      "compute_time_ms": 553.8832999300212
+    },
+    {
+      "batch_index": 22,
+      "load_time_ms": 667.8724000230432,
+      "compute_time_ms": 747.5605000508949
+    },
+    {
+      "batch_index": 23,
+      "load_time_ms": 650.0268999952823,
+      "compute_time_ms": 545.7751000067219
+    },
+    {
+      "batch_index": 24,
+      "load_time_ms": 638.9651999343187,
+      "compute_time_ms": 543.9354999689385
+    },
+    {
+      "batch_index": 25,
+      "load_time_ms": 632.3946999618784,
+      "compute_time_ms": 575.0161000760272
+    },
+    {
+      "batch_index": 26,
+      "load_time_ms": 662.47740003746,
+      "compute_time_ms": 578.4649000270292
+    },
+    {
+      "batch_index": 27,
+      "load_time_ms": 662.0677000610158,
+      "compute_time_ms": 569.2746998975053
+    },
+    {
+      "batch_index": 28,
+      "load_time_ms": 615.4955999227241,
+      "compute_time_ms": 543.3470000280067
+    }
+  ]
+}

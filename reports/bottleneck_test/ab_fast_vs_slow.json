@@ -1,0 +1,52 @@
+{
+  "session_a": "Fast Loader (0ms)",
+  "session_b": "Slow Loader (20ms)",
+  "total_layers": 2,
+  "regressions": 1,
+  "improvements": 0,
+  "unchanged": 1,
+  "overall_speedup": 0.7548,
+  "summary": {
+    "common_layers": 2,
+    "only_in_a": 0,
+    "only_in_b": 0,
+    "overall_speedup": 0.7548,
+    "overall_p_value": 0.000431,
+    "overall_significant": true,
+    "mean_time_a_ms": 287.5793,
+    "mean_time_b_ms": 381.0103,
+    "alpha": 0.05,
+    "regression_threshold_pct": 10.0,
+    "improvement_threshold_pct": 10.0
+  },
+  "layer_diffs": [
+    {
+      "layer_name": "Compute",
+      "mean_time_a_ms": 573.7575,
+      "mean_time_b_ms": 591.0041,
+      "delta_ms": 17.2465,
+      "delta_pct": 3.01,
+      "mem_delta_a_mb": 0.0,
+      "mem_delta_b_mb": 0.0,
+      "mem_delta_diff_mb": 0.0,
+      "is_regression": false,
+      "is_improvement": false,
+      "statistical_sig": true,
+      "p_value": 0.000739
+    },
+    {
+      "layer_name": "DataLoading",
+      "mean_time_a_ms": 1.4011,
+      "mean_time_b_ms": 171.0165,
+      "delta_ms": 169.6154,
+      "delta_pct": 12106.23,
+      "mem_delta_a_mb": 0.0,
+      "mem_delta_b_mb": 0.0,
+      "mem_delta_diff_mb": 0.0,
+      "is_regression": true,
+      "is_improvement": false,
+      "statistical_sig": true,
+      "p_value": 0.0
+    }
+  ]
+}

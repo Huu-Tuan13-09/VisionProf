@@ -1,0 +1,342 @@
+{
+  "model_name": "YOLOv8n",
+  "device": "cpu",
+  "total_rules": 19,
+  "passed": 15,
+  "failed": 4,
+  "critical": 0,
+  "metadata": {
+    "total_params": 3157200,
+    "total_gpu_mem_mb": 0.0,
+    "has_dataloader": false
+  },
+  "rules": [
+    {
+      "rule_id": "RA-01",
+      "rule_name": "OOM Risk Detection",
+      "category": "R-A",
+      "severity": "OK",
+      "passed": true,
+      "message": "Không có dữ liệu GPU memory để kiểm tra.",
+      "details": {},
+      "suggestions": [],
+      "affected_layers": []
+    },
+    {
+      "rule_id": "RA-02",
+      "rule_name": "Memory Fragmentation Risk",
+      "category": "R-A",
+      "severity": "OK",
+      "passed": true,
+      "message": "✅ Không phát hiện biến động memory bất thường (ngưỡng 500MB).",
+      "details": {
+        "max_delta_mb": 0.766
+      },
+      "suggestions": [],
+      "affected_layers": []
+    },
+    {
+      "rule_id": "RA-03",
+      "rule_name": "Memory Allocation Hotspot",
+      "category": "R-A",
+      "severity": "OK",
+      "passed": true,
+      "message": "✅ Memory phân phối hợp lý: Top-5 chiếm 18.7%.",
+      "details": {
+        "top_k_ratio": 0.187
+      },
+      "suggestions": [],
+      "affected_layers": []
+    },
+    {
+      "rule_id": "RA-04",
+      "rule_name": "Peak Memory Efficiency",
+      "category": "R-A",
+      "severity": "MEDIUM",
+      "passed": false,
+      "message": "Memory/param ratio cao: 150.5MB/Mparam (params=3.2M, peak=475.1MB).",
+      "details": {
+        "peak_mb": 475.141,
+        "total_params_M": 3.16,
+        "ratio_mb_per_mparam": 150.49
+      },
+      "suggestions": [
+        "Kiểm tra xem có lưu activations thừa không.",
+        "Dùng half-precision (fp16/bf16) để giảm bộ nhớ."
+      ],
+      "affected_layers": []
+    },
+    {
+      "rule_id": "RA-05",
+      "rule_name": "Memory Leak Heuristic",
+      "category": "R-A",
+      "severity": "OK",
+      "passed": true,
+      "message": "✅ Không phát hiện xu hướng tăng memory: slope=0.0342MB/iter, R²=0.680.",
+      "details": {
+        "slope_mb_per_iter": 0.0342,
+        "r_squared": 0.6803
+      },
+      "suggestions": [],
+      "affected_layers": []
+    },
+    {
+      "rule_id": "RB-01",
+      "rule_name": "Layer Speed Imbalance",
+      "category": "R-B",
+      "severity": "OK",
+      "passed": true,
+      "message": "✅ Compute phân phối hợp lý: Top-5 chiếm 16.3%.",
+      "details": {
+        "top_k_ratio": 0.1634,
+        "top_k_layers": {
+          "inner.model.0.conv": 0.8928,
+          "inner.model.1.conv": 0.7263,
+          "inner.model.22.cv3.0.1.conv": 0.6954,
+          "inner.model.22.cv3.0.0.conv": 0.5306,
+          "inner.model.22.cv2.0.0.conv": 0.4762
+        }
+      },
+      "suggestions": [],
+      "affected_layers": []
+    },
+    {
+      "rule_id": "RB-02",
+      "rule_name": "Compute Variance",
+      "category": "R-B",
+      "severity": "MEDIUM",
+      "passed": false,
+      "message": "18 layers có CV > 0.5 (timing không ổn định). Overall CV=1.304.",
+      "details": {
+        "overall_cv": 1.3037,
+        "n_unstable_layers": 18,
+        "unstable_layers": {
+          "inner.model.0.act": 1.2531,
+          "inner.model.6.m.1.cv2.bn": 1.0493,
+          "inner.model.12.cv1.bn": 1.04,
+          "inner.model.13": 0.9958,
+          "inner.model.21.m.0.cv2.bn": 0.995
+        }
+      },
+      "suggestions": [
+        "Tăng số iteration warmup.",
+        "Kiểm tra tác động của background processes (Windows).",
+        "Dùng torch.cuda.synchronize() trước/sau đo lường.",
+        "Chạy lại trên hệ thống ít tải hơn."
+      ],
+      "affected_layers": [
+        "inner.model.0.act",
+        "inner.model.6.m.1.cv2.bn",
+        "inner.model.12.cv1.bn",
+        "inner.model.13",
+        "inner.model.21.m.0.cv2.bn",
+        "inner.model.6.cv2.bn",
+        "inner.model.18.cv1.bn",
+        "inner.model.22.cv3.1.0.bn",
+        "inner.model.10",
+        "inner.model.18.m.0.cv2.conv"
+      ]
+    },
+    {
+      "rule_id": "RB-03",
+      "rule_name": "Serial Bottleneck Layer",
+      "category": "R-B",
+      "severity": "OK",
+      "passed": true,
+      "message": "✅ Không có layer đơn lẻ gây bottleneck (max=4.4%).",
+      "details": {
+        "max_ratio": 0.0439,
+        "max_layer": "inner.model.0.conv"
+      },
+      "suggestions": [],
+      "affected_layers": []
+    },
+    {
+      "rule_id": "RB-04",
+      "rule_name": "Time per Parameter Efficiency",
+      "category": "R-B",
+      "severity": "MEDIUM",
+      "passed": false,
+      "message": "40 layers có ms/Mparam > 5.0 (kém hiệu quả tính toán).",
+      "details": {
+        "threshold": 5.0,
+        "inefficient": {
+          "inner.model.2.cv1.conv": 229.6509,
+          "inner.model.2.cv2.conv": 196.5495,
+          "inner.model.1.conv": 157.6199,
+          "inner.model.2.m.0.cv1.conv": 132.3351,
+          "inner.model.2.m.0.cv2.conv": 94.7808
+        }
+      },
+      "suggestions": [
+        "Kiểm tra xem layer có đang chạy trên CPU không.",
+        "Xem xét fusing operations (conv+bn+relu) bằng torch.compile.",
+        "Các layer attention thường có ms/Mparam cao — dùng Flash Attention."
+      ],
+      "affected_layers": [
+        "inner.model.2.cv1.conv",
+        "inner.model.2.cv2.conv",
+        "inner.model.1.conv",
+        "inner.model.2.m.0.cv1.conv",
+        "inner.model.2.m.0.cv2.conv",
+        "inner.model.15.cv2.conv",
+        "inner.model.4.cv1.conv",
+        "inner.model.22.cv2.0.2",
+        "inner.model.22.cv3.0.2",
+        "inner.model.4.cv2.conv"
+      ]
+    },
+    {
+      "rule_id": "RB-05",
+      "rule_name": "CPU Utilization Drop",
+      "category": "R-B",
+      "severity": "OK",
+      "passed": true,
+      "message": [
+        "CPU util = 0.0% — CPU-only, ket qua chinh xac tu psutil."
+      ],
+      "details": {},
+      "suggestions": [],
+      "affected_layers": []
+    },
+    {
+      "rule_id": "RC-01",
+      "rule_name": "DataLoader I/O Bottleneck",
+      "category": "R-C",
+      "severity": "OK",
+      "passed": true,
+      "message": "Không có dữ liệu DataLoader — bỏ qua nhóm R-C.",
+      "details": {},
+      "suggestions": [],
+      "affected_layers": []
+    },
+    {
+      "rule_id": "RC-02",
+      "rule_name": "DataLoader Timing Variance",
+      "category": "R-C",
+      "severity": "OK",
+      "passed": true,
+      "message": "Không có dữ liệu DataLoader — bỏ qua nhóm R-C.",
+      "details": {},
+      "suggestions": [],
+      "affected_layers": []
+    },
+    {
+      "rule_id": "RC-03",
+      "rule_name": "Compute Starvation",
+      "category": "R-C",
+      "severity": "OK",
+      "passed": true,
+      "message": "Không có dữ liệu DataLoader — bỏ qua nhóm R-C.",
+      "details": {},
+      "suggestions": [],
+      "affected_layers": []
+    },
+    {
+      "rule_id": "RC-04",
+      "rule_name": "Zero Worker Warning",
+      "category": "R-C",
+      "severity": "OK",
+      "passed": true,
+      "message": "Không có dữ liệu DataLoader — bỏ qua nhóm R-C.",
+      "details": {},
+      "suggestions": [],
+      "affected_layers": []
+    },
+    {
+      "rule_id": "RD-01",
+      "rule_name": "Parameter Concentration",
+      "category": "R-D",
+      "severity": "OK",
+      "passed": true,
+      "message": "✅ Params phân phối hợp lý: max layer = 9.3%.",
+      "details": {
+        "max_ratio": 0.0934
+      },
+      "suggestions": [],
+      "affected_layers": []
+    },
+    {
+      "rule_id": "RD-02",
+      "rule_name": "Dead Layer Detection",
+      "category": "R-D",
+      "severity": "OK",
+      "passed": true,
+      "message": "✅ Không phát hiện dead layer.",
+      "details": {},
+      "suggestions": [],
+      "affected_layers": []
+    },
+    {
+      "rule_id": "RD-03",
+      "rule_name": "Layer Type Distribution",
+      "category": "R-D",
+      "severity": "OK",
+      "passed": true,
+      "message": "✅ Layer types đa dạng: 6 loại khác nhau.",
+      "details": {
+        "distribution": {
+          "BatchNorm2d": 57,
+          "Concat": 4,
+          "Conv2d": 64,
+          "MaxPool2d": 1,
+          "SiLU": 1,
+          "Upsample": 2
+        }
+      },
+      "suggestions": [],
+      "affected_layers": []
+    },
+    {
+      "rule_id": "RD-04",
+      "rule_name": "Depth Profile",
+      "category": "R-D",
+      "severity": "OK",
+      "passed": true,
+      "message": "Mô hình có 129 layer đo được. Avg time/layer=0.158ms. Total params=3.16M.",
+      "details": {
+        "n_layers": 129,
+        "total_time_ms": 20.324,
+        "avg_time_per_layer": 0.1576,
+        "total_params": 3157200
+      },
+      "suggestions": [],
+      "affected_layers": []
+    },
+    {
+      "rule_id": "RD-05",
+      "rule_name": "Param-Time Outliers",
+      "category": "R-D",
+      "severity": "MEDIUM",
+      "passed": false,
+      "message": "13 layers có ms/Mparam > 3.0× median (7.60ms/Mparam). Kém hiệu quả tương đối.",
+      "details": {
+        "median_ms_per_mparam": 7.5953,
+        "multiplier": 3.0,
+        "outliers": {
+          "inner.model.1.conv": 157.6199,
+          "inner.model.15.cv1.conv": 25.6246,
+          "inner.model.15.cv2.conv": 44.047,
+          "inner.model.15.m.0.cv2.conv": 23.0577,
+          "inner.model.2.cv1.conv": 229.6509
+        }
+      },
+      "suggestions": [
+        "Kiểm tra xem các layer này có đang chạy đúng device không.",
+        "Xem xét thay thế bằng layer hiệu quả hơn (ví dụ: depthwise conv)."
+      ],
+      "affected_layers": [
+        "inner.model.1.conv",
+        "inner.model.15.cv1.conv",
+        "inner.model.15.cv2.conv",
+        "inner.model.15.m.0.cv2.conv",
+        "inner.model.2.cv1.conv",
+        "inner.model.2.cv2.conv",
+        "inner.model.2.m.0.cv1.conv",
+        "inner.model.2.m.0.cv2.conv",
+        "inner.model.22.cv2.0.2",
+        "inner.model.22.cv3.0.2"
+      ]
+    }
+  ]
+}
