@@ -2,7 +2,14 @@
 ## Hệ Thống VisionProf: Thuật Toán, Mô Hình Toán Học & Cấu Trúc Kỹ Thuật
 
 > **Tài liệu tham chiếu**: Bổ trợ trực tiếp cho [research_plan_profiling_framework.md](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/research_plan_profiling_framework.md) (Master Plan v3.5)  
-> **Mục tiêu**: Cung cấp tài liệu đặc tả kỹ thuật chi tiết mức mã nguồn (code-level specification), các công thức toán học, thuật toán giải quyết triệt để các lỗi kỹ thuật đã phát hiện trong [SYSTEM_AUDIT_REPORT.md](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/SYSTEM_AUDIT_REPORT.md) và tích hợp các chuẩn mực công nghiệp toàn diện (Tail Latency P50-P99, Background Resource Sentinel, End-to-End Pipeline Sentinel, Output Consistency).
+> **Mục tiêu**: Cung cấp tài liệu đặc tả kỹ thuật chi tiết mức mã nguồn (code-level specification), các công thức toán học, thuật toán giải quyết triệt để các lỗi kỹ thuật đã phát hiện trong [SYSTEM_AUDIT_REPORT.md](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/SYSTEM_AUDIT_REPORT.md) và tích hợp các chuẩn mực công nghiệp toàn diện (Tail Latency P50-P99, Background Resource Sentinel, End-to-End Pipeline Sentinel, Output Consistency).  
+>
+> [!NOTE]
+> **Quy ước triển khai thực tế (Operational Baseline)**:  
+> - **Kiến trúc Canonical Modular v2.0**: Toàn bộ hệ thống mã nguồn được tổ chức thành các sub-packages độc lập tại `src/` (`src/core/`, `src/layer/`, `src/model/`, `src/zoo/`, `src/phase/`, `src/analyzer/`, `src/dashboard/`) tuân thủ giới hạn $\le 300$ dòng/file (chi tiết tại [`PROJECT_PLAN.md`](./PROJECT_PLAN.md) và [`agent-rules/`](./agent-rules)).
+> - **Chuẩn hóa phần cứng trên Google Colab**: Dữ liệu thực nghiệm chính thức được đo trên `colab_cpu` (Intel Xeon) và `colab_t4` (NVIDIA Tesla T4 16GB), hỗ trợ mở Streamlit Dashboard từ xa qua tunnel `pyngrok` hoặc tải gói `results/` về máy tính cá nhân (`cpu_laptop`).
+> - **Đo kiểm chuẩn xác**: Deferred CUDA Events (đồng bộ 1 lần cuối pass, LIFO stack cho module lồng nhau), Zero-Config leaf hooks tự động bypass non-torch models (XGBoost), Heuristic Catalog v2.0, và Speedup A/B tính trên toàn mô hình.
+> - **Lưu trữ & Kiểm chuẩn**: Sử dụng **Flat File Schema (`results/` với CSV + JSON)** được sinh tự động bởi `src.core.paths.build_result_path()` (Mục 5 SQLite DDL/Parquet là đặc tả tham chiếu mở rộng) và kiểm chuẩn qua **`torch.profiler`** (sai số $< 10\%$, thay thế NVIDIA Nsight CLI tại Mục 7).
 
 ---
 

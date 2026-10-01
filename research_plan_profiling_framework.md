@@ -3,9 +3,13 @@
 
 > **Tên đề tài**: Nghiên Cứu và Xây Dựng Framework Profiling Phân Cấp Tầng (Layer-Level) Tự Động Chẩn Đoán Điểm Nghẽn Hiệu Năng Cho Các Mô Hình Thị Giác Máy Tính Đa Nền Tảng  
 > **Phiên bản**: v3.5 (Đồng bộ toàn diện với [TECHNICAL_SPECIFICATION.md](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/TECHNICAL_SPECIFICATION.md) và báo cáo kiểm toán [SYSTEM_AUDIT_REPORT.md](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/SYSTEM_AUDIT_REPORT.md))  
-> **Phạm vi phần cứng**: Edge Laptop (x86 CPU Intel/AMD) $\longleftrightarrow$ Cloud Instance (Google Colab / Tesla T4 16GB)  
+> **Phạm vi phần cứng**: Chuẩn hóa Google Colab (`colab_cpu` Intel Xeon & `colab_t4` Tesla T4 16GB) $\longleftrightarrow$ Edge Laptop (`cpu_laptop` Intel/AMD/Apple Silicon)  
 > **Tỷ trọng định hướng**: 70% Kỹ thuật hệ thống đo lường (Systems Profiling) · 20% Chẩn đoán tự động (Heuristic & Roofline Diagnostic) · 10% Phân tích Đánh đổi Thực nghiệm (Trade-off Matrix)  
-> **Mục tiêu công bố**: Hội nghị MLSys (Primary) / EuroSys / Đồ án Kỹ thuật Hệ thống ML Xuất sắc
+> **Mục tiêu công bố**: Hội nghị MLSys (Primary) / EuroSys / Đồ án Kỹ thuật Hệ thống ML Xuất sắc  
+>
+> [!NOTE]
+> **Kế hoạch triển khai thực tế của Đồ án**:  
+> Đề cương này mô tả tầm nhìn nghiên cứu hệ thống tổng thể (MLSys/EuroSys). Kế hoạch phân công công việc chi tiết cho nhóm 3 người (TV1: Layer, TV2: Model, TV3: Phase), chuẩn hóa 8 mô hình đa lĩnh vực (CV, NLP, ML), kiến trúc Canonical Modular v2.0 (`src/`), quy trình chạy Colab kết nối ngrok tunnel và kiểm chuẩn bằng `torch.profiler` được quản lý chính thức tại [`PROJECT_PLAN.md`](./PROJECT_PLAN.md).
 
 ---
 

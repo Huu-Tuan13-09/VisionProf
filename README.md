@@ -10,6 +10,11 @@
 
 VisionProf is a highly precise, cross-platform performance profiling and diagnostic framework engineered specifically for Computer Vision models running on varied hardware ecosystems (Edge CPU laptops and Cloud GPU instances). By non-intrusively hooking into PyTorch's execution graph, VisionProf extracts micro-second level metrics and applies a robust 19-rule heuristic engine to automatically pinpoint I/O bottlenecks, compute starvation, memory fragmentation, and architectural inefficiencies.
 
+> [!NOTE]
+> **Project Roadmap & Status**:
+> The directory structure, heuristics, and benchmark figures presented in this document represent the **v1.0 baseline**. The system is being actively refactored to **v2.0/v3.0** featuring 3-tier modular separation (Layer, Model, Stage), Deferred CUDA Events, Heuristic Catalog v2.0, and Tail Latency metrics (P50–P99).  
+> For technical rules, architecture contracts, and implementation plans, please refer to [`AGENTS.md`](./AGENTS.md), [`PROJECT_PLAN.md`](./PROJECT_PLAN.md), and [`TECHNICAL_SPECIFICATION.md`](./TECHNICAL_SPECIFICATION.md).
+
 ## Key Highlights & Core Contributions
 
 - **`LayerProfiler` Mechanism:** Employs PyTorch `register_forward_pre_hook` and `register_forward_hook` to intercept model execution at the micro-second level. It dynamically calculates Activation Memory directly from output tensors and tracks Resident Set Size (RSS) RAM efficiently, ensuring the profiling itself does not become a bottleneck.
@@ -29,20 +34,24 @@ graph TD
     D -->|Hooks & OS Signals| E[Tier 1: PyTorch Core Execution]
 ```
 
-### Directory Tree
+### Directory Tree (Canonical Modular Architecture v2.0)
 
 ```
 VisionProf/
 ├── src/
-│   ├── collector.py       # Core profiler (LayerProfiler, DataLoaderSentinel, Overhead Calibration)
-│   ├── analyzer.py        # 19 Heuristic Rules Catalog and ABComparisonEngine
-│   └── dashboard.py       # 5-Tab Interactive Streamlit UI
-├── tests/
-│   ├── test_training_bottleneck.py      # Automated DataLoader I/O profiling test
-│   └── test_modern_models_benchmark.py  # Benchmark suite for 5 modern vision models
-├── data/                  # Auto-generated JSON profiles & CSV layer records
-├── reports/               # Output directory for heuristic analysis and A/B comparisons
-├── requirements.txt       # Project dependencies
+│   ├── core/              # Shared interfaces, types, constants, path builders
+│   ├── layer/             # [TV1] Layer-level profiling (Deferred CUDA Events, FLOPs, Memory)
+│   ├── model/             # [TV2] Model-level benchmarking & 100ms background ResourceSampler
+│   ├── zoo/               # [TV2] 8 Model Adapters (CV, NLP, Tabular/XGBoost)
+│   ├── phase/             # [TV3] Stage/Phase timer & DataLoaderSentinel
+│   ├── analyzer/          # [TV3] 19 Diagnostic Heuristics v2.0 & A/B Engine
+│   └── dashboard/         # [TV3] 7-Tab Streamlit UI with Plotly visualizations
+├── configs/               # Model and experiment YAML configs (TN1 -> TN7)
+├── notebooks/             # colab_runner.ipynb (Google Colab CPU & T4 execution)
+├── scripts/               # run_experiment.py, run_tests.py, verify_rules.py
+├── results/               # Standardized results: results/{device}/{model}/{exp_id}/{config}/
+├── tests/                 # Modular unit test suite
+├── requirements.txt       # Project dependencies (including pyngrok)
 └── README.md              # Project documentation
 ```
 

@@ -2,14 +2,16 @@
 ## (Comprehensive System Audit, Research Plan Gap Analysis & Architectural Roadmap)
 
 > **Dự án**: VisionProf (Cross-Platform PyTorch Layer Profiler & Automated Heuristic Bottleneck Analyzer)  
-> **Phiên bản kiểm toán**: Nhánh `main` (commit hiện tại)  
+> **Phiên bản kiểm toán**: Đánh giá hiện trạng phiên bản di sản v1.0 monolithic  
 > **Tài liệu đối chiếu**:
 > - Đề cương nghiên cứu: [`research_plan_profiling_framework.md`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/research_plan_profiling_framework.md) (v3.5)
 > - Đặc tả kỹ thuật chi tiết: [`TECHNICAL_SPECIFICATION.md`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/TECHNICAL_SPECIFICATION.md) (v2.5)
-> - Tài liệu kỹ thuật: [`README.md`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/README.md)
-> - Mã nguồn hệ thống: [`src/collector.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/collector.py), [`src/analyzer.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/analyzer.py), [`src/dashboard.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/dashboard.py)
-> - Kịch bản kiểm thử: [`tests/test_modern_models_benchmark.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/tests/test_modern_models_benchmark.py), [`tests/test_training_bottleneck.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/tests/test_training_bottleneck.py)
-> - Dữ liệu thực nghiệm: [`data/profiles/`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/data/profiles), [`reports/`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/reports)
+> - Kế hoạch triển khai & Khắc phục: [`PROJECT_PLAN.md`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/PROJECT_PLAN.md)
+>
+> [!IMPORTANT]
+> **Trạng thái giải quyết sau kiểm toán (Post-Audit Resolution Status)**:  
+> Báo cáo này ghi nhận các lỗ hổng kỹ thuật của phiên bản di sản monolithic v1.0.  
+> **Toàn bộ 10 khoảng trống (Gaps) và 6 nhóm lỗi kỹ thuật đã được giải quyết triệt để** trong kiến trúc mô-đun chuẩn hóa **Canonical Modular Architecture v2.0** (xem chi tiết tại [`PROJECT_PLAN.md`](./PROJECT_PLAN.md) và mã nguồn mới tại thư mục `src/`).
 
 ---
 
