@@ -1,0 +1,10 @@
+# TN2: Đối chiếu độ lệch với torch.profiler
+experiment: tn2
+description: "Validation against PyTorch official profiler"
+models: [resnet50]
+batch_sizes: [1, 8]
+precisions: [fp32]
+devices: [colab_t4]
+profilers: [layer]
+warmup_iters: 15
+measure_iters: 50

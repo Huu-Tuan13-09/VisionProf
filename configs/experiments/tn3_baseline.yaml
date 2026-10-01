@@ -1,0 +1,10 @@
+# TN3: Benchmark toàn diện 8 models ở cấu hình cơ bản (Batch 1, FP32)
+experiment: tn3
+description: "Baseline comparison across all 8 models"
+models: [mobilenet_v3, resnet50, vit_b_16, yolov8n, distilbert, bert_base, mlp, xgboost]
+batch_sizes: [1]
+precisions: [fp32]
+devices: [colab_cpu, colab_t4]
+profilers: [layer, phase]
+warmup_iters: 15
+measure_iters: 50

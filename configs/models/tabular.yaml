@@ -1,0 +1,13 @@
+# Tabular Models Configuration (Covertype dataset)
+models:
+  mlp:
+    family: tabular
+    features: 54
+    supported_devices: [colab_cpu, colab_t4]
+    precisions: [fp32, fp16]
+
+  xgboost:
+    family: tabular
+    features: 54
+    supported_devices: [colab_cpu, colab_t4]
+    precisions: [fp32]

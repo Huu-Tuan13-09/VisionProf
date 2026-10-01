@@ -1,0 +1,10 @@
+# TN4: Đánh giá mở rộng Batch Size (1, 8, 32)
+experiment: tn4
+description: "Batch scaling analysis"
+models: [resnet50, bert_base, mlp]
+batch_sizes: [1, 8, 32]
+precisions: [fp32]
+devices: [colab_cpu, colab_t4]
+profilers: [phase]
+warmup_iters: 15
+measure_iters: 50

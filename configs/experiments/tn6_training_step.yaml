@@ -1,0 +1,10 @@
+# TN6: Phân rã bước huấn luyện (Forward, Backward, Optimizer, DataLoader)
+experiment: tn6
+description: "Training step breakdown and I/O stall ratio"
+models: [resnet50, bert_base]
+batch_sizes: [16]
+precisions: [fp32]
+devices: [colab_cpu, colab_t4]
+profilers: [phase]
+warmup_iters: 5
+measure_iters: 30

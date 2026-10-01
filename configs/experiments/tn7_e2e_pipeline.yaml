@@ -1,0 +1,10 @@
+# TN7: Đo lường Pipeline hoàn chỉnh (Preprocess -> Inference -> Postprocess/NMS)
+experiment: tn7
+description: "End-to-end pipeline stages"
+models: [yolov8n, bert_base]
+batch_sizes: [1, 8]
+precisions: [fp32]
+devices: [colab_cpu, colab_t4]
+profilers: [phase]
+warmup_iters: 10
+measure_iters: 40

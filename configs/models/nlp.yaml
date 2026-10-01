@@ -1,0 +1,13 @@
+# Natural Language Processing Models Configuration
+models:
+  distilbert:
+    family: nlp
+    max_seq_len: 128
+    supported_devices: [colab_cpu, colab_t4]
+    precisions: [fp32, fp16]
+
+  bert_base:
+    family: nlp
+    max_seq_len: 128
+    supported_devices: [colab_cpu, colab_t4]
+    precisions: [fp32, fp16]

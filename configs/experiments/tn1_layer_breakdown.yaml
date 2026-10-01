@@ -1,0 +1,10 @@
+# TN1: Phân rã thời gian từng layer lá (Leaf Layers) trên CPU vs GPU
+experiment: tn1
+description: "Layer-level breakdown with Deferred CUDA Events and CPU timer"
+models: [resnet50, mobilenet_v3, vit_b_16, bert_base]
+batch_sizes: [1]
+precisions: [fp32]
+devices: [colab_cpu, colab_t4]
+profilers: [layer]
+warmup_iters: 15
+measure_iters: 50

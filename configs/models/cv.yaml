@@ -1,0 +1,25 @@
+# Computer Vision Models Configuration
+models:
+  mobilenet_v3:
+    family: cv
+    input_shape: [3, 224, 224]
+    supported_devices: [colab_cpu, colab_t4]
+    precisions: [fp32, fp16]
+
+  resnet50:
+    family: cv
+    input_shape: [3, 224, 224]
+    supported_devices: [colab_cpu, colab_t4]
+    precisions: [fp32, fp16]
+
+  vit_b_16:
+    family: cv
+    input_shape: [3, 224, 224]
+    supported_devices: [colab_cpu, colab_t4]
+    precisions: [fp32, fp16]
+
+  yolov8n:
+    family: cv
+    input_shape: [3, 640, 640]
+    supported_devices: [colab_cpu, colab_t4]
+    precisions: [fp32, fp16]
