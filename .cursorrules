@@ -1,0 +1,11 @@
+# Cursor Rules for VisionProf
+# Read AGENTS.md and agent-rules/ for full guidelines
+
+Always follow the rules specified in:
+1. AGENTS.md (Root master rules, checklist & context router)
+2. agent-rules/01_coding_standards.md (Max 300 lines/file, SRP, Type hints, Logging)
+3. agent-rules/02_architecture_and_modularization.md (3-level logic, ModelAdapter, ProfilerPlugin, Results schema)
+4. agent-rules/03_git_workflow_and_collaboration.md (Zero-overlap branching, Conventional Commits, Rebase)
+5. agent-rules/04_profiling_and_scientific_rigor.md (Deferred CUDA Events, warmup >= 20, tail latency)
+
+Always run `python3 scripts/verify_rules.py` before finalizing your edits.
