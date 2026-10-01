@@ -1,11 +1,22 @@
 .venv/
+venv/
+env/
 __pycache__/
 .pytest_cache/
 *.pyc
 *.pt
 *.pth
 *.onnx
+*.bin
+*.weights
 *.zip
+*.tar.gz
 .DS_Store
 
+# Temporary experiment results
+results/temp/
+*.log
+
+# Project private progress report
 BAO_CAO_TIEN_DO_NHOM.md
+
