@@ -41,14 +41,21 @@ CUDA = torch.cuda.is_available()
 # ─────────────────────────────────────────────────────────────────────────────
 
 class Sleep(nn.Module):
-    """Layer ngủ đúng `ms` mili-giây — biết trước thời gian thật để kiểm tra."""
+    """
+    Layer ngủ `ms` mili-giây và tự ghi lại thời gian ngủ THẬT (actual_ms).
+    time.sleep chỉ đảm bảo ngủ ÍT NHẤT `ms` — trên máy ảo dùng chung (Colab) có thể
+    bị đánh thức trễ, nên test so với actual_ms chứ không so với con số danh nghĩa.
+    """
 
     def __init__(self, ms: float):
         super().__init__()
         self.ms = ms
+        self.actual_ms = 0.0
 
     def forward(self, x):
+        t0 = time.perf_counter()
         time.sleep(self.ms / 1000.0)
+        self.actual_ms = (time.perf_counter() - t0) * 1000.0
         return x + 0
 
 
@@ -101,8 +108,10 @@ def test_cpu_timing_matches_known_sleep():
     model = nn.Sequential(Sleep(20), Sleep(5))
     df = _profile(model, torch.zeros(4)).to_dataframe()
     t = dict(zip(df["layer_name"], df["raw_time_ms"]))
-    assert 19.0 <= t["0"] <= 40.0
-    assert 4.5 <= t["1"] <= 20.0
+    for name, layer in zip(["0", "1"], model):
+        assert t[name] >= layer.ms * 0.95                 # không đo thiếu
+        assert t[name] >= layer.actual_ms                 # khoảng đo bao trọn phần việc của layer
+        assert t[name] - layer.actual_ms < 2.0            # chỉ dư một chút chi phí của hook
     assert set(df["timing_backend"]) == {"cpu_perf_counter"}
 
 
