@@ -81,6 +81,24 @@ def reference_by_type(model, inputs, device: str, n_iter: int) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def count_hidden_syncs(model, inputs, device: str) -> int:
+    """
+    Đếm số lần forward ép CPU chờ GPU (vd .item(), kiểm tra mask). Mỗi lần như vậy
+    hàng đợi GPU bị xả, GPU phải chờ CPU gửi lệnh → thời gian layer trên GPU bị đo dư.
+    """
+    if not device.startswith("cuda"):
+        return 0
+    import warnings
+    with torch.no_grad(), warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        torch.cuda.set_sync_debug_mode("warn")
+        try:
+            run_model(model, inputs)
+        finally:
+            torch.cuda.set_sync_debug_mode(0)
+    return sum("synchronizing CUDA operation" in str(w.message) for w in caught)
+
+
 def compare_with_reference(layers: pd.DataFrame, ref: pd.DataFrame) -> pd.DataFrame:
     """Σ thời gian theo loại layer (của mình) so với phép aten tương ứng (torch.profiler)."""
     ours = per_layer_time(layers).groupby("layer_type", as_index=False).agg(
@@ -162,6 +180,7 @@ def validate_model(name: str, device: str, batch_size: int, precision: str, n_it
         "timer_bias_ms": plugin.timer_bias_ms,
         "timer_floor_ms": floor_ms,
         "layers_below_3x_floor_pct": below_floor_pct,
+        "hidden_syncs_per_forward": count_hidden_syncs(model, inputs, device),
     }
     with open(out_dir / "tn2_summary.json", "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2)

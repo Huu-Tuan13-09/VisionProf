@@ -66,7 +66,10 @@ def _fallback_model(name: str, batch_size: int, seq_len: int) -> Tuple[nn.Module
         from transformers import BertConfig, BertModel, DistilBertConfig, DistilBertModel
         model = BertModel(BertConfig()) if name == "bert_base" else DistilBertModel(DistilBertConfig())
         ids = torch.randint(0, 30522, (batch_size, seq_len))
-        return model, {"input_ids": ids, "attention_mask": torch.ones_like(ids)}
+        # Không truyền attention_mask: input không có padding nên mask toàn số 1 (kết quả như nhau),
+        # còn khi có mask, transformers kiểm tra mask bằng một lệnh đồng bộ CPU–GPU ngầm,
+        # làm GPU phải chờ CPU và sai số đo thời gian từng layer trên GPU.
+        return model, {"input_ids": ids}
     raise ValueError(f"Model không hỗ trợ: {name}. Chọn trong {TORCH_MODELS}")
 
 
