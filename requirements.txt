@@ -15,6 +15,9 @@ ultralytics>=8.0.200        # YOLOv8 + YOLOv11
 # --- timm: ViT, ConvNeXt, MobileNetV3 ---
 timm>=0.9.12
 
+# --- NLP: DistilBERT, BERT-base ---
+transformers>=4.40.0
+
 # --- Data & Storage ---
 pandas>=2.0.0
 numpy>=1.24.0
@@ -24,8 +27,9 @@ pynvml>=11.5.0              # GPU memory + utilization (safe fallback nếu khô
 psutil>=5.9.0               # CPU + RAM monitoring
 
 # --- Visualization (Dashboard - Đợt 2) ---
-streamlit>=1.28.0
+streamlit>=1.46.0           # width="stretch", st.context.theme
 plotly>=5.18.0
+matplotlib>=3.8.0           # Hình cho báo cáo (experiments/tv1_figures.py)
 
 # --- Scientific Computing ---
 scipy>=1.11.0               # Statistical tests cho A/B Comparison
