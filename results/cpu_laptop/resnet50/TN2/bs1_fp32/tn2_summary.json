@@ -1,0 +1,19 @@
+{
+  "model": "resnet50",
+  "hw_id": "cpu_laptop",
+  "n_hooked": 126,
+  "t_clean_ms": 30.79044999992675,
+  "t_hooked_ms": 34.27335000003495,
+  "overhead_pct": 11.311624221524816,
+  "overhead_per_layer_ms": 0.02764206349292224,
+  "layer_sum_ms": 29.59755,
+  "t_base_ms": 30.79044999992675,
+  "unattributed_pct": 3.8742532178957747,
+  "matched_ours_ms": 29.597550000000002,
+  "matched_ref_ms": 29.494154000000012,
+  "total_rel_error_pct": 0.350564386420405,
+  "timer_bias_ms": 0.0009,
+  "timer_floor_ms": 0.0023,
+  "layers_below_3x_floor_pct": 0.0,
+  "hidden_syncs_per_forward": 0
+}

@@ -1,0 +1,11 @@
+rank,layer_name,layer_type,time_ms,pct,activation_mb,n_calls
+1,encoder.layers.encoder_layer_2.self_attention,MultiheadAttention,2.89525,3.213195716108983,0.577148,1
+2,encoder.layers.encoder_layer_8.self_attention,MultiheadAttention,2.8847500000000004,3.2015426446923034,0.577148,1
+3,encoder.layers.encoder_layer_4.self_attention,MultiheadAttention,2.88335,3.1999889018367456,0.577148,1
+4,encoder.layers.encoder_layer_7.self_attention,MultiheadAttention,2.8569500000000003,3.170689750846235,0.577148,1
+5,encoder.layers.encoder_layer_3.self_attention,MultiheadAttention,2.8516,3.1647522335053537,0.577148,1
+6,encoder.layers.encoder_layer_11.self_attention,MultiheadAttention,2.83405,3.145274956994617,0.577148,1
+7,encoder.layers.encoder_layer_1.self_attention,MultiheadAttention,2.8253000000000004,3.135564064147384,0.577148,1
+8,encoder.layers.encoder_layer_10.self_attention,MultiheadAttention,2.8226,3.132567560068808,0.577148,1
+9,encoder.layers.encoder_layer_6.self_attention,MultiheadAttention,2.8124000000000002,3.121247433549747,0.577148,1
+10,encoder.layers.encoder_layer_0.self_attention,MultiheadAttention,2.80535,3.1134232284556895,0.577148,1

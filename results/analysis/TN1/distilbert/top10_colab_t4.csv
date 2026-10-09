@@ -1,0 +1,11 @@
+rank,layer_name,layer_type,time_ms,pct,activation_mb,n_calls
+1,transformer.layer.4.ffn.lin2,Linear,0.159025,4.948638715921221,0.375,1
+2,transformer.layer.5.ffn.lin2,Linear,0.158785,4.941170246864021,0.375,1
+3,transformer.layer.2.ffn.lin2,Linear,0.15773,4.908340101633417,0.375,1
+4,transformer.layer.1.ffn.lin2,Linear,0.157345,4.896359432520827,0.375,1
+5,transformer.layer.0.ffn.lin2,Linear,0.15688,4.881889273722503,0.375,1
+6,transformer.layer.3.ffn.lin2,Linear,0.155825,4.8490591284918985,0.375,1
+7,transformer.layer.4.ffn.lin1,Linear,0.12894499999999998,4.012590594085594,1.5,1
+8,transformer.layer.5.ffn.lin1,Linear,0.12843500000000002,3.9967200973390473,1.5,1
+9,transformer.layer.2.ffn.lin1,Linear,0.12710500000000002,3.955332331313736,1.5,1
+10,transformer.layer.1.ffn.lin1,Linear,0.12698,3.951442503679777,1.5,1
