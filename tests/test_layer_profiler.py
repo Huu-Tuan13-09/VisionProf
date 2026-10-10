@@ -106,7 +106,13 @@ def _profile(model, x, device="cpu", iteration=0):
 
 def test_cpu_timing_matches_known_sleep():
     model = nn.Sequential(Sleep(20), Sleep(5))
-    df = _profile(model, torch.zeros(4)).to_dataframe()
+    profiler = LayerProfiler(model)
+    with torch.no_grad():
+        for i in range(2):                                # vòng 0 là khởi động, chỉ xét vòng 1
+            with profiler.profile_context(iteration=i):
+                model(torch.zeros(4))
+    df = profiler.to_dataframe()
+    df = df[df["iteration"] == 1]
     t = dict(zip(df["layer_name"], df["raw_time_ms"]))
     for name, layer in zip(["0", "1"], model):
         assert t[name] >= layer.ms * 0.95                 # không đo thiếu
