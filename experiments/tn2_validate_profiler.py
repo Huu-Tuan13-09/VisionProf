@@ -35,8 +35,9 @@ import torch
 from torch.profiler import ProfilerActivity, profile
 
 from tv1_common import (
-    RESULTS_DIR, hw_id_for, load_model, profile_layers, result_dir, sync,
+    RESULTS_DIR, TORCH_MODELS, hw_id_for, load_model, profile_layers, result_dir, sync,
 )
+
 from src.layer.overhead import calibrate_overhead_details, estimate_timer_bias
 from src.layer.flops import run_model
 from src.layer.analysis import per_layer_time
@@ -228,7 +229,8 @@ def _overhead_generic(model, inputs, device: str, n_iter: int) -> dict:
 
 def main() -> None:
     p = argparse.ArgumentParser(description="TN2 — Kiểm chứng công cụ đo mức Layer")
-    p.add_argument("--models", nargs="+", default=["resnet50", "bert_base"])
+    p.add_argument("--models", nargs="+", default=TORCH_MODELS)
+
     p.add_argument("--device", default="cpu")
     p.add_argument("--batch", type=int, default=1)
     p.add_argument("--precision", default="fp32", choices=["fp32", "fp16"])
