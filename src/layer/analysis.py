@@ -11,7 +11,13 @@ def load_layers(path: Union[str, Path]) -> pd.DataFrame:
     p = Path(path)
     if not p.exists():
         return pd.DataFrame()
-    return pd.read_csv(p)
+    df = pd.read_csv(p)
+    if "layer_name" in df.columns:
+        df["layer_name"] = df["layer_name"].astype(str)
+    if "layer_type" in df.columns:
+        df["layer_type"] = df["layer_type"].astype(str)
+    return df
+
 
 
 def per_layer_time(layers: pd.DataFrame, time_col: str = "time_ms") -> pd.DataFrame:
@@ -80,9 +86,12 @@ def compare_top_k(cpu_layers: pd.DataFrame, gpu_layers: pd.DataFrame, k: int = 1
     def _ranked(layers: pd.DataFrame, tag: str) -> pd.DataFrame:
         df = per_layer_time(layers).sort_values("time_ms", ascending=False).reset_index(drop=True)
         df[f"rank_{tag}"] = range(1, len(df) + 1)
+        df["layer_name"] = df["layer_name"].astype(str)
+        df["layer_type"] = df["layer_type"].astype(str)
         return df.rename(columns={"time_ms": f"time_ms_{tag}", "pct": f"pct_{tag}"})[
             ["layer_name", "layer_type", f"time_ms_{tag}", f"pct_{tag}", f"rank_{tag}"]
         ]
+
 
     merged = _ranked(cpu_layers, "cpu").merge(
         _ranked(gpu_layers, "gpu"), on=["layer_name", "layer_type"], how="outer"

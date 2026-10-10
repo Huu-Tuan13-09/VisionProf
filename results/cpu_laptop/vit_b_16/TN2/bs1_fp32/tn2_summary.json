@@ -1,0 +1,19 @@
+{
+  "model": "vit_b_16",
+  "hw_id": "cpu_laptop",
+  "n_hooked": 112,
+  "t_clean_ms": 49.893,
+  "t_hooked_ms": 62.7644,
+  "overhead_pct": 25.8,
+  "overhead_per_layer_ms": 0.114923,
+  "layer_sum_ms": 129.67148999999998,
+  "t_base_ms": 49.893,
+  "unattributed_pct": 0.0,
+  "matched_ours_ms": 78.91218,
+  "matched_ref_ms": 27.41147239999997,
+  "total_rel_error_pct": 187.8801213173799,
+  "timer_bias_ms": 0.000453125,
+  "timer_floor_ms": 0.001050140625,
+  "layers_below_3x_floor_pct": 0.0,
+  "hidden_syncs_per_forward": 0
+}

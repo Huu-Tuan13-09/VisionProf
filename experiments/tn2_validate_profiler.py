@@ -196,12 +196,11 @@ def _overhead_generic(model, inputs, device: str, n_iter: int) -> dict:
     """Như calibrate_overhead_details nhưng cho input dạng dict / tuple."""
     import time
     import numpy as np
-    from src.layer.plugin import LayerProfilerPlugin as LayerProfiler
+    from src.layer.plugin import LayerProfilerPlugin
 
-    profiler = LayerProfiler()
-    profiler.attach(model, device=device)
-
+    plugin = LayerProfilerPlugin()
     clean, hooked = [], []
+    n_hooked = 0
     with torch.no_grad():
         for _ in range(10):
             run_model(model, inputs)
@@ -212,18 +211,19 @@ def _overhead_generic(model, inputs, device: str, n_iter: int) -> dict:
             sync(device)
             clean.append((time.perf_counter() - t0) * 1000.0)
 
-            profiler.attach_hooks()
+            plugin.attach(model, device=device)
             t0 = time.perf_counter()
-            profiler.begin_iteration(i)
+            plugin.start(i)
             run_model(model, inputs)
-            profiler.end_iteration()
+            plugin.stop()
             hooked.append((time.perf_counter() - t0) * 1000.0)
-            n_hooked = profiler.n_hooked
-            profiler.remove_hooks()
+            n_hooked = len(plugin._hooks) // 2
+            plugin.detach()
     t_clean, t_hooked = float(np.median(clean)), float(np.median(hooked))
     diff = max(0.0, t_hooked - t_clean)
     return {"t_clean_ms": t_clean, "t_hooked_ms": t_hooked, "n_hooked": n_hooked,
             "overhead_pct": diff / t_clean * 100.0, "per_layer_ms": diff / max(n_hooked, 1)}
+
 
 
 def main() -> None:

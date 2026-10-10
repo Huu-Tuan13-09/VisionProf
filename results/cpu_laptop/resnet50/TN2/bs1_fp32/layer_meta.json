@@ -4,7 +4,7 @@
   "precision": "fp32",
   "n_hooked_layers": 126,
   "n_iterations": 5,
-  "timer_bias_ms": 0.0004609375,
+  "timer_bias_ms": 0.0004296875,
   "total_flops_counter": 8178368512.0,
   "hardware": {
     "hw_id": "cpu_laptop",

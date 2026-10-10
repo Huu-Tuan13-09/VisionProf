@@ -1,0 +1,19 @@
+{
+  "model": "yolov8n",
+  "hw_id": "cpu_laptop",
+  "n_hooked": 129,
+  "t_clean_ms": 37.8245,
+  "t_hooked_ms": 36.2588,
+  "overhead_pct": -4.14,
+  "overhead_per_layer_ms": -0.012137,
+  "layer_sum_ms": 73.89304,
+  "t_base_ms": 37.8245,
+  "unattributed_pct": 0.0,
+  "matched_ours_ms": 69.21836,
+  "matched_ref_ms": 29.708820399999976,
+  "total_rel_error_pct": 132.98925729141388,
+  "timer_bias_ms": 0.000425125,
+  "timer_floor_ms": 0.001103515625,
+  "layers_below_3x_floor_pct": 0.0,
+  "hidden_syncs_per_forward": 0
+}
