@@ -1,12 +1,10 @@
 """Zero-Config LayerProfilerPlugin implementing layer-level latency, memory, and Roofline tracking."""
 
-import csv
 import json
 import logging
-import time
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple
+from typing import Any, Callable, Dict, Generator, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -14,7 +12,7 @@ import pandas as pd
 from src.core.interfaces import ProfilerPlugin
 from src.core.types import LayerRecord
 from src.layer.events import DeferredCudaDispatcher
-from src.layer.flops import FlopsCalculator, analyze_layers, model_total_flops
+from src.layer.flops import FlopsCalculator, analyze_layers, model_total_flops, select_targets
 from src.layer.hw_specs import HardwareSpec, detect_hardware
 from src.layer.memory import ActivationMemoryTracker
 from src.layer.overhead import estimate_timer_bias
@@ -35,13 +33,11 @@ class _NumpyEncoder(json.JSONEncoder):
     """JSON encoder safely converting NumPy scalar and array types."""
 
     def default(self, obj: Any) -> Any:
-        if isinstance(obj, (np.bool_, bool)):
-            return bool(obj)
-        if isinstance(obj, (np.integer, int)):
-            return int(obj)
-        if isinstance(obj, (np.floating, float)):
-            return float(obj)
+        if isinstance(obj, (np.bool_, bool)): return bool(obj)
+        if isinstance(obj, (np.integer, int)): return int(obj)
+        if isinstance(obj, (np.floating, float)): return float(obj)
         return obj.tolist() if isinstance(obj, np.ndarray) else super().default(obj)
+
 
 
 class LayerProfilerPlugin(ProfilerPlugin):
@@ -94,31 +90,21 @@ class LayerProfilerPlugin(ProfilerPlugin):
         def _capture(*hook_args: Any, **hook_kwargs: Any) -> None:
             if self._captured_inputs is not None:
                 return
-            if len(hook_args) >= 3:
-                args, kwargs = hook_args[1], hook_args[2]
-            elif len(hook_args) == 2:
-                args, kwargs = hook_args[1], hook_kwargs
-            else:
-                args, kwargs = (), hook_kwargs
-
-            if args:
-                self._captured_inputs = args
-            elif kwargs:
-                self._captured_inputs = kwargs
+            args = hook_args[1] if len(hook_args) >= 2 else ()
+            kwargs = hook_args[2] if len(hook_args) >= 3 else hook_kwargs
+            self._captured_inputs = args or kwargs or None
 
         try:
             self._capture_handle = model.register_forward_pre_hook(_capture, with_kwargs=True)
         except TypeError:
             self._capture_handle = model.register_forward_pre_hook(_capture)
 
-        leaf_count = 0
-        for name, module in model.named_modules():
-            if len(list(module.children())) == 0 and not isinstance(module, (nn.Dropout, nn.Identity)):
-                self._hooks.append(module.register_forward_pre_hook(self._make_pre_hook(name)))
-                self._hooks.append(module.register_forward_hook(self._make_post_hook(name, module)))
-                leaf_count += 1
+        targets = select_targets(model)
+        for name, module in targets:
+            self._hooks.append(module.register_forward_pre_hook(self._make_pre_hook(name)))
+            self._hooks.append(module.register_forward_hook(self._make_post_hook(name, module)))
 
-        logger.info("Zero-Config attached %d leaf module hooks on %s.", leaf_count, device)
+        logger.info("Zero-Config attached %d leaf module hooks on %s.", len(targets), device)
 
     def _make_pre_hook(self, name: str) -> Callable:
         def _pre_hook(module: Any, inputs: Any) -> None:
@@ -144,24 +130,21 @@ class LayerProfilerPlugin(ProfilerPlugin):
 
             if self._is_cuda and self._cuda_dispatcher:
                 self._cuda_dispatcher.record_stop(name, call_idx)
-                self._raw_rows.append({
-                    "iteration": self._current_iter, "layer_name": name,
-                    "layer_type": type(module_ref).__name__, "call_index": call_idx,
-                    "activation_mb": act_mb, "flops": flops, "params": params,
-                    "in_shape": list(in_shape), "out_shape": out_shape,
-                })
+                time_ms, raw_ms = 0.0, 0.0
             else:
                 timer = self._cpu_timers.get(name)
                 time_ms = timer.stop() if timer else 0.0
                 raw_ms = timer.raw_ms if timer else time_ms
-                self._raw_rows.append({
-                    "iteration": self._current_iter, "layer_name": name,
-                    "layer_type": type(module_ref).__name__, "call_index": call_idx,
-                    "time_ms": round(time_ms, 5), "raw_time_ms": round(raw_ms, 5),
-                    "activation_mb": act_mb, "flops": flops, "params": params,
-                    "in_shape": list(in_shape), "out_shape": out_shape,
-                })
+
+            self._raw_rows.append({
+                "iteration": self._current_iter, "layer_name": name,
+                "layer_type": type(module_ref).__name__, "call_index": call_idx,
+                "time_ms": round(time_ms, 5), "forward_time_ms": round(time_ms, 5),
+                "raw_time_ms": round(raw_ms, 5), "activation_mb": act_mb,
+                "flops": flops, "params": params, "in_shape": list(in_shape), "out_shape": out_shape,
+            })
         return _post_hook
+
 
     def start(self, iteration: int) -> None:
         """Mark start of a new measurement iteration."""
@@ -178,7 +161,9 @@ class LayerProfilerPlugin(ProfilerPlugin):
                 if r["iteration"] == self._current_iter and "time_ms" not in r:
                     dur = cuda_durations.get((r["layer_name"], r["call_index"]), cuda_durations.get(r["layer_name"], 0.0))
                     r["time_ms"] = dur
+                    r["forward_time_ms"] = dur
                     r["raw_time_ms"] = dur
+
 
     def save(self, out_dir: Path) -> None:
         """Write collected layer records to layers.csv, layers_summary.csv, and layer_meta.json."""
@@ -227,8 +212,21 @@ class LayerProfilerPlugin(ProfilerPlugin):
             json.dump(meta, f, indent=2, ensure_ascii=False, cls=_NumpyEncoder)
         logger.info("Saved %d layer records and metadata to %s", len(df_raw), out_dir)
 
+    @property
+    def profiler(self) -> "LayerProfilerPlugin":
+        return self
+
+    def to_dataframe(self) -> pd.DataFrame:
+        """Return captured raw rows as a DataFrame."""
+        return pd.DataFrame(self._raw_rows) if self._raw_rows else pd.DataFrame()
+
+    def get_iteration_totals(self) -> Dict[int, float]:
+        """Return dictionary of total iteration times."""
+        return self._iter_totals
+
     def detach(self) -> None:
         """Remove all PyTorch hooks."""
+
         for handle in self._hooks:
             handle.remove()
         self._hooks.clear()

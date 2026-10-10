@@ -35,20 +35,19 @@ def per_layer_time(layers: pd.DataFrame, time_col: str = "time_ms") -> pd.DataFr
 
     per_call = layers.groupby(group_keys, as_index=False).agg(**{k: (k, fn) for k, fn in agg_dict.items()})
 
-    agg_layer: dict = {time_col: "sum"}
+    named_aggs = {"time_ms": (time_col, "sum")}
     if has_act:
-        agg_layer["activation_mb"] = "sum"
+        named_aggs["activation_mb"] = ("activation_mb", "sum")
     if has_call_idx:
-        agg_layer["n_calls"] = "count"
+        named_aggs["n_calls"] = ("call_index", "count")
     if has_order:
-        agg_layer["exec_order"] = "min"
+        named_aggs["exec_order"] = ("exec_order", "min")
 
-    df = per_call.groupby(["layer_name", "layer_type"], as_index=False).agg(**{
-        ("time_ms" if k == time_col else k): (k, fn) for k, fn in agg_layer.items()
-    })
+    df = per_call.groupby(["layer_name", "layer_type"], as_index=False).agg(**named_aggs)
     total = df["time_ms"].sum()
     df["pct"] = (df["time_ms"] / total * 100.0) if total > 0 else 0.0
     return df
+
 
 
 def top_k_layers(layers: pd.DataFrame, k: int = 10, time_col: str = "time_ms") -> pd.DataFrame:

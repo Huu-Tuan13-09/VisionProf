@@ -103,7 +103,35 @@ class FlopsCalculator:
             k_h, k_w = module.kernel_size if isinstance(module.kernel_size, tuple) else (module.kernel_size, module.kernel_size)
             groups = getattr(module, "groups", 1)
             return 2 * b * c_out * h_out * w_out * (c_in // groups) * k_h * k_w
+        if mod_type == "MultiheadAttention" and len(input_shape) >= 3:
+            b, l, e = input_shape[:3]
+            return 8 * b * l * e * e + 4 * b * l * l * e
         return 0
+
+
+def select_targets(
+    model: Any,
+    exclude_types: Optional[Tuple[type, ...]] = None,
+    atomic_types: Optional[Tuple[type, ...]] = None,
+) -> List[Tuple[str, Any]]:
+    """Select target layers: atomic modules (e.g. MultiheadAttention) or leaf modules, skipping children."""
+    if not HAS_TORCH or not isinstance(model, nn.Module):
+        return []
+    exclude = exclude_types or (nn.Dropout, nn.Identity)
+    atomic = atomic_types or ((nn.MultiheadAttention,) if HAS_TORCH else ())
+    targets: List[Tuple[str, Any]] = []
+    atomic_prefixes: List[str] = []
+    for name, module in model.named_modules():
+        if any(p == "" or name.startswith(p + ".") for p in atomic_prefixes):
+            continue
+        if isinstance(module, atomic):
+            atomic_prefixes.append(name)
+        elif len(list(module.children())) > 0:
+            continue
+        if isinstance(module, exclude):
+            continue
+        targets.append((name or "<root>", module))
+    return targets
 
 
 def analyze_layers(model: Any, inputs: Any, exclude_types: Optional[Tuple[type, ...]] = None) -> pd.DataFrame:
@@ -111,10 +139,10 @@ def analyze_layers(model: Any, inputs: Any, exclude_types: Optional[Tuple[type, 
     if not HAS_TORCH or not isinstance(model, nn.Module):
         return pd.DataFrame()
 
-    exclude = exclude_types or (nn.Dropout, nn.Identity)
-    targets = [(n, m) for n, m in model.named_modules() if len(list(m.children())) == 0 and not isinstance(m, exclude)]
+    targets = select_targets(model, exclude_types=exclude_types)
     stats: Dict[str, Dict[str, Any]] = {}
     handles = []
+
 
     def _make_hook(name: str, mod: Any) -> Callable:
         p_bytes = sum(p.numel() * p.element_size() for p in mod.parameters())

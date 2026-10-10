@@ -2,85 +2,85 @@
 
 ## Top-10 layer chậm nhất · cpu_laptop
 
-| rank | layer_name | layer_type | time_ms | pct | activation_mb | n_calls |
-| --- | --- | --- | --- | --- | --- | --- |
-| 1 | encoder.layer.6.intermediate.dense | Linear | 1.575 | 2.797 | 1.500 | 1 |
-| 2 | encoder.layer.4.intermediate.dense | Linear | 1.546 | 2.745 | 1.500 | 1 |
-| 3 | encoder.layer.5.intermediate.dense | Linear | 1.540 | 2.735 | 1.500 | 1 |
-| 4 | encoder.layer.3.intermediate.dense | Linear | 1.539 | 2.732 | 1.500 | 1 |
-| 5 | encoder.layer.8.intermediate.dense | Linear | 1.531 | 2.719 | 1.500 | 1 |
-| 6 | encoder.layer.1.intermediate.dense | Linear | 1.530 | 2.717 | 1.500 | 1 |
-| 7 | encoder.layer.7.intermediate.dense | Linear | 1.529 | 2.715 | 1.500 | 1 |
-| 8 | encoder.layer.10.intermediate.dense | Linear | 1.528 | 2.713 | 1.500 | 1 |
-| 9 | encoder.layer.11.intermediate.dense | Linear | 1.520 | 2.698 | 1.500 | 1 |
-| 10 | encoder.layer.0.intermediate.dense | Linear | 1.518 | 2.695 | 1.500 | 1 |
+|   rank | layer_name                          | layer_type   |            time_ms |                pct |   activation_mb |   n_calls |
+|-------:|:------------------------------------|:-------------|-------------------:|-------------------:|----------------:|----------:|
+|      1 | encoder.layer.6.intermediate.dense  | Linear       | 1.5754000000000001 | 2.796909799925257  |             1.5 |         1 |
+|      2 | encoder.layer.4.intermediate.dense  | Linear       | 1.546              | 2.744714073050938  |             1.5 |         1 |
+|      3 | encoder.layer.5.intermediate.dense  | Linear       | 1.5403             | 2.7345944933508144 |             1.5 |         1 |
+|      4 | encoder.layer.3.intermediate.dense  | Linear       | 1.5389499999999998 | 2.7321977507902586 |             1.5 |         1 |
+|      5 | encoder.layer.8.intermediate.dense  | Linear       | 1.53135            | 2.7187049778567616 |             1.5 |         1 |
+|      6 | encoder.layer.1.intermediate.dense  | Linear       | 1.5303             | 2.716840844754107  |             1.5 |         1 |
+|      7 | encoder.layer.7.intermediate.dense  | Linear       | 1.52925            | 2.714976711651453  |             1.5 |         1 |
+|      8 | encoder.layer.10.intermediate.dense | Linear       | 1.5279500000000001 | 2.712668737333881  |             1.5 |         1 |
+|      9 | encoder.layer.11.intermediate.dense | Linear       | 1.5195             | 2.6976669042696635 |             1.5 |         1 |
+|     10 | encoder.layer.0.intermediate.dense  | Linear       | 1.5181499999999999 | 2.6952701617091077 |             1.5 |         1 |
 
 ## Tỷ trọng theo loại layer · cpu_laptop
 
-| layer_type | time_ms | n_layers | pct |
-| --- | --- | --- | --- |
-| Linear | 53.776 | 73 | 95.471 |
-| GELUActivation | 1.564 | 12 | 2.777 |
-| LayerNorm | 0.876 | 25 | 1.555 |
-| Embedding | 0.094 | 3 | 0.167 |
-| Tanh | 0.017 | 1 | 0.031 |
+| layer_type     |   time_ms |   n_layers |                  pct |
+|:---------------|----------:|-----------:|---------------------:|
+| Linear         |  53.77555 |         73 | 95.47122177946594    |
+| GELUActivation |   1.56405 |         12 |  2.776759408767994   |
+| LayerNorm      |   0.87565 |         25 |  1.5545982393706685  |
+| Embedding      |   0.094   |          3 |  0.16688429680904796 |
+| Tanh           |   0.0172  |          1 |  0.03053627558633643 |
 
 ## Top-10 layer chậm nhất · colab_t4
 
-| rank | layer_name | layer_type | time_ms | pct | activation_mb | n_calls |
-| --- | --- | --- | --- | --- | --- | --- |
-| 1 | encoder.layer.10.output.dense | Linear | 0.155 | 2.484 | 0.375 | 1 |
-| 2 | encoder.layer.9.output.dense | Linear | 0.155 | 2.484 | 0.375 | 1 |
-| 3 | encoder.layer.7.output.dense | Linear | 0.155 | 2.481 | 0.375 | 1 |
-| 4 | encoder.layer.6.output.dense | Linear | 0.155 | 2.480 | 0.375 | 1 |
-| 5 | encoder.layer.3.output.dense | Linear | 0.155 | 2.477 | 0.375 | 1 |
-| 6 | encoder.layer.5.output.dense | Linear | 0.154 | 2.468 | 0.375 | 1 |
-| 7 | encoder.layer.0.output.dense | Linear | 0.154 | 2.467 | 0.375 | 1 |
-| 8 | encoder.layer.8.output.dense | Linear | 0.154 | 2.467 | 0.375 | 1 |
-| 9 | encoder.layer.1.output.dense | Linear | 0.154 | 2.465 | 0.375 | 1 |
-| 10 | encoder.layer.4.output.dense | Linear | 0.153 | 2.459 | 0.375 | 1 |
+|   rank | layer_name                    | layer_type   |             time_ms |                pct |   activation_mb |   n_calls |
+|-------:|:------------------------------|:-------------|--------------------:|-------------------:|----------------:|----------:|
+|      1 | encoder.layer.10.output.dense | Linear       | 0.15502             | 2.4839863638730764 |           0.375 |         1 |
+|      2 | encoder.layer.9.output.dense  | Linear       | 0.154995            | 2.483585772600358  |           0.375 |         1 |
+|      3 | encoder.layer.7.output.dense  | Linear       | 0.15485             | 2.4812623432185905 |           0.375 |         1 |
+|      4 | encoder.layer.6.output.dense  | Linear       | 0.15476499999999999 | 2.479900332891347  |           0.375 |         1 |
+|      5 | encoder.layer.3.output.dense  | Linear       | 0.15456             | 2.476615484455056  |           0.375 |         1 |
+|      6 | encoder.layer.5.output.dense  | Linear       | 0.154045            | 2.468363304237054  |           0.375 |         1 |
+|      7 | encoder.layer.0.output.dense  | Linear       | 0.15396500000000002 | 2.467081412164355  |           0.375 |         1 |
+|      8 | encoder.layer.8.output.dense  | Linear       | 0.153955            | 2.466921175655267  |           0.375 |         1 |
+|      9 | encoder.layer.1.output.dense  | Linear       | 0.15384             | 2.4650784558007617 |           0.375 |         1 |
+|     10 | encoder.layer.4.output.dense  | Linear       | 0.15347             | 2.4591497049645272 |           0.375 |         1 |
 
 ## Tỷ trọng theo loại layer · colab_t4
 
-| layer_type | time_ms | n_layers | pct |
-| --- | --- | --- | --- |
-| Linear | 5.938 | 73 | 95.146 |
-| LayerNorm | 0.200 | 25 | 3.198 |
-| GELUActivation | 0.082 | 12 | 1.318 |
-| Embedding | 0.017 | 3 | 0.269 |
-| Tanh | 0.004 | 1 | 0.069 |
+| layer_type     |   time_ms |   n_layers |                 pct |
+|:---------------|----------:|-----------:|--------------------:|
+| Linear         |  5.93783  |         73 | 95.14571507545136   |
+| LayerNorm      |  0.19961  |         25 |  3.1984809578938513 |
+| GELUActivation |  0.082235 |         12 |  1.317704932480341  |
+| Embedding      |  0.01681  |          3 |  0.2693575717759412 |
+| Tanh           |  0.00429  |          1 |  0.0687414623985002 |
 
 ## CPU (cpu_laptop) và GPU (colab_t4) · top-10
 
-| layer_name | layer_type | time_ms_cpu | pct_cpu | rank_cpu | time_ms_gpu | pct_gpu | rank_gpu | speedup | rank_change |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| encoder.layer.6.intermediate.dense | Linear | 1.575 | 2.797 | 1 | 0.126 | 2.021 | 14 | 12.491 | -13 |
-| encoder.layer.4.intermediate.dense | Linear | 1.546 | 2.745 | 2 | 0.123 | 1.976 | 23 | 12.539 | -21 |
-| encoder.layer.5.intermediate.dense | Linear | 1.540 | 2.735 | 3 | 0.125 | 1.997 | 20 | 12.359 | -17 |
-| encoder.layer.3.intermediate.dense | Linear | 1.539 | 2.732 | 4 | 0.126 | 2.024 | 13 | 12.183 | -9 |
-| encoder.layer.8.intermediate.dense | Linear | 1.531 | 2.719 | 5 | 0.125 | 2.000 | 19 | 12.270 | -14 |
-| encoder.layer.1.intermediate.dense | Linear | 1.530 | 2.717 | 6 | 0.125 | 2.002 | 15 | 12.249 | -9 |
-| encoder.layer.7.intermediate.dense | Linear | 1.529 | 2.715 | 7 | 0.123 | 1.971 | 24 | 12.432 | -17 |
-| encoder.layer.10.intermediate.dense | Linear | 1.528 | 2.713 | 8 | 0.125 | 2.002 | 16 | 12.230 | -8 |
-| encoder.layer.11.intermediate.dense | Linear | 1.520 | 2.698 | 9 | 0.125 | 2.002 | 18 | 12.163 | -9 |
-| encoder.layer.0.intermediate.dense | Linear | 1.518 | 2.695 | 10 | 0.124 | 1.986 | 22 | 12.248 | -12 |
-| encoder.layer.8.output.dense | Linear | 1.477 | 2.622 | 13 | 0.154 | 2.467 | 8 | 9.592 | 5 |
-| encoder.layer.0.output.dense | Linear | 1.467 | 2.605 | 14 | 0.154 | 2.467 | 7 | 9.529 | 7 |
-| encoder.layer.6.output.dense | Linear | 1.466 | 2.602 | 15 | 0.155 | 2.480 | 4 | 9.471 | 11 |
-| encoder.layer.7.output.dense | Linear | 1.465 | 2.602 | 16 | 0.155 | 2.481 | 3 | 9.463 | 13 |
-| encoder.layer.5.output.dense | Linear | 1.464 | 2.599 | 17 | 0.154 | 2.468 | 6 | 9.502 | 11 |
-| encoder.layer.10.output.dense | Linear | 1.463 | 2.597 | 18 | 0.155 | 2.484 | 1 | 9.436 | 17 |
-| encoder.layer.3.output.dense | Linear | 1.460 | 2.592 | 19 | 0.155 | 2.477 | 5 | 9.445 | 14 |
-| encoder.layer.4.output.dense | Linear | 1.459 | 2.591 | 20 | 0.153 | 2.459 | 10 | 9.509 | 10 |
-| encoder.layer.9.output.dense | Linear | 1.452 | 2.579 | 22 | 0.155 | 2.484 | 2 | 9.371 | 20 |
-| encoder.layer.1.output.dense | Linear | 1.450 | 2.573 | 24 | 0.154 | 2.465 | 9 | 9.422 | 15 |
+| layer_name                          | layer_type   |        time_ms_cpu |            pct_cpu |   rank_cpu |         time_ms_gpu |            pct_gpu |   rank_gpu |            speedup |   rank_change |
+|:------------------------------------|:-------------|-------------------:|-------------------:|-----------:|--------------------:|-------------------:|-----------:|-------------------:|--------------:|
+| encoder.layer.6.intermediate.dense  | Linear       | 1.5754000000000001 | 2.796909799925257  |          1 | 0.126125            | 2.0209829708649965 |         14 | 12.49078295341923  |           -13 |
+| encoder.layer.4.intermediate.dense  | Linear       | 1.546              | 2.744714073050938  |          2 | 0.12329499999999999 | 1.9756360387932586 |         23 | 12.539032401962773 |           -21 |
+| encoder.layer.5.intermediate.dense  | Linear       | 1.5403             | 2.7345944933508144 |          3 | 0.124625            | 1.9969474945018848 |         20 | 12.359478435305919 |           -17 |
+| encoder.layer.3.intermediate.dense  | Linear       | 1.5389499999999998 | 2.7321977507902586 |          4 | 0.12632             | 2.024107582792201  |         13 | 12.18294806839772  |            -9 |
+| encoder.layer.8.intermediate.dense  | Linear       | 1.53135            | 2.7187049778567616 |          5 | 0.1248              | 1.9997516334109142 |         19 | 12.270432692307693 |           -14 |
+| encoder.layer.1.intermediate.dense  | Linear       | 1.5303             | 2.716840844754107  |          6 | 0.12493             | 2.001834708029051  |         15 | 12.249259585367806 |            -9 |
+| encoder.layer.7.intermediate.dense  | Linear       | 1.52925            | 2.714976711651453  |          7 | 0.12301000000000001 | 1.9710692982842677 |         24 | 12.431916104381756 |           -17 |
+| encoder.layer.10.intermediate.dense | Linear       | 1.5279500000000001 | 2.712668737333881  |          8 | 0.12493             | 2.001834708029051  |         16 | 12.230449051468824 |            -8 |
+| encoder.layer.11.intermediate.dense | Linear       | 1.5195             | 2.6976669042696635 |          9 | 0.12493             | 2.001834708029051  |         17 | 12.162811174257586 |            -8 |
+| encoder.layer.0.intermediate.dense  | Linear       | 1.5181499999999999 | 2.6952701617091077 |         10 | 0.12395500000000001 | 1.986211648393028  |         22 | 12.24758985115566  |           -12 |
+| encoder.layer.8.output.dense        | Linear       | 1.4767000000000001 | 2.6216812882757567 |         13 | 0.153955            | 2.466921175655267  |          8 |  9.591763827092333 |             5 |
+| encoder.layer.0.output.dense        | Linear       | 1.46715            | 2.604726553865901  |         14 | 0.15396500000000002 | 2.467081412164355  |          7 |  9.529113759620692 |             7 |
+| encoder.layer.6.output.dense        | Linear       | 1.4657499999999999 | 2.602241043062362  |         15 | 0.15476499999999999 | 2.479900332891347  |          4 |  9.470810583788325 |            11 |
+| encoder.layer.7.output.dense        | Linear       | 1.4654             | 2.6016196653614774 |         16 | 0.15485             | 2.4812623432185905 |          3 |  9.46335163061027  |            13 |
+| encoder.layer.5.output.dense        | Linear       | 1.4637             | 2.598601545100037  |         17 | 0.154045            | 2.468363304237054  |          6 |  9.501768963614529 |            11 |
+| encoder.layer.10.output.dense       | Linear       | 1.4627             | 2.596826180240366  |         18 | 0.15502             | 2.4839863638730764 |          1 |  9.435556702360985 |            17 |
+| encoder.layer.3.output.dense        | Linear       | 1.45975            | 2.5915888539043377 |         19 | 0.15456             | 2.476615484455056  |          5 |  9.444552277432713 |            14 |
+| encoder.layer.4.output.dense        | Linear       | 1.4593500000000001 | 2.59087870796047   |         20 | 0.15347             | 2.4591497049645272 |         10 |  9.509024565061576 |            10 |
+| encoder.layer.9.output.dense        | Linear       | 1.45245            | 2.5786286904287414 |         22 | 0.154995            | 2.483585772600358  |          2 |  9.37094744991774  |            20 |
+| encoder.layer.1.output.dense        | Linear       | 1.4495             | 2.573391364092713  |         24 | 0.15384             | 2.4650784558007617 |          9 |  9.422126885075404 |            15 |
 
 ## CPU và GPU · tỷ trọng theo loại layer
 
-| layer_type | time_ms_cpu | n_layers | pct_cpu | time_ms_gpu | pct_gpu | pct_change |
-| --- | --- | --- | --- | --- | --- | --- |
-| Linear | 53.776 | 73 | 95.471 | 5.938 | 95.146 | -0.326 |
-| GELUActivation | 1.564 | 12 | 2.777 | 0.082 | 1.318 | -1.459 |
-| LayerNorm | 0.876 | 25 | 1.555 | 0.200 | 3.198 | 1.644 |
-| Embedding | 0.094 | 3 | 0.167 | 0.017 | 0.269 | 0.102 |
-| Tanh | 0.017 | 1 | 0.031 | 0.004 | 0.069 | 0.038 |
+| layer_type     |   time_ms_cpu |   n_layers_cpu |              pct_cpu |   time_ms_gpu |   n_layers_gpu |             pct_gpu |           pct_change |
+|:---------------|--------------:|---------------:|---------------------:|--------------:|---------------:|--------------------:|---------------------:|
+| Linear         |      53.77555 |             73 | 95.47122177946594    |      5.93783  |             73 | 95.14571507545136   | -0.3255067040145718  |
+| GELUActivation |       1.56405 |             12 |  2.776759408767994   |      0.082235 |             12 |  1.317704932480341  | -1.459054476287653   |
+| LayerNorm      |       0.87565 |             25 |  1.5545982393706685  |      0.19961  |             25 |  3.1984809578938513 |  1.6438827185231828  |
+| Embedding      |       0.094   |              3 |  0.16688429680904796 |      0.01681  |              3 |  0.2693575717759412 |  0.10247327496689326 |
+| Tanh           |       0.0172  |              1 |  0.03053627558633643 |      0.00429  |              1 |  0.0687414623985002 |  0.03820518681216377 |

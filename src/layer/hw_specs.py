@@ -112,3 +112,20 @@ def get_hardware_specs(device: str) -> Dict[str, float]:
         "memory_bandwidth_gb_s": spec.bandwidth_gbs,
         "vram_gb": 16.0 if "t4" in spec.hw_id else 12.0,
     }
+
+
+def calculate_roofline_efficiency(
+    gflops: float,
+    time_ms: float,
+    device: str,
+    precision: str = "fp32",
+) -> float:
+    """Calculate percentage efficiency relative to theoretical hardware compute ceiling."""
+    if time_ms <= 0.0 or gflops <= 0.0:
+        return 0.0
+    specs = get_hardware_specs(device)
+    peak_tflops = specs.get(f"peak_{precision.lower()}_tflops", specs.get("peak_fp32_tflops", 1.0))
+    achieved_tflops = gflops / time_ms
+    pct = (achieved_tflops / peak_tflops) * 100.0 if peak_tflops > 0 else 0.0
+    return round(min(100.0, pct), 2)
+
