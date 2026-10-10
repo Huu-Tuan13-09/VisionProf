@@ -27,7 +27,6 @@ class DistilBERTAdapter(BaseTorchAdapter):
             config = DistilBertConfig()
             model = DistilBertModel(config)
         except Exception:
-            # Fallback embedding + transformer layer
             model = nn.Sequential(
                 nn.Embedding(1000, 128),
                 nn.TransformerEncoder(
@@ -44,8 +43,11 @@ class DistilBERTAdapter(BaseTorchAdapter):
     def make_input(self, batch_size: int, device: str = "cpu", precision: str = "fp32", seq_len: int = 128, **kwargs: Any) -> Any:
         dev = "cuda" if "cuda" in device.lower() or "t4" in device.lower() else "cpu"
         input_ids = torch.randint(0, 1000, (batch_size, seq_len), device=dev, dtype=torch.long)
-        attention_mask = torch.ones(batch_size, seq_len, device=dev, dtype=torch.long)
-        return {"input_ids": input_ids, "attention_mask": attention_mask}
+        # Omit attention_mask during benchmarking unless explicitly requested to prevent hidden CUDA sync
+        if kwargs.get("include_mask", False):
+            attention_mask = torch.ones(batch_size, seq_len, device=dev, dtype=torch.long)
+            return {"input_ids": input_ids, "attention_mask": attention_mask}
+        return {"input_ids": input_ids}
 
 
 class BERTBaseAdapter(BaseTorchAdapter):
@@ -77,5 +79,7 @@ class BERTBaseAdapter(BaseTorchAdapter):
     def make_input(self, batch_size: int, device: str = "cpu", precision: str = "fp32", seq_len: int = 128, **kwargs: Any) -> Any:
         dev = "cuda" if "cuda" in device.lower() or "t4" in device.lower() else "cpu"
         input_ids = torch.randint(0, 1000, (batch_size, seq_len), device=dev, dtype=torch.long)
-        attention_mask = torch.ones(batch_size, seq_len, device=dev, dtype=torch.long)
-        return {"input_ids": input_ids, "attention_mask": attention_mask}
+        if kwargs.get("include_mask", False):
+            attention_mask = torch.ones(batch_size, seq_len, device=dev, dtype=torch.long)
+            return {"input_ids": input_ids, "attention_mask": attention_mask}
+        return {"input_ids": input_ids}

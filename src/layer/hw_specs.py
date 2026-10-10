@@ -1,48 +1,114 @@
-"""Theoretical peak hardware specifications for Roofline and efficiency calculations."""
+"""Hardware specification definitions and detection for Roofline calculations."""
 
-from typing import Dict
+from dataclasses import asdict, dataclass
+from typing import Any, Dict, Optional
+
+try:
+    import psutil
+    HAS_PSUTIL = True
+except ImportError:
+    HAS_PSUTIL = False
+
+try:
+    import torch
+    HAS_TORCH = True
+except ImportError:
+    HAS_TORCH = False
 
 
-HARDWARE_PEAKS: Dict[str, Dict[str, float]] = {
-    "colab_t4": {
-        "peak_fp32_tflops": 8.1,
-        "peak_fp16_tflops": 65.0,
-        "memory_bandwidth_gb_s": 320.0,
-        "vram_gb": 16.0,
-    },
-    "colab_cpu": {
-        "peak_fp32_tflops": 0.14,
-        "peak_fp16_tflops": 0.14,
-        "memory_bandwidth_gb_s": 35.0,
-        "vram_gb": 12.7,
-    },
-    "cpu_laptop": {
-        "peak_fp32_tflops": 0.25,
-        "peak_fp16_tflops": 0.25,
-        "memory_bandwidth_gb_s": 45.0,
-        "vram_gb": 16.0,
-    },
+@dataclass
+class HardwareSpec:
+    """Theoretical peak computing capacity and bandwidth limits for a hardware target."""
+
+    hw_id: str
+    name: str
+    peak_gflops_fp32: float
+    peak_gflops_fp16: float
+    bandwidth_gbs: float
+    source: str = "datasheet"
+
+    def peak_gflops(self, precision: str = "fp32") -> float:
+        """Return peak compute capability in GFLOP/s based on target precision."""
+        return self.peak_gflops_fp16 if precision.lower() == "fp16" else self.peak_gflops_fp32
+
+    def ridge_point(self, precision: str = "fp32") -> float:
+        """Arithmetic intensity (FLOP/byte) threshold where workload transitions to compute-bound."""
+        return self.peak_gflops(precision) / self.bandwidth_gbs if self.bandwidth_gbs > 0 else 0.0
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert specification into a JSON-serializable dictionary."""
+        return asdict(self)
+
+
+KNOWN_GPUS: Dict[str, HardwareSpec] = {
+    "T4": HardwareSpec(
+        hw_id="colab_t4",
+        name="NVIDIA Tesla T4",
+        peak_gflops_fp32=8_100.0,
+        peak_gflops_fp16=65_000.0,
+        bandwidth_gbs=320.0,
+        source="datasheet",
+    ),
 }
 
 
+def estimate_cpu_spec(
+    flops_per_cycle_per_core: int = 32,
+    bandwidth_gbs: float = 51.2,
+    max_freq_ghz: Optional[float] = None,
+    n_cores: Optional[int] = None,
+) -> HardwareSpec:
+    """Estimate peak theoretical capacity for local host CPU."""
+    cores = n_cores or (psutil.cpu_count(logical=False) if HAS_PSUTIL else 4) or 4
+    freq = max_freq_ghz
+    if freq is None and HAS_PSUTIL:
+        f = psutil.cpu_freq()
+        freq = (f.max or f.current) / 1000.0 if f else 2.5
+    freq = freq or 2.5
+    peak = cores * freq * flops_per_cycle_per_core
+    return HardwareSpec(
+        hw_id="cpu_laptop",
+        name=f"CPU {cores} cores @ {freq:.2f} GHz",
+        peak_gflops_fp32=peak,
+        peak_gflops_fp16=peak,
+        bandwidth_gbs=bandwidth_gbs,
+        source="estimate",
+    )
+
+
+def detect_hardware(device: str = "cpu", **cpu_overrides: Any) -> HardwareSpec:
+    """Detect hardware specs from target device name or active PyTorch runtime."""
+    dev_lower = device.strip().lower()
+
+    if "t4" in dev_lower:
+        return KNOWN_GPUS["T4"]
+
+    if dev_lower == "colab_cpu":
+        return HardwareSpec(
+            hw_id="colab_cpu",
+            name="Intel Xeon CPU @ 2.20GHz (Colab)",
+            peak_gflops_fp32=140.0,
+            peak_gflops_fp16=140.0,
+            bandwidth_gbs=35.0,
+            source="datasheet",
+        )
+
+    if dev_lower.startswith("cuda") and HAS_TORCH and torch.cuda.is_available():
+        gpu_name = torch.cuda.get_device_name(0)
+        for key, spec in KNOWN_GPUS.items():
+            if key in gpu_name:
+                return spec
+        return KNOWN_GPUS["T4"]
+
+    return estimate_cpu_spec(**cpu_overrides)
+
+
 def get_hardware_specs(device: str) -> Dict[str, float]:
-    """Retrieve theoretical hardware peak specification dictionary for a given device."""
-    dev_key = device.strip().lower().replace("-", "_")
-    return HARDWARE_PEAKS.get(dev_key, HARDWARE_PEAKS["colab_cpu"])
-
-
-def calculate_roofline_efficiency(
-    gflops: float,
-    time_ms: float,
-    device: str,
-    precision: str = "fp32",
-) -> float:
-    """Calculate percentage efficiency relative to theoretical hardware compute ceiling."""
-    if time_ms <= 0.0 or gflops <= 0.0:
-        return 0.0
-    specs = get_hardware_specs(device)
-    peak_tflops = specs.get(f"peak_{precision.lower()}_tflops", specs["peak_fp32_tflops"])
-    # Actual TFLOPs achieved = (GFLOPs / 1000) / (time_ms / 1000) = GFLOPs / time_ms
-    achieved_tflops = gflops / time_ms
-    pct = (achieved_tflops / peak_tflops) * 100.0
-    return round(min(100.0, pct), 2)
+    """Backward-compatible helper returning dictionary of peaks."""
+    spec = detect_hardware(device)
+    return {
+        "peak_fp32_tflops": spec.peak_gflops_fp32 / 1000.0,
+        "peak_fp16_tflops": spec.peak_gflops_fp16 / 1000.0,
+        "memory_bandwidth_gb_s": spec.bandwidth_gbs,
+        "vram_gb": 16.0 if "t4" in spec.hw_id else 12.0,
+    }

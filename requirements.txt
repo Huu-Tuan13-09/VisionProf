@@ -20,7 +20,7 @@ pandas>=2.0.0
 numpy>=1.24.0
 
 # --- NLP & Tabular Models (Plan v2.5) ---
-transformers>=4.35.0         # BERT, DistilBERT
+transformers>=4.40.0         # BERT, DistilBERT
 datasets>=2.14.0             # SST-2 dataset
 xgboost>=2.0.0               # Machine Learning model
 
@@ -30,9 +30,11 @@ pynvml>=11.5.0              # GPU memory + utilization (safe fallback nếu khô
 psutil>=5.9.0               # CPU + RAM monitoring
 
 # --- Visualization & Remote Tunneling (Dashboard) ---
-streamlit>=1.28.0
+streamlit>=1.46.0           # width="stretch", theme context
 plotly>=5.18.0
+matplotlib>=3.8.0           # Figures generation for report
 pyngrok>=7.0.0
+
 
 # --- Scientific Computing ---
 scipy>=1.11.0               # Statistical tests cho A/B Comparison

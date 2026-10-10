@@ -6,7 +6,10 @@ from typing import Dict, Union
 
 def sanitize_name(name: str) -> str:
     """Normalize names of devices, models, and experiments into safe directory tokens."""
-    return name.strip().lower().replace("-", "_").replace(" ", "_").replace("/", "_")
+    token = name.strip().replace("-", "_").replace(" ", "_").replace("/", "_")
+    if token.upper().startswith("TN") and token[2:].isdigit():
+        return token.upper()
+    return token.lower()
 
 
 def build_result_path(
@@ -39,5 +42,7 @@ def get_expected_result_files(run_dir: Union[str, Path]) -> Dict[str, Path]:
         "summary": dir_path / "summary.json",
         "resources": dir_path / "resources.csv",
         "layers": dir_path / "layers.csv",
+        "layers_summary": dir_path / "layers_summary.csv",
+        "layer_meta": dir_path / "layer_meta.json",
         "phases": dir_path / "phases.csv",
     }

@@ -1,0 +1,19 @@
+{
+  "model": "bert_base",
+  "hw_id": "cpu_laptop",
+  "n_hooked": 114,
+  "t_clean_ms": 66.35515000004943,
+  "t_hooked_ms": 69.81160000009368,
+  "overhead_pct": 5.209015426898541,
+  "overhead_per_layer_ms": 0.030319736842493353,
+  "layer_sum_ms": 60.241749999999996,
+  "t_base_ms": 66.35515000004943,
+  "unattributed_pct": 9.213150750235489,
+  "matched_ours_ms": 60.2258,
+  "matched_ref_ms": 60.06650399999993,
+  "total_rel_error_pct": 0.26519938633363593,
+  "timer_bias_ms": 0.0006,
+  "timer_floor_ms": 0.0023,
+  "layers_below_3x_floor_pct": 0.0,
+  "hidden_syncs_per_forward": 0
+}

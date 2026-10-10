@@ -9,6 +9,7 @@ from src.zoo.tabular import MLPAdapter, XGBoostAdapter
 
 _REGISTRY: Dict[str, Type[ModelAdapter]] = {
     "mobilenet_v3": MobileNetV3Adapter,
+    "mobilenet_v3_large": MobileNetV3Adapter,
     "resnet50": ResNet50Adapter,
     "vit_b_16": ViTB16Adapter,
     "yolov8n": YOLOv8nAdapter,
@@ -27,6 +28,10 @@ def get_model_adapter(name: str) -> ModelAdapter:
     return _REGISTRY[clean_name]()
 
 
+# Backward compatibility alias for TV1 scripts
+get_adapter = get_model_adapter
+
+
 def list_available_models() -> List[str]:
     """Return list of all registered model identifiers."""
     return list(_REGISTRY.keys())
@@ -34,6 +39,7 @@ def list_available_models() -> List[str]:
 
 __all__ = [
     "get_model_adapter",
+    "get_adapter",
     "list_available_models",
     "MobileNetV3Adapter",
     "ResNet50Adapter",
