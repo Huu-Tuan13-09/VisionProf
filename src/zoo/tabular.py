@@ -67,14 +67,18 @@ class XGBoostAdapter(BaseNonTorchAdapter):
                 tree_method=tree_method,
                 device=device_target,
             )
-            # Fit on a tiny dummy matrix to initialize trees
-            dummy_x = np.random.randn(20, 54).astype(np.float32)
-            dummy_y = np.random.randint(0, 7, size=(20,))
+            # Fit on 1,000 synthetic samples to initialize trees to realistic depth 6
+            dummy_x = np.random.randn(1000, 54).astype(np.float32)
+            dummy_y = np.random.randint(0, 7, size=(1000,))
             model.fit(dummy_x, dummy_y)
             return model
         except Exception as exc:
             logger.warning("XGBoost not available or GPU mode unsupported: %s. Using Mock.", exc)
-            return _MockXGBoostModel()
+            mock = _MockXGBoostModel()
+            dummy_x = np.random.randn(1000, 54).astype(np.float32)
+            dummy_y = np.random.randint(0, 7, size=(1000,))
+            mock.fit(dummy_x, dummy_y)
+            return mock
 
     def make_input(self, batch_size: int, device: str = "cpu", precision: str = "fp32", **kwargs: Any) -> Any:
         return np.random.randn(batch_size, 54).astype(np.float32)
@@ -82,8 +86,31 @@ class XGBoostAdapter(BaseNonTorchAdapter):
     def forward(self, model: Any, inputs: Any) -> Any:
         return model.predict(inputs)
 
+    def fit(self, model: Any, x: Any, y: Any) -> Any:
+        """Fit XGBoost model on tabular data and labels."""
+        model.fit(x, y)
+        return model
+
+    def train_step(self, model: Any, batch: Any, optimizer: Any = None, timer: Any = None) -> float:
+        """Execute one training fit step for tabular XGBoost model."""
+        if isinstance(batch, (tuple, list)) and len(batch) == 2:
+            x, y = batch
+        else:
+            x = batch
+            y = np.random.randint(0, 7, size=(len(x),))
+        if timer is not None:
+            with timer.measure("forward"):
+                model.fit(x, y)
+        else:
+            model.fit(x, y)
+        return 0.0
+
 
 class _MockXGBoostModel:
     """Mock fallback for environments without xgboost installed."""
+
+    def fit(self, x: Any, y: Any) -> "_MockXGBoostModel":
+        return self
+
     def predict(self, x: Any) -> Any:
         return np.zeros(len(x), dtype=int)

@@ -1,0 +1,7 @@
+{
+  "model": "xgboost",
+  "device": "cpu_laptop",
+  "batch_size": 8,
+  "precision": "fp32",
+  "experiment": "TN4"
+}

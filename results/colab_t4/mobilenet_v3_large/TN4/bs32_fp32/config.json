@@ -1,0 +1,7 @@
+{
+  "model": "mobilenet_v3_large",
+  "device": "colab_t4",
+  "batch_size": 32,
+  "precision": "fp32",
+  "experiment": "TN4"
+}

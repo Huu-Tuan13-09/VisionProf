@@ -74,6 +74,9 @@ class BenchmarkSummary:
     peak_vram_mb: float = 0.0
     rss_mb: float = 0.0
     reserved_vram_mb: float = 0.0
+    std_ms: float = 0.0
+    params_m: float = 0.0
+    cold_start_ms: float = 0.0
     extra: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:

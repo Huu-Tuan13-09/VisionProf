@@ -1,0 +1,7 @@
+{
+  "model": "yolov8n",
+  "device": "cpu_laptop",
+  "batch_size": 32,
+  "precision": "fp32",
+  "experiment": "TN4"
+}

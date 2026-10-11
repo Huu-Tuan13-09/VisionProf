@@ -20,12 +20,12 @@ TV2 phụ trách **Mức Model (Toàn bộ mô hình)**, sở hữu:
    - **Rule Checker:** Mọi task code đều phải pass `python3 scripts/verify_rules.py` (exit code 0).
 
 2. **Quy trình Git & Khởi tạo Nhánh làm việc (`agent-rules/03_git_workflow_and_collaboration.md`):**
-   - **Vấn đề phân tách nhánh:** Nhánh `tv1-layer` chứa engine đo Layer của TV1 nhưng thiếu `src/zoo/`, `src/model/`, `scripts/` (vốn nằm trên `main`). Ngược lại `main` thiếu code của TV1.
-   - **Giải pháp (Phase 0):** Tạo nhánh `feat/tv2-model-benchmark` từ `main`, merge `tv1-layer` vào, giải quyết 2 xung đột nhỏ (`requirements.txt` và `tests/test_layer_profiler.py`). Nhờ đó, TV2 có đầy đủ cả hạ tầng Model Zoo lẫn bộ đo Layer của TV1.
+   - **Tình trạng nhánh chính (`main`):** Nhánh `main` hiện tại đã hoàn tất việc tích hợp toàn diện TV1 theo chuẩn Modular v2.0 (`src/layer/`), 100% test xanh (38/38 tests), không còn xung đột.
+   - **Quy trình làm việc của TV2:** Khởi tạo feature branch từ `main` mới nhất: `git checkout -b feature/tv2-model-benchmark`. Không merge lại nhánh cũ `tv1-layer` để tránh phá vỡ kiến trúc modular.
 
 3. **Tách biệt Đo Benchmark Sạch khỏi Profiler Hooks (Khắc phục lỗi phồng trễ):**
    - *Nguyên nhân:* Kết quả TN2 của TV1 chứng minh hook làm chậm mô hình 5–11% trên CPU và **109–166% trên GPU T4 ở batch 1**.
-   - *Quyết định:* Trong `scripts/run_experiment.py`, vòng lặp đo latency (P50..P99) của TV2 được chạy ở **Lượt 1 (Sạch hoàn toàn)**. Sau đó mới gắn `LayerPlugin` ở **Lượt 2** để trích xuất `layers.csv`.
+   - *Quyết định:* Trong `scripts/run_experiment.py`, vòng lặp đo latency (P50..P99) của TV2 được chạy ở **Lượt 1 (Sạch hoàn toàn)**. Sau đó mới gắn `LayerProfilerPlugin` ở **Lượt 2** để trích xuất `layers.csv`.
 
 4. **Đo Peak VRAM Chính xác (Loại bỏ điểm mù 100ms của Background Thread):**
    - *Nguyên nhân:* Forward pass ở batch 1 chỉ mất 5–20ms, đỉnh bộ nhớ xuất hiện và giải phóng ngay. Luồng `ResourceSampler` lấy mẫu mỗi 100ms sẽ **bỏ sót hoàn toàn đỉnh VRAM**!
@@ -43,27 +43,27 @@ TV2 phụ trách **Mức Model (Toàn bộ mô hình)**, sở hữu:
    - Với BERT/DistilBERT: `make_input` chỉ trả về `{"input_ids": ids}`, **loại bỏ `attention_mask`** khi không có padding để ngăn lỗi đồng bộ ngầm CPU-GPU (làm sai số GPU tới 87%).
 
 7. **Cung cấp API phục vụ TV3 (Điểm chạm Mục 8.1 ① & 8.3 ②):**
-   - Cung cấp `train_step(self, model, batch, optimizer)` trong các adapter PyTorch cho 5 model: ResNet-50, MobileNetV3-Large, DistilBERT, MLP, XGBoost (`fit`).
+   - Cung cấp `train_step(self, model, batch, optimizer, timer=None)` trong các adapter PyTorch cho 5 model: ResNet-50, MobileNetV3-Large, DistilBERT, MLP, XGBoost (`fit`). Cho phép TV3 truyền `PhaseTimer` để bọc các giai đoạn `forward`, `backward`, `optimizer`.
    - Cung cấp `preprocess()` và `postprocess()` thật: YOLOv8 (resize 640x640 + NMS) và BERT (tokenizer + decode) phục vụ TN7.
 
 ---
 
 ## 3. Danh sách Giai đoạn & Nhiệm vụ Chi tiết (Detailed Tasks)
 
-### 🟢 Phase 0: Đồng bộ Git & Hợp nhất Mã nguồn (Pre-requisite Setup)
+### 🟢 Phase 0: Đồng bộ Git & Hợp nhất Mã nguồn (ĐÃ HOÀN THÀNH 100% TRÊN MAIN)
 
-#### Task 0.1: Tạo nhánh làm việc và Hợp nhất `main` với `tv1-layer`
-- **Mô tả:** Khởi tạo nhánh `feat/tv2-model-benchmark` từ `main`, thực hiện merge nhánh `tv1-layer` vào để có đầy đủ cả hạ tầng module trên `main` (`src/core/`, `src/zoo/`, `src/model/`, `scripts/`) và engine của TV1 (`src/layer_plugin.py`, `src/collector.py`, `src/flops.py`).
+#### Task 0.1: Khởi tạo Nhánh làm việc từ `main` Chuẩn Modular
+- **Mô tả:** Nhánh `main` đã hoàn tất tích hợp `feature/integrate-tv1-modular`. TV2 khởi tạo nhánh làm việc `feature/tv2-model-benchmark` trực tiếp từ `main`.
 - **Tiêu chí chấp nhận:**
-  - [ ] Giải quyết xung đột `requirements.txt`: gộp đủ `transformers>=4.40.0`, `matplotlib>=3.8.0`, `pyngrok>=7.0.0`, `streamlit>=1.46.0`.
-  - [ ] Giải quyết xung đột `tests/test_layer_profiler.py`: giữ lại trọn vẹn bộ 11 tests chuẩn của TV1.
-  - [ ] Cả `src/zoo/` và `src/layer_plugin.py` đều cùng tồn tại trong working tree.
+  - [x] Nhánh `main` đồng bộ đầy đủ code của TV1 và TV3.
+  - [x] Tạo nhánh `feature/tv2-model-benchmark` từ `main`.
+  - [x] Toàn bộ test suite trong `tests/` pass 100% (38/38 passed).
+  - [x] `python3 scripts/verify_rules.py` pass exit code 0.
 - **Kiểm chứng:**
-  - [ ] `git status` sạch sẽ trên nhánh mới.
-  - [ ] Chạy `pytest tests/test_layer_profiler.py tests/test_layer_flops_plugin.py -q` pass 22 tests.
+  - [x] `git status` sạch sẽ trên nhánh mới.
+  - [x] `pytest -q` pass.
 - **Phụ thuộc:** Không.
-- **Tập tin liên quan:** `requirements.txt`, `tests/test_layer_profiler.py`.
-- **Độ lớn:** S (2 files).
+- **Độ lớn:** XS.
 
 ---
 
@@ -184,7 +184,7 @@ TV2 phụ trách **Mức Model (Toàn bộ mô hình)**, sở hữu:
 #### Task 2.4: Tái cấu trúc `scripts/run_experiment.py` — Tách Lượt Đo Sạch & Ghép `LayerPlugin`
 - **Mô tả:** Tái cấu trúc luồng chạy trong `scripts/run_experiment.py`:
   1. **Lượt 1 (Model Benchmark sạch):** Chạy warmup ➔ Chạy 50 vòng đo latency không gắn bất kỳ hook nào ➔ Ghi `benchmark.csv`, `summary.json`, `resources.csv`.
-  2. **Lượt 2 (Profiler Plugins):** Nếu cờ `--profilers layer` được bật, khởi tạo `from src.layer_plugin import LayerPlugin`, gọi `attach(model, device)`, chạy đo forward bằng `run_model` ➔ Ghi `layers.csv`, `layers_summary.csv`, `layer_meta.json` ➔ `detach()`.
+  2. **Lượt 2 (Profiler Plugins):** Nếu cờ `--profilers layer` được bật, khởi tạo `from src.layer.plugin import LayerProfilerPlugin`, gọi `attach(model, device)`, chạy đo forward ➔ Ghi `layers.csv`, `layers_summary.csv`, `layer_meta.json` ➔ `detach()`.
   3. Ghi `env.json` (chuẩn hóa tên thiết bị: `cpu_laptop` hoặc `colab_t4`) và `config.json`.
   4. Chuẩn hóa tên thư mục thực nghiệm chữ HOA: `TN1`, `TN2`, `TN3`, `TN4`, `TN5` trong `build_result_path` để tránh lỗi Case-Sensitivity trên Linux.
   5. Hỗ trợ cờ `--skip-existing`.
@@ -195,7 +195,7 @@ TV2 phụ trách **Mức Model (Toàn bộ mô hình)**, sở hữu:
   - [ ] File `scripts/run_experiment.py` $\le 300$ dòng code.
 - **Kiểm chứng:**
   - [ ] Chạy lệnh CLI mẫu trên CPU Laptop và kiểm tra danh mục file trong thư mục kết quả.
-  - [ ] Chạy regression test: `pytest tests/test_layer_profiler.py tests/test_layer_flops_plugin.py -q` (22 tests vẫn pass).
+  - [ ] Chạy regression test: `pytest -q` (38 tests vẫn pass).
   - [ ] Rule test: `python3 scripts/verify_rules.py`
 - **Phụ thuộc:** Task 2.1, 2.2, 2.3.
 - **Tập tin liên quan:** `scripts/run_experiment.py`, `src/core/paths.py`.
@@ -365,10 +365,10 @@ TV2 phụ trách **Mức Model (Toàn bộ mô hình)**, sở hữu:
 
 | Rủi ro tiềm ẩn | Mức độ | Biện pháp phòng ngừa chủ động |
 | :--- | :---: | :--- |
-| **Phân tách nhánh Git (tv1-layer vs main)** | **Nghiêm trọng (High)** | Thêm Phase 0: Tạo nhánh `feat/tv2-model-benchmark` từ `main`, merge `tv1-layer` vào trước khi code. |
+| **Phân tách nhánh Git (tv1-layer vs main)** | **Nghiêm trọng (High)** | Đã giải quyết: Nhánh `main` đã tích hợp sạch TV1 modular. TV2 chỉ cần tạo `feature/tv2-model-benchmark` trực tiếp từ `main`. |
 | **Bỏ sót đỉnh Peak VRAM do luồng 100ms** | **Nghiêm trọng (High)** | Bắt buộc dùng `torch.cuda.max_memory_allocated()` của PyTorch allocator thay vì chỉ dựa vào `ResourceSampler`. |
 | **Lỗi Case-Sensitivity trên Colab Linux (`TN1` vs `tn1`)** | **Cao (High)** | Thống nhất chuẩn tên thực nghiệm viết HOA trong `build_result_path`: `TN1`..`TN5`. |
-| **Đo Latency bị nhiễm bẩn bởi hook overhead** | **Nghiêm trọng (High)** | Tách `run_experiment.py` thành 2 pha độc lập: Pha 1 đo sạch (P50, throughput), Pha 2 mới gắn `LayerPlugin`. |
+| **Đo Latency bị nhiễm bẩn bởi hook overhead** | **Nghiêm trọng (High)** | Tách `run_experiment.py` thành 2 pha độc lập: Pha 1 đo sạch (P50, throughput), Pha 2 mới gắn `LayerProfilerPlugin`. |
 | **Colab ngắt kết nối / Hết quota GPU giữa chừng** | **Cao (High)** | Lưu kết quả tức thời sau mỗi model; sử dụng cờ `--skip-existing`; mount Google Drive trực tiếp. |
 | **Xung đột tên hàm / kiểu dữ liệu với TV1** | **Cao (High)** | Export alias `get_adapter = get_model_adapter`; trả về pure `nn.Module`; hỗ trợ `**kwargs` cho `seq_len`. |
 | **Lỗi đồng bộ ngầm khi đo BERT trên GPU** | **Cao (High)** | Tuyệt đối không truyền `attention_mask` khi input không padding. |

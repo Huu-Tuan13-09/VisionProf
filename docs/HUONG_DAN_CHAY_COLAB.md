@@ -16,22 +16,20 @@ flowchart LR
 
 ---
 
-## 🔑 Bước 1: Tạo GitHub Token (Fine-grained PAT)
+## 🔑 Bước 1: Tạo GitHub Token (Personal Access Token - Classic)
 
-Do repository là **Private**, Google Colab cần một Token để Clone mã nguồn và Push kết quả mà không cần mật khẩu.
+Do repository là **Private** và thuộc tài khoản cá nhân (`Huu-Tuan13-09`), các thành viên trong nhóm (Collaborator) **phải sử dụng Token loại Classic** (vì GitHub Fine-grained PAT không cho phép ủy quyền repository của tài khoản cá nhân khác cho Collaborator).
 
-1. Đăng nhập GitHub, vào: **Settings** $\rightarrow$ **Developer Settings** (góc dưới bên trái).
-2. Chọn **Personal access tokens** $\rightarrow$ **Fine-grained tokens** $\rightarrow$ bấm **Generate new token**.
-3. Điền thông tin:
-   - **Token name**: `colab-visionprof-token`
-   - **Expiration**: `30 days` (hoặc thời gian làm đồ án).
-   - **Repository access**: Chọn **Only select repositories** $\rightarrow$ chọn repo: `Huu-Tuan13-09/VisionProf`.
-   - **Permissions** $\rightarrow$ **Repository permissions**:
-     - `Contents`: Chọn **Read and write** (để clone và push kết quả đo).
-4. Bấm **Generate token** $\rightarrow$ **Copy mã token** (`github_pat_...`).
+1. Truy cập trực tiếp: [github.com/settings/tokens/new](https://github.com/settings/tokens/new)  
+   *(Hoặc vào: **Settings** $\rightarrow$ **Developer Settings** $\rightarrow$ **Personal access tokens** $\rightarrow$ **Tokens (classic)** $\rightarrow$ **Generate new token (classic)**)*.
+2. Điền thông tin:
+   - **Note**: `colab-visionprof-token`
+   - **Expiration**: Chọn `30 days` (hoặc `90 days` trong suốt thời gian làm đồ án).
+   - **Select scopes**: Tích chọn duy nhất ô **`repo`** (Full control of private repositories - bao gồm clone, pull và push).
+3. Bấm **Generate token** ở cuối trang $\rightarrow$ **Copy mã token** (bắt đầu bằng `ghp_...`).
 
 > [!TIP]
-> Token này được cấp quyền chỉ trên duy nhất repo `VisionProf` trong 30 ngày, hoàn toàn an toàn và không ảnh hưởng đến các repo khác của bạn.
+> Token Classic với quyền `repo` hoạt động hoàn hảo cho cả Owner lẫn Collaborator, đảm bảo Google Colab có thể clone và tự động push kết quả đo GPU về đúng nhánh của bạn.
 
 ---
 

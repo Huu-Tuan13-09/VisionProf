@@ -15,14 +15,14 @@ except ImportError:
 
 
 class MobileNetV3Adapter(BaseTorchAdapter):
-    """Adapter for MobileNetV3-Small (Edge lightweight CNN)."""
+    """Adapter for MobileNetV3-Large (5.5M parameters, Edge-optimized CNN)."""
 
-    name: str = "mobilenet_v3"
+    name: str = "mobilenet_v3_large"
     family: str = "cv"
 
     def load(self, device: str, precision: str = "fp32") -> Any:
         import torchvision.models as models
-        model = models.mobilenet_v3_small(weights=None)
+        model = models.mobilenet_v3_large(weights=None)
         dev = "cuda" if "cuda" in device.lower() or "t4" in device.lower() else "cpu"
         model = model.to(dev)
         if precision == "fp16" and dev == "cuda":
@@ -37,7 +37,7 @@ class MobileNetV3Adapter(BaseTorchAdapter):
 
 
 class ResNet50Adapter(BaseTorchAdapter):
-    """Adapter for ResNet-50 (Standard CNN baseline)."""
+    """Adapter for ResNet-50 (Standard 25.6M CNN baseline)."""
 
     name: str = "resnet50"
     family: str = "cv"
@@ -59,7 +59,7 @@ class ResNet50Adapter(BaseTorchAdapter):
 
 
 class ViTB16Adapter(BaseTorchAdapter):
-    """Adapter for Vision Transformer ViT-B/16."""
+    """Adapter for Vision Transformer ViT-B/16 (86.6M params)."""
 
     name: str = "vit_b_16"
     family: str = "cv"
@@ -115,6 +115,25 @@ class YOLOv8nAdapter(BaseTorchAdapter):
         dtype = torch.float16 if precision == "fp16" and dev == "cuda" else torch.float32
         return torch.randn(batch_size, 3, 640, 640, device=dev, dtype=dtype)
 
+    def preprocess(self, raw_data: Any) -> Any:
+        """Preprocess raw image data into standardized 640x640 tensor."""
+        if HAS_TORCH and isinstance(raw_data, torch.Tensor):
+            if raw_data.ndim == 4 and raw_data.shape[-2:] == (640, 640):
+                return raw_data
+            if raw_data.ndim == 4:
+                return nn.functional.interpolate(raw_data, size=(640, 640), mode="bilinear", align_corners=False)
+            if raw_data.ndim == 3:
+                expanded = raw_data.unsqueeze(0)
+                return nn.functional.interpolate(expanded, size=(640, 640), mode="bilinear", align_corners=False)
+        return raw_data
+
     def postprocess(self, model_output: Any) -> Any:
-        """Simulate NMS box filtering on detection output."""
-        return model_output
+        """Simulate NMS box filtering on YOLO detection predictions."""
+        if HAS_TORCH and isinstance(model_output, (list, tuple)) and len(model_output) > 0:
+            preds = model_output[0]
+        else:
+            preds = model_output
+        if HAS_TORCH and isinstance(preds, torch.Tensor):
+            if preds.ndim >= 2:
+                return preds[..., : min(100, preds.shape[-1])]
+        return preds

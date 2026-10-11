@@ -43,7 +43,6 @@ class DistilBERTAdapter(BaseTorchAdapter):
     def make_input(self, batch_size: int, device: str = "cpu", precision: str = "fp32", seq_len: int = 128, **kwargs: Any) -> Any:
         dev = "cuda" if "cuda" in device.lower() or "t4" in device.lower() else "cpu"
         input_ids = torch.randint(0, 1000, (batch_size, seq_len), device=dev, dtype=torch.long)
-        # Omit attention_mask during benchmarking unless explicitly requested to prevent hidden CUDA sync
         if kwargs.get("include_mask", False):
             attention_mask = torch.ones(batch_size, seq_len, device=dev, dtype=torch.long)
             return {"input_ids": input_ids, "attention_mask": attention_mask}
@@ -83,3 +82,30 @@ class BERTBaseAdapter(BaseTorchAdapter):
             attention_mask = torch.ones(batch_size, seq_len, device=dev, dtype=torch.long)
             return {"input_ids": input_ids, "attention_mask": attention_mask}
         return {"input_ids": input_ids}
+
+    def preprocess(self, raw_data: Any) -> Any:
+        """Tokenize raw text inputs into input_ids tensor."""
+        if isinstance(raw_data, str):
+            raw_data = [raw_data]
+        if isinstance(raw_data, (list, tuple)) and all(isinstance(s, str) for s in raw_data):
+            try:
+                from transformers import BertTokenizerFast
+                tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased", local_files_only=True)
+                enc = tokenizer(list(raw_data), padding=True, truncation=True, return_tensors="pt")
+                return {"input_ids": enc["input_ids"]}
+            except Exception:
+                tokens = [[abs(hash(w)) % 1000 + 1 for w in text.split()] or [1] for text in raw_data]
+                max_len = max(len(t) for t in tokens)
+                padded = [t + [0] * (max_len - len(t)) for t in tokens]
+                return {"input_ids": torch.tensor(padded, dtype=torch.long)}
+        return raw_data
+
+    def postprocess(self, model_output: Any) -> Any:
+        """Extract pooled representations or token logits."""
+        if hasattr(model_output, "last_hidden_state"):
+            return model_output.last_hidden_state.mean(dim=1)
+        if hasattr(model_output, "logits"):
+            return model_output.logits.argmax(dim=-1)
+        if isinstance(model_output, (tuple, list)) and len(model_output) > 0:
+            return model_output[0]
+        return model_output
