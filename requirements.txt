@@ -23,6 +23,7 @@ numpy>=1.24.0
 transformers>=4.40.0         # BERT, DistilBERT
 datasets>=2.14.0             # SST-2 dataset
 xgboost>=2.0.0               # Machine Learning model
+scikit-learn>=1.3.0          # Required by XGBClassifier
 
 
 # --- GPU Monitoring ---

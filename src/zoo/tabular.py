@@ -58,25 +58,33 @@ class XGBoostAdapter(BaseNonTorchAdapter):
 
     def load(self, device: str, precision: str = "fp32") -> Any:
         try:
+            import os
+            import sys
+            os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+            device_target = "cuda" if "cuda" in device.lower() or "t4" in device.lower() else "cpu"
+            if device_target == "cpu" or sys.platform == "darwin":
+                os.environ.setdefault("OMP_NUM_THREADS", "1")
             import xgboost as xgb
             tree_method = "hist"
-            device_target = "cuda" if "cuda" in device.lower() or "t4" in device.lower() else "cpu"
-            model = xgb.XGBClassifier(
-                n_estimators=50,
-                max_depth=6,
-                tree_method=tree_method,
-                device=device_target,
-            )
+            kwargs: dict[str, Any] = {
+                "n_estimators": 50,
+                "max_depth": 6,
+                "tree_method": tree_method,
+                "device": device_target,
+            }
+            if device_target == "cpu" or sys.platform == "darwin":
+                kwargs["n_jobs"] = 1
+            model = xgb.XGBClassifier(**kwargs)
             # Fit on 1,000 synthetic samples to initialize trees to realistic depth 6
             dummy_x = np.random.randn(1000, 54).astype(np.float32)
-            dummy_y = np.random.randint(0, 7, size=(1000,))
+            dummy_y = np.arange(1000) % 7
             model.fit(dummy_x, dummy_y)
             return model
         except Exception as exc:
             logger.warning("XGBoost not available or GPU mode unsupported: %s. Using Mock.", exc)
             mock = _MockXGBoostModel()
             dummy_x = np.random.randn(1000, 54).astype(np.float32)
-            dummy_y = np.random.randint(0, 7, size=(1000,))
+            dummy_y = np.arange(1000) % 7
             mock.fit(dummy_x, dummy_y)
             return mock
 
@@ -97,7 +105,15 @@ class XGBoostAdapter(BaseNonTorchAdapter):
             x, y = batch
         else:
             x = batch
-            y = np.random.randint(0, 7, size=(len(x),))
+            num_classes = len(getattr(model, "classes_", []))
+            if num_classes > 1 and len(x) < num_classes:
+                repeat_count = int(np.ceil(num_classes / max(1, len(x))))
+                x = np.repeat(x, repeat_count, axis=0)[:num_classes]
+                y = np.arange(num_classes)
+            elif num_classes > 1:
+                y = np.arange(len(x)) % num_classes
+            else:
+                y = np.zeros(len(x), dtype=int)
         if timer is not None:
             with timer.measure("forward"):
                 model.fit(x, y)

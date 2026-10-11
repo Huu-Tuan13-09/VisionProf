@@ -3,5 +3,12 @@
   "device": "cpu_laptop",
   "batch_size": 8,
   "precision": "fp32",
-  "experiment": "TN4"
+  "seq_len": 128,
+  "experiment": "TN4",
+  "profilers": "layer",
+  "warmup": 5,
+  "measure": 20,
+  "skip_existing": false,
+  "results_dir": "results",
+  "canonical_model": "vit_b_16"
 }

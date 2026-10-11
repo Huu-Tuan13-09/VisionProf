@@ -6,8 +6,9 @@
   "seq_len": 128,
   "experiment": "TN3",
   "profilers": "layer",
-  "warmup": 2,
-  "measure": 5,
+  "warmup": 10,
+  "measure": 30,
   "skip_existing": false,
-  "results_dir": "results"
+  "results_dir": "results",
+  "canonical_model": "resnet50"
 }

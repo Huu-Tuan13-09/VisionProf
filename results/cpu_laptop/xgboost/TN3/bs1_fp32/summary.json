@@ -1,27 +1,27 @@
 {
-  "mean_ms": 0.0004,
-  "p50_ms": 0.0003,
-  "p90_ms": 0.0005,
-  "p95_ms": 0.0006,
-  "p99_ms": 0.0009,
-  "tail_ratio": 3.08,
-  "throughput_fps": 2816901.41,
+  "mean_ms": 0.1353,
+  "p50_ms": 0.1294,
+  "p90_ms": 0.1579,
+  "p95_ms": 0.1612,
+  "p99_ms": 0.1884,
+  "tail_ratio": 1.456,
+  "throughput_fps": 7391.71,
   "peak_vram_mb": 0.0,
-  "rss_mb": 338.95,
+  "rss_mb": 445.55,
   "reserved_vram_mb": 0.0,
-  "std_ms": 0.0002,
+  "std_ms": 0.0164,
   "params_m": 0.0,
-  "cold_start_ms": 0.0028,
+  "cold_start_ms": 1.1993,
   "extra": {
-    "cold_start_ms": 0.0028,
-    "xgboost_single_row_ms": 0.0002,
-    "xgboost_batch_10k_ms": 0.0013,
-    "xgboost_batch_10k_fps": 7996773888.8,
+    "cold_start_ms": 1.1993,
+    "xgboost_single_row_ms": 0.1446,
+    "xgboost_batch_10k_ms": 25.5368,
+    "xgboost_batch_10k_fps": 391592.19,
     "xgboost_n_jobs_latency_ms": {
-      "1": 0.0014,
-      "2": 0.0138,
-      "4": 0.0023,
-      "-1": 0.0022
+      "1": 25.6809,
+      "2": 25.5332,
+      "4": 25.7549,
+      "-1": 25.5942
     }
   }
 }

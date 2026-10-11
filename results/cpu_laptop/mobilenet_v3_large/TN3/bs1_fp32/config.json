@@ -6,8 +6,9 @@
   "seq_len": 128,
   "experiment": "TN3",
   "profilers": "layer",
-  "warmup": 5,
-  "measure": 20,
-  "skip_existing": true,
-  "results_dir": "results"
+  "warmup": 10,
+  "measure": 30,
+  "skip_existing": false,
+  "results_dir": "results",
+  "canonical_model": "mobilenet_v3_large"
 }

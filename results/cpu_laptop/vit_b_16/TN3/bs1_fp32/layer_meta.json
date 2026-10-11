@@ -4,14 +4,14 @@
   "precision": "fp32",
   "n_hooked_layers": 75,
   "n_iterations": 5,
-  "timer_bias_ms": 0.000516921875,
+  "timer_bias_ms": 0.000447265625,
   "total_flops_counter": 35127656448.0,
   "iteration_total_ms": {
-    "0": 118.55288,
-    "1": 54.03883,
-    "2": 48.45575,
-    "3": 47.91097,
-    "4": 50.17054
+    "0": 44.40124,
+    "1": 44.70149,
+    "2": 45.17067,
+    "3": 43.77918,
+    "4": 43.86171
   },
   "gpu_prefill_ok_ratio": null,
   "hardware": {
