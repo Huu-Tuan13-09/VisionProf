@@ -21,6 +21,7 @@ def render(results_dir: Path) -> None:
         st.info("Cần dữ liệu `layers.csv` để tính toán Roofline efficiency.")
         return
 
+    selected_file = st.selectbox("Chọn file layers.csv:", layer_files, format_func=lambda p: str(p.relative_to(results_dir)))
     if not selected_file or selected_file.stat().st_size == 0:
         st.warning("File layers.csv rỗng.")
         return

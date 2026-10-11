@@ -90,7 +90,10 @@ class YOLOv8nAdapter(BaseTorchAdapter):
         dev = "cuda" if "cuda" in device.lower() or "t4" in device.lower() else "cpu"
         try:
             from ultralytics import YOLO
-            yolo = YOLO("yolov8n.pt")
+            try:
+                yolo = YOLO("yolov8n.yaml")
+            except Exception:
+                yolo = YOLO("yolov8n.pt")
             model = yolo.model.to(dev)
         except Exception:
             # Fallback tiny ConvNet backbone if ultralytics package is missing

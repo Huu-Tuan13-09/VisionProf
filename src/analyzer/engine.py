@@ -146,14 +146,21 @@ class DiagnosticEngine:
     def _evaluate_layer_rules(self, layer_file: Path, total_latency: float) -> List[RuleResult]:
         activations: List[float] = []
         durations: List[Tuple[str, float]] = []
-        params: List[Tuple[str, int]] = []
+        params_map: Dict[str, int] = {}
         stats: List[Tuple[str, float, float]] = []
         total_flops = 0.0
+        first_iter: Optional[str] = None
 
         try:
             with open(layer_file, "r", encoding="utf-8") as f:
                 reader = csv.DictReader(f)
                 for row in reader:
+                    it = row.get("iteration", "0")
+                    if first_iter is None:
+                        first_iter = it
+                    if it != first_iter:
+                        continue
+
                     name = row.get("layer_name", "")
                     t_ms = _safe_float(row.get("time_ms", 0.0))
                     act = _safe_float(row.get("activation_mb", 0.0))
@@ -162,12 +169,14 @@ class DiagnosticEngine:
 
                     activations.append(act)
                     durations.append((name, t_ms))
-                    params.append((name, p))
+                    if name not in params_map:
+                        params_map[name] = p
                     stats.append((name, t_ms, flops))
                     total_flops += flops
         except Exception:
             pass
 
+        params = list(params_map.items())
         total_gflops = total_flops / 1e9
         return [
             check_ra03_activation_hotspot(activations),

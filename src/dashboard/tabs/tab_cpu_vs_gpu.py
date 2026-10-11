@@ -29,8 +29,9 @@ def render(results_dir: Path) -> None:
     # Pivot to compare P50 across devices
     try:
         pivot_df = df.pivot_table(index="model", columns="device", values="p50_ms", aggfunc="mean").reset_index()
-        if "colab_cpu" in pivot_df.columns and "colab_t4" in pivot_df.columns:
-            pivot_df["Speedup_GPU_vs_CPU"] = (pivot_df["colab_cpu"] / pivot_df["colab_t4"]).round(2)
+        cpu_col = "colab_cpu" if "colab_cpu" in pivot_df.columns else ("cpu_laptop" if "cpu_laptop" in pivot_df.columns else None)
+        if cpu_col and "colab_t4" in pivot_df.columns:
+            pivot_df["Speedup_GPU_vs_CPU"] = (pivot_df[cpu_col] / pivot_df["colab_t4"]).round(2)
         st.subheader("Hệ Số Tăng Tốc (Speedup Multiplier)")
         st.dataframe(pivot_df, use_container_width=True)
     except Exception as exc:

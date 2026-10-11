@@ -39,30 +39,22 @@ class _NumpyEncoder(json.JSONEncoder):
         return obj.tolist() if isinstance(obj, np.ndarray) else super().default(obj)
 
 
-
 class LayerProfilerPlugin(ProfilerPlugin):
     """Zero-Config layer-level profiler hooking leaf modules without manual model code edits."""
 
     name: str = "layer"
 
     def __init__(self, subtract_timer_bias: bool = True, hw_spec: Optional[HardwareSpec] = None) -> None:
-        self.device: str = "cpu"
-        self._enabled: bool = False
-        self._is_cuda: bool = False
-        self.subtract_timer_bias: bool = subtract_timer_bias
-        self.hw_spec: Optional[HardwareSpec] = hw_spec
-        self.precision: str = "fp32"
-        self.timer_bias_ms: float = 0.0
-        self._hooks: List[Any] = []
-        self._records: List[LayerRecord] = []
-        self._current_iter: int = 0
+        self.device, self._enabled, self._is_cuda = "cpu", False, False
+        self.subtract_timer_bias, self.hw_spec = subtract_timer_bias, hw_spec
+        self.precision, self.timer_bias_ms = "fp32", 0.0
+        self._hooks, self._records = [], []
+        self._current_iter = 0
         self._cuda_dispatcher: Optional[DeferredCudaDispatcher] = None
         self._cpu_timers: Dict[str, CPUTimer] = {}
         self._call_counts: Dict[str, int] = {}
         self._raw_rows: List[Dict[str, Any]] = []
-        self._model_ref: Optional[Any] = None
-        self._captured_inputs: Optional[Any] = None
-        self._capture_handle: Optional[Any] = None
+        self._model_ref = self._captured_inputs = self._capture_handle = None
         self._iter_totals: Dict[int, float] = {}
 
     def attach(self, model: Any, device: str) -> None:
@@ -150,6 +142,8 @@ class LayerProfilerPlugin(ProfilerPlugin):
         """Mark start of a new measurement iteration."""
         self._current_iter = iteration
         self._call_counts.clear()
+        if self._is_cuda and self._cuda_dispatcher:
+            self._cuda_dispatcher.prefill_queue(iteration)
 
     def stop(self) -> None:
         """Complete iteration and aggregate measurements."""
@@ -158,11 +152,15 @@ class LayerProfilerPlugin(ProfilerPlugin):
         if self._is_cuda and self._cuda_dispatcher:
             cuda_durations = self._cuda_dispatcher.synchronize_and_collect()
             for r in self._raw_rows:
-                if r["iteration"] == self._current_iter and "time_ms" not in r:
+                if r["iteration"] == self._current_iter:
                     dur = cuda_durations.get((r["layer_name"], r["call_index"]), cuda_durations.get(r["layer_name"], 0.0))
                     r["time_ms"] = dur
                     r["forward_time_ms"] = dur
                     r["raw_time_ms"] = dur
+
+        iter_rows = [r for r in self._raw_rows if r["iteration"] == self._current_iter]
+        if iter_rows:
+            self._iter_totals[self._current_iter] = round(sum(r["time_ms"] for r in iter_rows), 5)
 
 
     def save(self, out_dir: Path) -> None:
@@ -206,6 +204,10 @@ class LayerProfilerPlugin(ProfilerPlugin):
             "n_iterations": int(df_raw["iteration"].nunique()),
             "timer_bias_ms": self.timer_bias_ms,
             "total_flops_counter": model_total_flops(analysis_df) if not analysis_df.empty else 0.0,
+            "iteration_total_ms": self._iter_totals,
+            "gpu_prefill_ok_ratio": (
+                sum(prefill.values()) / len(prefill) if self._cuda_dispatcher and (prefill := self._cuda_dispatcher.get_prefill_ok()) else None
+            ),
             "hardware": spec.to_dict(),
         }
         with open(out_dir / "layer_meta.json", "w", encoding="utf-8") as f:

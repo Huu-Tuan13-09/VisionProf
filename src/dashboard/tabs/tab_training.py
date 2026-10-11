@@ -21,6 +21,7 @@ def render(results_dir: Path) -> None:
         st.info("Chưa có file `phases.csv`. Hãy chạy thực nghiệm với `--profilers phase`.")
         return
 
+    selected_file = st.selectbox("Chọn file phases.csv:", phase_files, format_func=lambda p: str(p.relative_to(results_dir)))
     if not selected_file or selected_file.stat().st_size == 0:
         st.warning("File phases.csv rỗng.")
         return
