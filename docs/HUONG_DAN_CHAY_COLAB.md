@@ -41,12 +41,18 @@ Do repository là **Private** và thuộc tài khoản cá nhân (`Huu-Tuan13-09
    - Hoặc chọn tab **GitHub** $\rightarrow$ nhập URL repo `VisionProf` $\rightarrow$ chọn nhánh bạn muốn chạy.
 3. Ở **thanh công cụ bên trái của Colab**, bấm vào biểu tượng **chìa khóa (Secrets) 🔑**:
    - Bấm **Add new secret**.
-   - **Name**: `GITHUB_TOKEN`
-   - **Value**: Dán mã token `github_pat_...` vừa tạo ở Bước 1.
-   - Gạt công tắc **Notebook access** sang **ON** (màu xanh).
+   - **Secret 1 (Bắt buộc để clone & push code)**:
+     - **Name**: `VISIONPROF_GITHUB_TOKEN` *(Khuyên dùng tiền tố này để không bị nhầm lẫn với các token của dự án khác trong cùng tài khoản Google; notebook vẫn hỗ trợ fallback `GITHUB_TOKEN` nếu bạn đã lỡ đặt tên cũ)*.
+     - **Value**: Dán mã token `ghp_...` vừa tạo ở Bước 1.
+     - Gạt công tắc **Notebook access** sang **ON** (màu xanh).
+   - **Secret 2 (Tùy chọn - nếu dùng Ngrok Live Dashboard ở Cell 7)**:
+     - **Name**: `VISIONPROF_NGROK_AUTHTOKEN`
+     - **Value**: Dán mã token lấy từ [dashboard.ngrok.com](https://dashboard.ngrok.com).
+     - Gạt công tắc **Notebook access** sang **ON** (màu xanh).
 
 > [!NOTE]
-> Secret được lưu trong tài khoản Google cá nhân của bạn, **không bị commit lên Git** và các thành viên khác không thể thấy token của bạn.
+> Việc đặt tên bí danh có tiền tố `VISIONPROF_` giúp quản lý tài nguyên khoa học, đảm bảo không bao giờ bị ghi đè hay dùng nhầm token của dự án khác khi bạn làm việc đa nhiệm trên Google Colab.
+
 
 ---
 
@@ -67,15 +73,16 @@ Trong notebook [`colab_runner.ipynb`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_
    ```
    - Nhập chính xác tên nhánh bạn đang làm việc (ví dụ: `main`, `feature/integrate-tv1-modular`, `feat/model-zoo`, hoặc nhánh tính năng cá nhân).
    - Nhấn **Enter** (nếu để trống và nhấn Enter, notebook sẽ tự động chọn nhánh mặc định `main`).
-   - Notebook sẽ tự động dùng `GITHUB_TOKEN` clone repo và checkout/pull đúng nhánh bạn đã nhập.
+   - Notebook sẽ tự động dùng `VISIONPROF_GITHUB_TOKEN` (hoặc fallback `GITHUB_TOKEN`) clone repo và checkout/pull đúng nhánh bạn đã nhập.
 
 2. **Xác nhận đẩy kết quả lên GitHub (Cell 6)**:
    Sau khi hoàn tất toàn bộ quá trình đo đạc và sinh biểu đồ ở Cell 4-5, tại Cell 6 sẽ xuất hiện câu hỏi xác nhận:
    ```text
    👉 Xác nhận đẩy kết quả lên nhánh '<BRANCH_NAME>' trên GitHub? (Y/n):
    ```
-   - Nhấn **Enter** hoặc gõ `y` để xác nhận đẩy các file kết quả mới (`results/colab_t4/`, `results/analysis/`, `docs/tv1/figures/`) lên GitHub.
+   - Nhấn **Enter** hoặc gõ `y` để xác nhận đẩy các file kết quả mới (`results/colab_t4/`, `results/analysis/`, `docs/tv1/figures/`, `docs/tv2/figures/`) lên GitHub.
    - Gõ `n` nếu bạn muốn kiểm tra lại trước và chưa muốn push lên remote.
+
 
 Sau đó bạn có thể bấm **Runtime $\rightarrow$ Run all** (hoặc chạy tuần tự từng cell):
 
@@ -116,8 +123,9 @@ Toàn bộ các file kết quả đo GPU T4 mới nhất sẽ lập tức xuất
 ## 🛠️ Xử Lý Sự Cố Thường Gặp (Troubleshooting)
 
 ### 1. Lỗi `Authentication failed` hoặc `Repository not found` ở Cell 2
-- **Nguyên nhân**: Chưa thêm `GITHUB_TOKEN` vào Colab Secrets, hoặc chưa bật công tắc **Notebook access**.
-- **Xử lý**: Kiểm tra lại Bước 2, đảm bảo Name là `GITHUB_TOKEN` và công tắc đang bật màu xanh.
+- **Nguyên nhân**: Chưa thêm `VISIONPROF_GITHUB_TOKEN` (hoặc `GITHUB_TOKEN`) vào Colab Secrets, hoặc chưa bật công tắc **Notebook access**.
+- **Xử lý**: Kiểm tra lại Bước 2, đảm bảo Name là `VISIONPROF_GITHUB_TOKEN` (hoặc `GITHUB_TOKEN`) và công tắc đang bật màu xanh.
+
 
 ### 2. Muốn chuyển sang chạy nhánh khác
 - **Xử lý**: Chạy lại **Cell 2**, nhập tên nhánh mới vào ô prompt `input()` tương tác. Notebook sẽ tự động fetch và chuyển sang nhánh đó.
