@@ -92,8 +92,8 @@ Sau đó bạn có thể bấm **Runtime $\rightarrow$ Run all** (hoặc chạy 
 | **Cell 2** | **Nhập nhánh & Clone repo tương tác** | Hộp thoại `input()` yêu cầu nhập nhánh. Tự động dùng token clone repo Private và chuyển vào đúng nhánh đó. |
 | **Cell 3** | Cài đặt thư viện dependencies | Cài đủ PyTorch, Torchvision, Ultralytics, Transformers, Pyngrok. |
 | **Cell 4** | **Chạy trọn bộ TV1 trên GPU T4**: <br/>• Unit tests CUDA (`pytest`) <br/>• TN1 (`tn1_layer_breakdown.py --device cuda`) <br/>• TN2 (`tn2_validate_profiler.py --device cuda`) <br/>• Phân tích A/B & render 4 biểu đồ báo cáo | • 2 test CUDA pass trực tiếp trên GPU. <br/>• Sinh đầy đủ `results/colab_t4/{model}/TN1/` và `TN2/` cho cả 7 model. <br/>• Cập nhật bảng tổng hợp `summary_colab_t4.csv` và 4 hình tại `docs/tv1/figures/`. |
-| **Cell 5** | Chạy thực nghiệm TV2 / TV3 mẫu | Đo baseline 8 model (TN3). |
-| **Cell 6** | **Xác nhận & Git Push về đúng nhánh** | Hộp thoại `input()` xác nhận (Y/n). Tự động `git commit` và `git push` kết quả mới lên đúng nhánh bạn đã chọn. |
+| **Cell 5** | **Bộ Thực Nghiệm Đánh Giá Linh Hoạt (Interactive Eval)** | Hộp thoại `input()` chọn 1 trong 5 chế độ đo thật 100%: <br/>• **[1] Full Toàn Diện (Khuyên dùng)**: Chạy đủ cả GPU T4 (TN3, TN4, TN5) + CPU Colab (TN3, TN4). <br/>• **[2] GPU T4 Chuyên Sâu**: Chạy trọn vẹn GPU T4 (TN3 8 models, TN4 bs 1/8/32, TN5 FP16). <br/>• **[3] CPU Colab Chuyên Sâu**: Chạy trọn vẹn CPU Colab (TN3 8 models, TN4 bs 1/8/32). <br/>• **[4] Custom Models**: Tùy chọn 1 hoặc nhiều model bất kỳ. <br/>• **[5] Chỉ Phân Tích**: Trích xuất biểu đồ TV1 & TV2 từ dữ liệu sẵn có. |
+| **Cell 6** | **Xác nhận & Git Push về đúng nhánh** | Hộp thoại `input()` xác nhận (Y/n). Tự động commit và push toàn bộ số liệu đo thật (`results/colab_t4/`, `results/colab_cpu/`, biểu đồ `docs/`) lên GitHub. |
 | **Cell 7** | Mở Live Dashboard qua Ngrok *(Tùy chọn)* | Trả về link công khai `https://xxx.ngrok-free.app` để cả nhóm cùng truy cập xem giao diện đồ thị T4. |
 | **Cell 8** | Tải file nén kết quả dự phòng *(Tùy chọn)* | Tự động kích hoạt tải file `.tar.gz` về máy qua trình duyệt. |
 
