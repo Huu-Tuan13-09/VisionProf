@@ -2,11 +2,19 @@
 
 import json
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
-import plotly.graph_objects as go
-import streamlit as st
+
+try:
+    import plotly.graph_objects as go
+except ImportError:
+    go = None
+
+try:
+    import streamlit as st
+except ImportError:
+    st = None
 
 CPU_HW, GPU_HW = "cpu_laptop", "colab_t4"
 CONFIG = "bs1_fp32"
@@ -31,9 +39,15 @@ GROUP_OF = {
 }
 
 
+def _cache_data(func: Any) -> Any:
+    if st is not None and hasattr(st, "cache_data"):
+        return st.cache_data(show_spinner=False)(func)
+    return func
+
+
 def _mode() -> str:
     try:
-        return "dark" if st.context.theme.type == "dark" else "light"
+        return "dark" if st is not None and st.context.theme.type == "dark" else "light"
     except Exception:
         return "light"
 
@@ -42,13 +56,13 @@ def _colors() -> Dict[str, str]:
     return dict(zip(GROUPS, _PALETTE[_mode()]))
 
 
-@st.cache_data(show_spinner=False)
+@_cache_data
 def _read_csv(path: str) -> Optional[pd.DataFrame]:
     p = Path(path)
     return pd.read_csv(p) if p.exists() else None
 
 
-@st.cache_data(show_spinner=False)
+@_cache_data
 def _read_json(path: str) -> Optional[dict]:
     p = Path(path)
     return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
@@ -74,7 +88,9 @@ def _tn1(results_dir: Path, hw: str, model: str, name: str) -> Any:
     return _read_json(str(path)) if name.endswith(".json") else _read_csv(str(path))
 
 
-def _fig_type_share(share: pd.DataFrame) -> go.Figure:
+def _fig_type_share(share: pd.DataFrame) -> Optional[Any]:
+    if go is None:
+        return None
     df = share.copy()
     df["group"] = df["layer_type"].map(GROUP_OF).fillna("Khác")
     colors = _colors()
@@ -99,7 +115,9 @@ def _fig_type_share(share: pd.DataFrame) -> go.Figure:
     return fig
 
 
-def _fig_roofline(summary: pd.DataFrame, hardware: dict) -> go.Figure:
+def _fig_roofline(summary: pd.DataFrame, hardware: dict) -> Optional[Any]:
+    if go is None:
+        return None
     df = summary[(summary["flops_source"] == "counter") & (summary["time_ms"] > 0)].copy()
     df["group"] = df["layer_type"].map(GROUP_OF).fillna("Khác")
     peak, bw = hardware.get("peak_gflops_fp32", 8100.0), hardware.get("bandwidth_gbs", 320.0)
@@ -134,7 +152,9 @@ def _fig_roofline(summary: pd.DataFrame, hardware: dict) -> go.Figure:
     return fig
 
 
-def _fig_timeline(layers: pd.DataFrame) -> go.Figure:
+def _fig_timeline(layers: pd.DataFrame) -> Optional[Any]:
+    if go is None:
+        return None
     order_col = "exec_order" if "exec_order" in layers.columns else "call_index"
     per = (layers.groupby(["layer_name", "layer_type", "call_index"], as_index=False)
            .agg(time_ms=("time_ms", "median"), exec_order=(order_col, "min"))
@@ -161,6 +181,8 @@ def _fig_timeline(layers: pd.DataFrame) -> go.Figure:
 
 def render_layer_tab(results_dir: Path) -> None:
     """Render Tab 3: Detailed leaf layer breakdown, Roofline curve, and CPU vs GPU comparison."""
+    if st is None:
+        return
     st.header("🟧 Leaf Layer Breakdown & Hotspot Identification")
     models = _available_models(results_dir)
     if not models:
@@ -188,7 +210,9 @@ def render_layer_tab(results_dir: Path) -> None:
             k[3].metric("FLOPs / 1 lần forward", f"{flops / 1e9:.2f} G" if flops >= 1e8 else f"{flops / 1e6:.2f} M")
 
         st.markdown("##### Thời gian tập trung ở nhóm layer nào? (CH1)")
-        st.plotly_chart(_fig_type_share(share), use_container_width=True, key="layer_tab_share")
+        fig_share = _fig_type_share(share)
+        if fig_share is not None:
+            st.plotly_chart(fig_share, use_container_width=True, key="layer_tab_share")
         with st.expander("Bảng tỷ trọng theo loại layer"):
             st.dataframe(share.round(3), use_container_width=True, hide_index=True)
 
@@ -202,10 +226,14 @@ def render_layer_tab(results_dir: Path) -> None:
     meta = meta_gpu if hw == GPU_HW else meta_cpu
     if layers is not None and not layers.empty:
         st.markdown(f"##### Thời gian từng layer theo thứ tự chạy · {DEVICE_LABELS.get(hw, hw)}")
-        st.plotly_chart(_fig_timeline(layers), use_container_width=True, key="layer_tab_timeline")
+        fig_time = _fig_timeline(layers)
+        if fig_time is not None:
+            st.plotly_chart(fig_time, use_container_width=True, key="layer_tab_timeline")
     if summary is not None and meta and meta.get("hardware"):
         st.markdown(f"##### Roofline · {DEVICE_LABELS.get(hw, hw)} — vì sao layer lớn chưa nhanh hơn?")
-        st.plotly_chart(_fig_roofline(summary, meta["hardware"]), use_container_width=True, key="layer_tab_roof")
+        fig_roof = _fig_roofline(summary, meta["hardware"])
+        if fig_roof is not None:
+            st.plotly_chart(fig_roof, use_container_width=True, key="layer_tab_roof")
 
 
 def render(results_dir: Path) -> None:
