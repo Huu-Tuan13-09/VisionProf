@@ -122,7 +122,9 @@ def plot_ch4_batch_scaling(out_path: Path) -> None:
         cpu_fps = []
         for b in batches:
             s_t4 = load_summary("colab_t4", m, "TN4", f"bs{b}_fp32")
-            s_cpu = load_summary("cpu_laptop", m, "TN4", f"bs{b}_fp32")
+            s_cpu = load_summary("colab_cpu", m, "TN4", f"bs{b}_fp32")
+            if not s_cpu:
+                s_cpu = load_summary("cpu_laptop", m, "TN4", f"bs{b}_fp32")
             t4_fps.append(s_t4.get("throughput_fps", 0.0))
             cpu_fps.append(s_cpu.get("throughput_fps", 0.0))
 
@@ -190,7 +192,9 @@ def run_analysis() -> None:
     gpu_p50: Dict[str, float] = {}
 
     for m in MODELS_ORDER:
-        scpu = load_summary("cpu_laptop", m, "TN3", "bs1_fp32")
+        scpu = load_summary("colab_cpu", m, "TN3", "bs1_fp32")
+        if not scpu:
+            scpu = load_summary("cpu_laptop", m, "TN3", "bs1_fp32")
         sgpu = load_summary("colab_t4", m, "TN3", "bs1_fp32")
         if scpu and sgpu:
             cpu_p50[m] = scpu["p50_ms"]

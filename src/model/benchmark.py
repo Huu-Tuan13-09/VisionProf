@@ -1,6 +1,8 @@
 """Full-model latency benchmarking, percentiles (P50..P99), throughput and cold-start tracking."""
 
+import contextlib
 import csv
+import gc
 import json
 import logging
 import os
@@ -58,16 +60,18 @@ class ModelBenchmark:
         """Execute warmup iterations to prime CUDA caches and JIT kernels."""
         inputs = adapter.make_input(batch_size=batch_size, device=device, precision=precision, **kwargs)
         is_cuda = "cuda" in device.lower() or "t4" in device.lower()
+        infer_ctx = torch.inference_mode() if HAS_TORCH and getattr(adapter, "is_torch", True) else contextlib.nullcontext()
 
         logger.info("Executing %d warmup iterations...", self.warmup_iters)
-        for i in range(self.warmup_iters):
-            t0 = time.perf_counter()
-            _ = adapter.forward(model, inputs)
-            if is_cuda and HAS_TORCH and torch.cuda.is_available():
-                torch.cuda.synchronize()
-            t1 = time.perf_counter()
-            if i == 0:
-                self._cold_start_ms = round((t1 - t0) * 1000.0, 4)
+        with infer_ctx:
+            for i in range(self.warmup_iters):
+                t0 = time.perf_counter()
+                _ = adapter.forward(model, inputs)
+                if is_cuda and HAS_TORCH and torch.cuda.is_available():
+                    torch.cuda.synchronize()
+                t1 = time.perf_counter()
+                if i == 0:
+                    self._cold_start_ms = round((t1 - t0) * 1000.0, 4)
 
     def measure(
         self,
@@ -85,6 +89,11 @@ class ModelBenchmark:
         inputs = adapter.make_input(batch_size=batch_size, device=device, precision=precision, **kwargs)
         is_cuda = ("cuda" in device.lower() or "t4" in device.lower()) and HAS_TORCH and torch.cuda.is_available()
 
+        gc.collect()
+        if is_cuda:
+            torch.cuda.empty_cache()
+            torch.cuda.reset_peak_memory_stats()
+
         if hasattr(model, "parameters"):
             try:
                 self._params_m = round(sum(p.numel() for p in model.parameters()) / 1e6, 3)
@@ -93,27 +102,26 @@ class ModelBenchmark:
         else:
             self._params_m = 0.0
 
-        if is_cuda:
-            torch.cuda.reset_peak_memory_stats()
-
+        infer_ctx = torch.inference_mode() if HAS_TORCH and getattr(adapter, "is_torch", True) else contextlib.nullcontext()
         logger.info("Executing %d measurement iterations on %s...", self.measure_iters, device)
-        for i in range(self.measure_iters):
-            for p in active_plugins:
-                p.start(iteration=i)
+        with infer_ctx:
+            for i in range(self.measure_iters):
+                for p in active_plugins:
+                    p.start(iteration=i)
 
-            t0 = time.perf_counter()
-            _ = adapter.forward(model, inputs)
-            if is_cuda:
-                torch.cuda.synchronize()
-            t1 = time.perf_counter()
+                t0 = time.perf_counter()
+                _ = adapter.forward(model, inputs)
+                if is_cuda:
+                    torch.cuda.synchronize()
+                t1 = time.perf_counter()
 
-            for p in active_plugins:
-                p.stop()
+                for p in active_plugins:
+                    p.stop()
 
-            elapsed_ms = (t1 - t0) * 1000.0
-            self._metrics.append(
-                BenchmarkMetric(iteration=i, latency_ms=round(elapsed_ms, 4), timestamp=time.time())
-            )
+                elapsed_ms = (t1 - t0) * 1000.0
+                self._metrics.append(
+                    BenchmarkMetric(iteration=i, latency_ms=round(elapsed_ms, 4), timestamp=time.time())
+                )
 
         if is_cuda:
             self._peak_vram_mb = round(torch.cuda.max_memory_allocated() / (1024 * 1024), 2)

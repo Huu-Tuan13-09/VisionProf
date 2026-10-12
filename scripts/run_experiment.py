@@ -1,6 +1,8 @@
 """CLI runner executing benchmark experiments according to configuration arguments."""
 
 import argparse
+import contextlib
+import gc
 import json
 import logging
 import sys
@@ -142,17 +144,20 @@ def main() -> int:
     # 5. Phase 2: Profiler Plugins (Layer and Phase Breakdown)
     profiler_names = [p.strip().lower() for p in args.profilers.split(",") if p.strip()]
 
+    infer_ctx = torch.inference_mode() if HAS_TORCH else contextlib.nullcontext()
+
     if "layer" in profiler_names and adapter.is_torch:
         logger.info("Running Phase 2: LayerProfilerPlugin collection...")
         layer_plugin = LayerProfilerPlugin()
         layer_plugin.attach(model, device=args.device)
         test_inp = adapter.make_input(batch_size=args.batch_size, device=args.device, precision=args.precision, seq_len=args.seq_len)
-        for i in range(min(5, args.measure)):
-            layer_plugin.start(iteration=i)
-            _ = adapter.forward(model, test_inp)
-            if "cuda" in args.device.lower() and HAS_TORCH and torch.cuda.is_available():
-                torch.cuda.synchronize()
-            layer_plugin.stop()
+        with infer_ctx:
+            for i in range(min(5, args.measure)):
+                layer_plugin.start(iteration=i)
+                _ = adapter.forward(model, test_inp)
+                if "cuda" in args.device.lower() and HAS_TORCH and torch.cuda.is_available():
+                    torch.cuda.synchronize()
+                layer_plugin.stop()
         layer_plugin.save(run_dir)
         layer_plugin.detach()
 
@@ -161,12 +166,15 @@ def main() -> int:
         phase_plugin = PhaseProfilerPlugin()
         phase_plugin.attach(model, device=args.device)
         test_inp = adapter.make_input(batch_size=args.batch_size, device=args.device, precision=args.precision, seq_len=args.seq_len)
-        for i in range(min(5, args.measure)):
-            phase_plugin.start(iteration=i)
-            _ = adapter.forward(model, test_inp)
-            phase_plugin.stop()
+        with infer_ctx:
+            for i in range(min(5, args.measure)):
+                phase_plugin.start(iteration=i)
+                _ = adapter.forward(model, test_inp)
+                phase_plugin.stop()
         phase_plugin.save(run_dir)
         phase_plugin.detach()
+
+    gc.collect()
 
     logger.info("Experiment successfully completed. Results written to %s", run_dir)
     return 0
