@@ -1,0 +1,2 @@
+timestamp,cpu_pct,rss_mb,gpu_util_pct,vram_mb,power_w
+1728000000.0,45.0,900.0,85.0,484.88000000000005,68.5

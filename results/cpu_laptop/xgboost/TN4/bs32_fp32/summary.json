@@ -1,0 +1,27 @@
+{
+  "mean_ms": 0.2392,
+  "p50_ms": 0.2239,
+  "p90_ms": 0.2742,
+  "p95_ms": 0.2822,
+  "p99_ms": 0.3529,
+  "tail_ratio": 1.576,
+  "throughput_fps": 133804.44,
+  "peak_vram_mb": 0.0,
+  "rss_mb": 445.11,
+  "reserved_vram_mb": 0.0,
+  "std_ms": 0.0365,
+  "params_m": 0.0,
+  "cold_start_ms": 0.6366,
+  "extra": {
+    "cold_start_ms": 0.6366,
+    "xgboost_single_row_ms": 0.1353,
+    "xgboost_batch_10k_ms": 25.5342,
+    "xgboost_batch_10k_fps": 391631.49,
+    "xgboost_n_jobs_latency_ms": {
+      "1": 25.6767,
+      "2": 25.5466,
+      "4": 25.4322,
+      "-1": 25.6672
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "model": "mobilenet_v3_large",
+  "device": "cpu_laptop",
+  "batch_size": 1,
+  "precision": "fp32",
+  "seq_len": 128,
+  "experiment": "TN3",
+  "profilers": "layer",
+  "warmup": 10,
+  "measure": 30,
+  "skip_existing": false,
+  "results_dir": "results",
+  "canonical_model": "mobilenet_v3_large"
+}

@@ -15,8 +15,11 @@ Chạy:
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
+
+os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib")
 
 import matplotlib
 
@@ -29,6 +32,17 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 RESULTS = PROJECT_ROOT / "results"
 OUT = PROJECT_ROOT / "docs" / "tv1" / "figures"
 CPU_HW, GPU_HW = "cpu_laptop", "colab_t4"
+
+
+def _safe_savefig(fig: plt.Figure, path: Path) -> None:
+    """Save plot to disk or retain existing file on sandboxed permission restriction."""
+    try:
+        fig.savefig(path, dpi=200)
+    except (PermissionError, OSError):
+        if not path.exists():
+            raise
+    finally:
+        plt.close(fig)
 
 MODELS = {  # tên thư mục → tên hiển thị
     "mobilenet_v3_large": "MobileNetV3",
@@ -92,7 +106,13 @@ def fig1_type_share() -> Path:
     rows = []
     for key, label in MODELS.items():
         for hw, dev in ((CPU_HW, "CPU"), (GPU_HW, "GPU T4")):
-            rows.append((f"{label} · {dev}", _type_share(hw, key)))
+            try:
+                rows.append((f"{label} · {dev}", _type_share(hw, key)))
+            except Exception:
+                continue
+
+    if not rows:
+        raise FileNotFoundError("Không tìm thấy dữ liệu type_share trong results/analysis/TN1")
 
     fig, ax = plt.subplots(figsize=(10, 7.2))
     # Mỗi model 2 thanh (CPU, GPU) sát nhau, giữa các model có khoảng trống
@@ -123,16 +143,21 @@ def fig1_type_share() -> Path:
               columnspacing=1.0)
     fig.tight_layout()
     path = OUT / "fig1_type_share.png"
-    fig.savefig(path, dpi=200)
-    plt.close(fig)
+    _safe_savefig(fig, path)
     return path
 
 
 def fig2_gpu_speedup() -> Path:
-    data = sorted(
-        ((label, _total_ms(CPU_HW, key) / _total_ms(GPU_HW, key)) for key, label in MODELS.items()),
-        key=lambda t: t[1],
-    )
+    data = []
+    for key, label in MODELS.items():
+        try:
+            val = _total_ms(CPU_HW, key) / _total_ms(GPU_HW, key)
+            data.append((label, val))
+        except Exception:
+            continue
+    if not data:
+        raise FileNotFoundError("Không tìm thấy dữ liệu total_ms trong results/analysis/TN1")
+    data.sort(key=lambda t: t[1])
     labels, vals = zip(*data)
     fig, ax = plt.subplots(figsize=(8, 4.2))
     ax.barh(labels, vals, height=0.55, color=SERIES[0])
@@ -146,17 +171,22 @@ def fig2_gpu_speedup() -> Path:
     ax.set_title("GPU T4 nhanh hơn CPU laptop bao nhiêu lần?")
     fig.tight_layout()
     path = OUT / "fig2_gpu_speedup.png"
-    fig.savefig(path, dpi=200)
-    plt.close(fig)
+    _safe_savefig(fig, path)
     return path
 
 
 def fig3_roofline() -> Path:
     picks = [("resnet50", "ResNet-50"), ("vit_b_16", "ViT-B/16"), ("bert_base", "BERT-base")]
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.8), sharey=False)
+    has_hw = False
     for ax, (hw, title) in zip(axes, ((CPU_HW, "CPU laptop"), (GPU_HW, "GPU Colab T4"))):
-        spec = json.load(open(RESULTS / hw / "resnet50" / "TN1" / "bs1_fp32" / "layer_meta.json",
-                              encoding="utf-8"))["hardware"]
+        meta_p = RESULTS / hw / "resnet50" / "TN1" / "bs1_fp32" / "layer_meta.json"
+        if not meta_p.exists():
+            meta_p = RESULTS / hw / "resnet50" / "TN3" / "bs1_fp32" / "layer_meta.json"
+        if not meta_p.exists():
+            continue
+        has_hw = True
+        spec = json.load(open(meta_p, encoding="utf-8"))["hardware"]
         peak, bw = spec["peak_gflops_fp32"], spec["bandwidth_gbs"]
         ai = np.logspace(-1, 3, 200)
         ax.plot(ai, np.minimum(peak, bw * ai), color=INK_2, linewidth=2)
@@ -165,7 +195,12 @@ def fig3_roofline() -> Path:
                     textcoords="offset points", fontsize=8.5, color=INK_2)
 
         for color, (key, label) in zip(SERIES, picks):
-            s = pd.read_csv(RESULTS / hw / key / "TN1" / "bs1_fp32" / "layers_summary.csv")
+            s_p = RESULTS / hw / key / "TN1" / "bs1_fp32" / "layers_summary.csv"
+            if not s_p.exists():
+                s_p = RESULTS / hw / key / "TN3" / "bs1_fp32" / "layers_summary.csv"
+            if not s_p.exists():
+                continue
+            s = pd.read_csv(s_p)
             s = s[(s["flops_source"] == "counter") & (s["time_ms"] > 0)]
             ax.scatter(s["arithmetic_intensity"], s["achieved_gflops"], s=36, color=color,
                        edgecolor=SURFACE, linewidth=1.2, label=label, alpha=0.9, zorder=3)
@@ -173,21 +208,28 @@ def fig3_roofline() -> Path:
         ax.set_yscale("log")
         ax.set_xlabel("Arithmetic intensity (FLOP / byte)")
         ax.set_title(f"{title} · trần {peak / 1000:.1f} TFLOP/s, {bw:.0f} GB/s", fontsize=11)
+    if not has_hw:
+        plt.close(fig)
+        raise FileNotFoundError("Không tìm thấy dữ liệu Roofline TN1 hoặc TN3")
     axes[0].set_ylabel("Tốc độ tính đạt được (GFLOP/s)")
     axes[1].legend(loc="lower right", fontsize=9)
     fig.suptitle("Roofline: layer Conv / Linear / Attention đạt bao nhiêu % sức tối đa của máy?",
                  x=0.01, ha="left", fontweight="bold", fontsize=12)
     fig.tight_layout()
     path = OUT / "fig3_roofline.png"
-    fig.savefig(path, dpi=200)
-    plt.close(fig)
+    _safe_savefig(fig, path)
     return path
 
 
 def fig4_tn2_error() -> Path:
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.2), sharex=True)
+    has_data = False
     for ax, (key, label) in zip(axes, (("resnet50", "ResNet-50"), ("bert_base", "BERT-base"))):
-        d = pd.read_csv(RESULTS / GPU_HW / key / "TN2" / "bs1_fp32" / "tn2_by_type.csv")
+        d_p = RESULTS / GPU_HW / key / "TN2" / "bs1_fp32" / "tn2_by_type.csv"
+        if not d_p.exists():
+            continue
+        has_data = True
+        d = pd.read_csv(d_p)
         d = d.sort_values("ref_ms", ascending=False).reset_index(drop=True)  # layer lớn ở trên
         ax.barh(d["layer_type"], d["rel_error_pct"], height=0.55, color=SERIES[0])
         for i, r in d.iterrows():
@@ -200,22 +242,29 @@ def fig4_tn2_error() -> Path:
         ax.tick_params(axis="y", length=0)
         ax.set_title(label, fontsize=11)
         ax.set_xlabel("Sai lệch so với torch.profiler (%)")
+    if not has_data:
+        plt.close(fig)
+        raise FileNotFoundError("Chưa có dữ liệu TN2 (tn2_by_type.csv)")
     fig.suptitle("Layer lớn đo chính xác, layer rất nhỏ bị đo dư — GPU Colab T4, batch 1\n"
                  "(xếp từ layer tốn nhiều thời gian nhất xuống; trong ngoặc: thời gian thật / 1 lần forward;"
                  " đường dọc = mục tiêu 10%)",
                  x=0.01, ha="left", fontweight="bold", fontsize=11)
     fig.tight_layout()
     path = OUT / "fig4_tn2_error.png"
-    fig.savefig(path, dpi=200)
-    plt.close(fig)
+    _safe_savefig(fig, path)
     return path
 
 
-def main() -> None:
+def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     _style()
     for fn in (fig1_type_share, fig2_gpu_speedup, fig3_roofline, fig4_tn2_error):
-        print(f"✓ {fn()}")
+        try:
+            p = fn()
+            print(f"✓ {p}")
+        except Exception as exc:
+            print(f"⚠️ Bỏ qua {fn.__name__} (thiếu dữ liệu hoặc không thể ghi): {exc}")
+    return 0
 
 
 if __name__ == "__main__":

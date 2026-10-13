@@ -1,7 +1,7 @@
 # TN5: So sánh FP32 vs FP16 trên Colab T4 Tensor Cores
 experiment: tn5
 description: "Precision acceleration and cosine similarity evaluation"
-models: [resnet50, bert_base, vit_b_16]
+models: [mobilenet_v3, resnet50, vit_b_16, yolov8n, distilbert, bert_base, mlp]
 batch_sizes: [1, 16]
 precisions: [fp32, fp16]
 devices: [colab_t4]

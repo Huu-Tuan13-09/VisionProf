@@ -17,6 +17,13 @@ __pycache__/
 results/temp/
 *.log
 
+# Environment variables & secrets
+.env
+.env.*
+!.env.example
+
 # Project private progress report
 BAO_CAO_TIEN_DO_NHOM.md
 
+# Internal tracking & tasks
+tasks/

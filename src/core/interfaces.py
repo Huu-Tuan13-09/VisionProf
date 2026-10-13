@@ -27,7 +27,7 @@ class ModelAdapter(ABC):
         """Execute one forward inference pass."""
         ...
 
-    def train_step(self, model: Any, batch: Any, optimizer: Any) -> float:
+    def train_step(self, model: Any, batch: Any, optimizer: Any, timer: Optional[Any] = None) -> float:
         """Execute one training step (forward + loss + backward + optimizer step)."""
         raise NotImplementedError("train_step is optional and not implemented for this adapter.")
 

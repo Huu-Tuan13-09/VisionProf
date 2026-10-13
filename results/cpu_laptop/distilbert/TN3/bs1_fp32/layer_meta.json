@@ -1,0 +1,25 @@
+{
+  "plugin": "layer",
+  "device": "cpu_laptop",
+  "precision": "fp32",
+  "n_hooked_layers": 57,
+  "n_iterations": 5,
+  "timer_bias_ms": 0.00044596875,
+  "total_flops_counter": 10871635968.0,
+  "iteration_total_ms": {
+    "0": 35.91826,
+    "1": 17.43229,
+    "2": 17.2381,
+    "3": 17.65799,
+    "4": 17.26275
+  },
+  "gpu_prefill_ok_ratio": null,
+  "hardware": {
+    "hw_id": "cpu_laptop",
+    "name": "CPU 10 cores @ 3.50 GHz",
+    "peak_gflops_fp32": 1121.28,
+    "peak_gflops_fp16": 1121.28,
+    "bandwidth_gbs": 51.2,
+    "source": "estimate"
+  }
+}
