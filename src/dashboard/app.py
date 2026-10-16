@@ -16,6 +16,7 @@ try:
         render_diagnostics,
         render_layer,
         render_overview,
+        render_pipeline,
         render_roofline,
         render_training,
     )
@@ -37,9 +38,10 @@ def main() -> None:
         "2. Colab CPU vs T4 GPU",
         "3. Leaf Layer Breakdown",
         "4. Roofline Model",
-        "5. Training & Pipeline",
-        "6. Diagnostic Engine (19 Rules)",
-        "7. A/B Testing & Speedup",
+        "5. TN6 — Training Phases (CH5)",
+        "6. TN7 — Pipeline Breakdown (CH6)",
+        "7. Diagnostic Engine (19 Rules)",
+        "8. A/B Testing & Speedup",
     ]
 
     choice = st.sidebar.radio("Navigation", tab_names)
@@ -55,8 +57,10 @@ def main() -> None:
     elif choice == tab_names[4]:
         render_training(results_dir)
     elif choice == tab_names[5]:
-        render_diagnostics(results_dir)
+        render_pipeline(results_dir)
     elif choice == tab_names[6]:
+        render_diagnostics(results_dir)
+    elif choice == tab_names[7]:
         render_ab_test(results_dir)
 
 
