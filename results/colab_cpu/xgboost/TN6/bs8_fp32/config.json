@@ -1,0 +1,10 @@
+{
+  "model": "xgboost",
+  "device": "colab_cpu",
+  "batch_size": 8,
+  "precision": "fp32",
+  "num_workers": 0,
+  "warmup": 5,
+  "measure": 30,
+  "experiment": "TN6"
+}
