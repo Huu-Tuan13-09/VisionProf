@@ -1,0 +1,11 @@
+iteration,phase,time_ms
+0,csv_parse,0.0211
+0,predict,0.0017
+1,csv_parse,0.019
+1,predict,0.0011
+2,csv_parse,0.0191
+2,predict,0.0011
+3,csv_parse,0.0145
+3,predict,0.0008
+4,csv_parse,0.0141
+4,predict,0.0007

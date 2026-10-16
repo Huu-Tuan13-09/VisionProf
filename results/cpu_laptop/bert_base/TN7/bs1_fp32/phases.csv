@@ -1,0 +1,10 @@
+iteration,phase,time_ms
+0,tokenize,2.9357
+0,model_forward,110.0398
+0,decode_pooling,0.0749
+1,tokenize,2.6891
+1,model_forward,86.2655
+1,decode_pooling,0.0883
+2,tokenize,3.4133
+2,model_forward,99.9811
+2,decode_pooling,0.0819
