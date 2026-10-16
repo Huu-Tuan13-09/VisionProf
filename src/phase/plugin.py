@@ -1,4 +1,16 @@
-"""PhaseProfilerPlugin implementing stage/phase level profiling to phases.csv."""
+"""PhaseProfilerPlugin implementing stage/phase level profiling to phases.csv.
+
+Implements the ProfilerPlugin interface (Mục 8.1). The plugin wraps PhaseTimer
+and coordinates with the run loop:
+
+    plugin.attach(model, device)
+    for i in range(n_iters):
+        plugin.start(i)
+        with plugin.timer.measure("forward"):
+            ...
+        plugin.stop()
+    plugin.save(out_dir)
+"""
 
 import csv
 import logging
@@ -18,7 +30,7 @@ class PhaseProfilerPlugin(ProfilerPlugin):
     name: str = "phase"
 
     def __init__(self) -> None:
-        self.timer = PhaseTimer()
+        self.timer = PhaseTimer(device="cpu")
         self.device: str = "cpu"
         self._current_iter: int = 0
         self._iter_start_time: float = 0.0
@@ -27,7 +39,7 @@ class PhaseProfilerPlugin(ProfilerPlugin):
     def attach(self, model: Any, device: str) -> None:
         """Initialize plugin state with target model and device."""
         self.device = device
-        self.timer.clear()
+        self.timer = PhaseTimer(device=device)   # re-create with correct device
         logger.info("Attached PhaseProfilerPlugin on %s", device)
 
     def start(self, iteration: int) -> None:
@@ -51,6 +63,10 @@ class PhaseProfilerPlugin(ProfilerPlugin):
         self.timer.add_record(
             PhaseRecord(iteration=self._current_iter, phase=phase_name, time_ms=round(duration_ms, 4))
         )
+
+    def get_summary(self) -> dict:
+        """Return mean duration per phase across all recorded iterations."""
+        return self.timer.summary()
 
     def save(self, out_dir: Path) -> None:
         """Write collected phase records to phases.csv."""
