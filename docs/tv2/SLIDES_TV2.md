@@ -63,11 +63,10 @@
 ### Slide 5: Kết Quả CH4 — Sức Mạnh Tensor Cores FP16
 - **Tiêu đề:** Kết Quả CH4 (Phần 2): Tăng Tốc FP16 Tensor Cores & Tiết Kiệm VRAM
 - **Nội dung chính:**
-  - **Tăng tốc độ trễ:** Trung bình giảm trễ từ **1.5x đến 2.1x** (ResNet-50 tăng tốc 2.11x, BERT-base tăng tốc 2.07x).
-  - **Tiết kiệm bộ nhớ VRAM:** Giảm đỉnh bộ nhớ **46.0%** trên toàn bộ các mô hình.
-  - **Độ chính xác khoa học:** Cosine Similarity giữa đầu ra FP32 và FP16 đạt **0.9998** (> 0.999).
-- **Lời thoại gợi ý (Speaker Notes):**
-  > *"Điểm sáng tiếp theo của thực nghiệm CH4 là sức mạnh của nhân chuyên dụng Tensor Cores trên GPU Tesla T4 khi chạy ở độ chính xác nửa FP16. Không chỉ giúp mô hình chạy nhanh gấp đôi (2.1x), FP16 còn cắt giảm tới 46% dung lượng bộ nhớ VRAM, trong khi đầu ra dự đoán giữ nguyên độ tương đồng cosine tới 0.9998 so với FP32 gốc."*
+  - ⏳ **Chờ số đo TN5 thật trên Colab T4.** Bộ số FP16 cũ (tăng tốc 1.5–2.1×, VRAM giảm 46.0%, cosine 0.9998) là số
+    sinh ra, đã bỏ. Sau khi chạy `notebooks/colab_runner.ipynb` chế độ [2], điền: tăng tốc FP16 so với FP32 (P50),
+    VRAM đỉnh FP32 / FP16, cosine similarity, cho từng mô hình.
+- **Lời thoại gợi ý (Speaker Notes):** viết lại sau khi có số đo TN5 thật.
 
 ---
 

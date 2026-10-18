@@ -78,6 +78,8 @@
 
 ### Slide 9. Thiết lập thực nghiệm
 - Bảng 8 mô hình (họ, tham số, input) · 2 máy (laptop CPU, Colab T4).
+- ⚠️ "Laptop CPU" là **hai máy khác nhau** dù cùng tên thư mục `cpu_laptop`: TV1 đo trên laptop x86 8 nhân,
+  TV2 đo trên MacBook chip Apple (arm64). Ghi rõ máy của từng phần, **không so số CPU của TV1 với TV2**.
 - Quy tắc đo: khởi động 10 vòng, đo 50 vòng; đồng bộ GPU trước khi bấm giờ; báo **P50 / P90 / P99** thay vì chỉ trung bình; tự lưu `env.json` (máy, phiên bản thư viện).
 - 7 thực nghiệm TN1–TN7 ứng với 6 câu hỏi.
 - **Chuyển:** "Bắt đầu từ mức sâu nhất: TV1 với mức Layer."
@@ -128,6 +130,9 @@
 
 ### Slide 16. CH3: Bảng 8 mô hình × 2 máy
 - Bảng P50, throughput, VRAM. Cột laptop CPU: lấy từ `results/cpu_laptop/*/TN3/`. Cột T4: **[CHỜ SỐ ĐO]**.
+- Lưu ý MobileNetV3 trên MacBook chip Apple mất 176 ms (chậm hơn ResNet-50 khoảng 8 lần), trong khi trên laptop x86
+  của TV1 chỉ khoảng 12 ms. Nhiều khả năng do kernel PyTorch trên CPU ARM, không phải tính chất chung của CPU; nếu
+  đưa lên slide thì nói rõ là kết quả riêng của máy đó.
 
 ### Slide 17. CH3: Ít tham số có chắc nhanh hơn? Thứ hạng có đảo?
 - Hình: `docs/tv2/figures/fig_ch3_rank_shift.png` (vẽ lại sau khi có số T4). Kết luận **[CHỜ SỐ ĐO]**.
