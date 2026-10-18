@@ -36,6 +36,8 @@ def estimate_timer_bias(
       - tiny_kernel=False: chain of nn.Identity (no kernel) -> subtracted from CPU layer times.
       - tiny_kernel=True : chain of ReLU on a 1-element tensor -> each layer launches the smallest
         possible kernel; gives the real floor of CUDA event timing (incl. launch cost).
+    On GPU the queue is prefilled (as in the original TV1 profiler) so the events time the
+    kernels back to back, not the GPU waiting for the CPU to launch them.
     """
     if not HAS_TORCH:
         return 0.0
@@ -46,7 +48,7 @@ def estimate_timer_bias(
     chain = nn.Sequential(*[make_layer() for _ in range(n_layers)]).to(dev_str)
     x = torch.zeros(1, device=dev_str)
 
-    plugin = LayerProfilerPlugin(subtract_timer_bias=False, exclude_types=(), gpu_queue_prefill=False)
+    plugin = LayerProfilerPlugin(subtract_timer_bias=False, exclude_types=(), gpu_queue_prefill=True)
     plugin.attach(chain, dev_str)
     with torch.no_grad():
         for i in range(n_warmup + n_runs):
