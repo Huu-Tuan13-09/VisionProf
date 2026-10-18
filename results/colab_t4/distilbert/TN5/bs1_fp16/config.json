@@ -1,0 +1,14 @@
+{
+  "model": "distilbert",
+  "device": "colab_t4",
+  "batch_size": 1,
+  "precision": "fp16",
+  "seq_len": 128,
+  "experiment": "TN5",
+  "profilers": "layer",
+  "warmup": 15,
+  "measure": 50,
+  "skip_existing": true,
+  "results_dir": "results",
+  "canonical_model": "distilbert"
+}

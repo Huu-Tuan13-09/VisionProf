@@ -1,0 +1,27 @@
+{
+  "plugin": "layer",
+  "device": "colab_t4",
+  "precision": "fp32",
+  "n_hooked_layers": 167,
+  "n_iterations": 5,
+  "timer_bias_ms": 0.0,
+  "total_flops_model": 13861744640.0,
+  "total_flops_counter": 13861744640.0,
+  "total_flops_all": 14217424896.0,
+  "iteration_total_ms": {
+    "0": 20.51891,
+    "1": 20.55619,
+    "2": 20.59258,
+    "3": 20.51174,
+    "4": 20.63779
+  },
+  "gpu_prefill_ok_ratio": 1.0,
+  "hardware": {
+    "hw_id": "colab_t4",
+    "name": "NVIDIA Tesla T4",
+    "peak_gflops_fp32": 8100.0,
+    "peak_gflops_fp16": 65000.0,
+    "bandwidth_gbs": 320.0,
+    "source": "datasheet"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "model": "resnet50",
+  "hw_id": "colab_t4",
+  "n_hooked": 126,
+  "t_clean_ms": 6.042289000106393,
+  "t_hooked_ms": 18.905367500110515,
+  "overhead_pct": 212.88419835227387,
+  "overhead_per_layer_ms": 0.10208792460320731,
+  "layer_sum_ms": 5.128805,
+  "t_base_ms": 5.66779,
+  "unattributed_pct": 9.509614858701545,
+  "matched_ours_ms": 5.128805,
+  "matched_ref_ms": 4.755854020000054,
+  "total_rel_error_pct": 7.841934980164536,
+  "timer_bias_ms": 0.0,
+  "timer_floor_ms": 0.042545,
+  "layers_below_3x_floor_pct": 94.30379746835443,
+  "hidden_syncs_per_forward": 0
+}

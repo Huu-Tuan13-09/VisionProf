@@ -1,0 +1,14 @@
+{
+  "model": "bert_base",
+  "device": "colab_t4",
+  "batch_size": 32,
+  "precision": "fp32",
+  "seq_len": 128,
+  "experiment": "TN4",
+  "profilers": "layer",
+  "warmup": 15,
+  "measure": 50,
+  "skip_existing": true,
+  "results_dir": "results",
+  "canonical_model": "bert_base"
+}

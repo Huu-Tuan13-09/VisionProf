@@ -1,0 +1,19 @@
+{
+  "model": "bert_base",
+  "hw_id": "colab_t4",
+  "n_hooked": 114,
+  "t_clean_ms": 9.81478950006931,
+  "t_hooked_ms": 22.90932599998996,
+  "overhead_pct": 133.41637637595977,
+  "overhead_per_layer_ms": 0.11486435526246185,
+  "layer_sum_ms": 6.295405000000001,
+  "t_base_ms": 7.03064,
+  "unattributed_pct": 10.457582808961908,
+  "matched_ours_ms": 6.290954999999999,
+  "matched_ref_ms": 6.293261419999984,
+  "total_rel_error_pct": 0.03664904166629928,
+  "timer_bias_ms": 0.0,
+  "timer_floor_ms": 0.03792,
+  "layers_below_3x_floor_pct": 78.94736842105263,
+  "hidden_syncs_per_forward": 0
+}

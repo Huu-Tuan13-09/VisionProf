@@ -1,0 +1,19 @@
+{
+  "model": "mobilenet_v3_large",
+  "device": "colab_t4",
+  "batch_size": 32,
+  "num_workers": 2,
+  "cpu_count": 2,
+  "warmup": 5,
+  "measure": 30,
+  "median_ms": {
+    "data_load": 3.909,
+    "forward": 38.484,
+    "backward": 62.335,
+    "optimizer": 12.19
+  },
+  "step_ms": 116.918,
+  "data_load_pct": 3.34,
+  "images_per_s": 273.7,
+  "sentinel_mean_io_ms": 8.586
+}

@@ -1,0 +1,19 @@
+{
+  "model": "resnet50",
+  "device": "colab_t4",
+  "batch_size": 32,
+  "num_workers": 4,
+  "cpu_count": 2,
+  "warmup": 5,
+  "measure": 30,
+  "median_ms": {
+    "data_load": 2.002,
+    "forward": 118.159,
+    "backward": 225.848,
+    "optimizer": 10.327
+  },
+  "step_ms": 356.336,
+  "data_load_pct": 0.56,
+  "images_per_s": 89.8,
+  "sentinel_mean_io_ms": 0.522
+}
