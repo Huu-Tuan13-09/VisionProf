@@ -15,15 +15,6 @@ from typing import List, Tuple
 MAX_LINES_HARD_LIMIT = 300
 WARNING_LINES_LIMIT = 250
 
-# Các file di sản v1.0 đang trong giai đoạn chờ refactor (được miễn tạm thời)
-LEGACY_FILES = {
-    "src/collector.py",
-    "src/analyzer.py",
-    "src/dashboard.py",
-    "tests/test_training_bottleneck.py",
-    "tests/test_modern_models_benchmark.py",
-}
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -36,9 +27,6 @@ def check_file_lengths() -> Tuple[List[str], List[str]]:
     
     for file_path in python_files:
         rel_path = file_path.relative_to(PROJECT_ROOT).as_posix()
-        if rel_path in LEGACY_FILES:
-            continue
-            
         with open(file_path, "r", encoding="utf-8") as f:
             lines = f.readlines()
             total_lines = len(lines)
@@ -57,7 +45,6 @@ def check_forbidden_patterns() -> List[str]:
     candidate_files = [
         f for f in PROJECT_ROOT.glob("src/**/*.py")
         if not f.relative_to(PROJECT_ROOT).as_posix().startswith("src/dashboard")
-        and f.relative_to(PROJECT_ROOT).as_posix() not in LEGACY_FILES
     ]
     
     for file_path in candidate_files:
@@ -72,12 +59,9 @@ def check_forbidden_patterns() -> List[str]:
 
 
 def check_type_hints() -> List[str]:
-    """Kiểm tra 100% type hints cho các public functions/methods trong src/ (ngoài legacy)."""
+    """Kiểm tra 100% type hints cho các public functions/methods trong src/ ."""
     errors = []
-    candidate_files = [
-        f for f in PROJECT_ROOT.glob("src/**/*.py")
-        if f.relative_to(PROJECT_ROOT).as_posix() not in LEGACY_FILES
-    ]
+    candidate_files = list(PROJECT_ROOT.glob("src/**/*.py"))
     
     for file_path in candidate_files:
         rel_path = file_path.relative_to(PROJECT_ROOT).as_posix()

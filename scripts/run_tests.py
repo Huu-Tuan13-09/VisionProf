@@ -12,12 +12,6 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-# Legacy test files that depend on v1 monolithic layout
-SKIP_FILES = {
-    "test_modern_models_benchmark.py",
-    "test_training_bottleneck.py",
-}
-
 
 def discover_and_run_tests() -> Tuple[int, int, List[str]]:
     """Discover all test functions in tests/ and execute them.
@@ -37,10 +31,6 @@ def discover_and_run_tests() -> Tuple[int, int, List[str]]:
     print("=" * 65)
 
     for test_file in test_files:
-        if test_file.name in SKIP_FILES:
-            print(f"⏩ Bỏ qua test di sản v1.0: {test_file.name}")
-            continue
-
         module_name = f"tests.{test_file.stem}"
         try:
             mod = importlib.import_module(module_name)
