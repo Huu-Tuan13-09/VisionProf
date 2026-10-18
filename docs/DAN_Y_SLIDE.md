@@ -1,226 +1,247 @@
-# Dàn ý slide trình bày hoàn chỉnh (24 phút · 22 slide · 3 thành viên)
+# Dàn ý slide trình bày hoàn chỉnh (24 phút · 23 slide · 3 thành viên)
 
-> 📌 **Nguyên tắc cốt lõi về số liệu:** Tài liệu này là **DÀN Ý CẤU TRÚC VÀ LUẬN ĐIỂM THUYẾT TRÌNH**, tập trung vào: **Bố cục hiển thị (Visual Layout)**, **Luận điểm khoa học**, **Cơ chế kỹ thuật** và **Thông điệp chốt**.  
-> Mọi kết quả đo lường cụ thể được chuẩn hóa dưới dạng các vị trí giữ chỗ `[Số liệu...]` để cập nhật số liệu thực tế sau, tuyệt đối không phụ thuộc vào số liệu cứng ở bước này.
+> Khung 22 slide của TV2, thêm phần **Nghiên cứu liên quan** (paper) theo nhận xét của thầy, và điền **số đo thật**.
+> Nguồn số liệu: `docs/KET_QUA_COLAB_GIUA_KY.md` (Colab T4, 18/10), báo cáo từng thành viên, `results/`.
+> Paper và hình: `docs/research/TONG_HOP_NGHIEN_CUU.md`, `docs/research/figures/`. Hình lấy từ paper phải **ghi nguồn ngay dưới hình**.
+> Quy tắc mỗi câu hỏi nghiên cứu: **1 bảng + 1 hình + 3 câu kết luận**.
 
 ---
 
 ## ⏱️ Tổng quan phân bổ thời gian & Phân vai
 
-| Phần | Người phụ trách | Slide | Thời lượng | Trọng tâm khoa học & Luận điểm |
+| Phần | Người phụ trách | Slide | Thời lượng | Trọng tâm |
 | :--- | :---: | :---: | :---: | :--- |
-| **Phần 1: Mở đầu & Khung bài toán** | 🟩 **TV3** | **1–3** | **3.0'** | Định vị Profiling, 3 mức đo, 2 mô hình xuyên suốt |
-| **Phần 2: Mức Layer (TV1)** | 🟧 **TV1** | **4–9** | **7.0'** | Thách thức đo GPU, Roofline, CH1, CH2 (Tự kiểm chứng TN2) |
-| **Phần 3: Mức Model (TV2)** | 🟦 **TV2** | **10–15** | **7.0'** | Đo sạch 2 pha, Chuẩn MLPerf P50–P99, CH3, CH4 |
-| **Phần 4: Mức Giai đoạn & Tổng kết** | 🟩 **TV3** | **16–22** | **7.0'** | Training CH5, Pipeline Amdahl CH6, Chẩn đoán, Demo, Kết luận |
-| **Tổng cộng** | **3 thành viên** | **22** | **24.0'** | **Dành riêng 5–10' sau bài cho phần Q&A và Live Demo trực tiếp** |
+| **Phần 1: Mở đầu & Khung bài toán** | 🟩 **TV3** | **1–3** | **2.5'** | Định vị Profiling, 3 mức đo, 2 mô hình xuyên suốt |
+| **Phần 2: Nghiên cứu liên quan** | 🟧 **TV1** | **4–6** | **3.0'** | Các mức profiling, Roofline & overhead, so sánh & khoảng trống |
+| **Phần 3: Mức Layer** | 🟧 **TV1** | **7–10** | **5.0'** | Đo GPU, CH1, CH2 (tự kiểm chứng TN2) |
+| **Phần 4: Mức Model** | 🟦 **TV2** | **11–16** | **6.5'** | Đo sạch 2 pha, P50–P99, CH3, CH4 |
+| **Phần 5: Mức Giai đoạn & Tổng kết** | 🟩 **TV3** | **17–23** | **7.0'** | CH5 (training + nạp dữ liệu), CH6, chẩn đoán, demo, kết luận |
+| **Tổng cộng** | TV1 8' · TV2 6.5' · TV3 9.5' | **23** | **24.0'** | Dành 5–10' sau bài cho Q&A và demo trực tiếp |
 
 ---
 
-## 🟩 TV3: Phần 1. Mở đầu & Khung bài toán (Slide 1–3 · 3.0')
+## 🟩 TV3: Phần 1. Mở đầu & Khung bài toán (Slide 1–3 · 2.5')
 
 ### Slide 1. Tiêu đề & Giới thiệu đề tài
-- **Bố cục trực quan:** Tiêu đề trung tâm, bên dưới chia 3 khối tác giả kèm mã màu nhận diện (🟩 TV3, 🟧 TV1, 🟦 TV2), thông tin môn học và giảng viên hướng dẫn.
-- **Nội dung hiển thị:**
-  - *Đề tài:* VisionProf: Nền tảng Phân tích và Chẩn đoán Hiệu năng Mô hình Học sâu ở 3 Mức (Layer, Model, Giai đoạn).
-  - *Đặc tính hệ thống:* Bộ công cụ profiling nhẹ cho PyTorch, bọc mô hình không cần sửa đổi mã nguồn (Zero-code modification).
-- **Thông điệp chốt:** VisionProf cung cấp góc nhìn toàn diện từ vi mô phép tính đến vĩ mô pipeline ứng dụng.
+- **Bố cục:** Tiêu đề giữa; 3 khối tác giả theo màu (🟩 TV3, 🟧 TV1, 🟦 TV2), môn học, giảng viên.
+- **Nội dung:** VisionProf: phân tích hiệu năng mô hình học sâu ở 3 mức (Layer, Model, Giai đoạn); công cụ nhẹ cho PyTorch, gắn vào mô hình không sửa mã nguồn.
 
 ### Slide 2. Đặt vấn đề: Evaluation, Benchmarking hay Profiling?
-- **Bố cục trực quan:** Bảng so sánh 3 cột phân định khái niệm, cột thứ 3 (Profiling) được đóng khung viền nổi bật.
-- **Nội dung hiển thị:**
-  - *Evaluation (Đánh giá thuật toán):* Mô hình dự đoán đúng bao nhiêu? (Accuracy, mAP, F1) $\rightarrow$ *Ngoài phạm vi đề tài*.
-  - *Benchmarking (Đo hiệu năng đen):* Mô hình chạy nhanh bao nhiêu? (Latency trung bình, Throughput tổng).
-  - *Profiling (Mổ xẻ tài nguyên):* **Thời gian và bộ nhớ thực sự đi đâu?** Nghẽn do tính toán hay băng thông phần cứng?
-- **Thông điệp chốt:** Đề tài tập trung 100% vào **Profiling**; giải thích cặn kẽ hành vi tiêu hao tài nguyên phần cứng.
+- **Bố cục:** Bảng 3 cột, cột Profiling đóng khung nổi bật.
+- **Nội dung:**
+  - *Evaluation:* mô hình dự đoán đúng bao nhiêu (Accuracy, mAP, F1) → **ngoài phạm vi đề tài**.
+  - *Benchmarking:* mô hình chạy nhanh bao nhiêu (latency, throughput).
+  - *Profiling:* **thời gian và bộ nhớ thực sự đi đâu**, nghẽn do tính toán hay do băng thông bộ nhớ.
+- **Thông điệp chốt:** Đề tài tập trung vào **Profiling**.
 
-### Slide 3. Khung 3 mức đo & Sợi chỉ đỏ dẫn dắt (The Red Thread)
-- **Bố cục trực quan:** Sơ đồ phân tầng 3 mức đo xếp chồng, đặt cạnh biểu tượng của 2 mô hình đối sánh xuyên suốt.
-- **Nội dung hiển thị:**
-  - 3 Mức khảo sát: 🟧 Mức Layer (TV1) $\rightarrow$ 🟦 Mức Model (TV2) $\rightarrow$ 🟩 Mức Giai đoạn (TV3), trả lời 6 câu hỏi CH1–CH6.
-  - Sợi chỉ đỏ dẫn dắt: Theo dõi hành trình đối đầu giữa **ResNet-50** (đại diện CNN) và **DistilBERT / ViT** (đại diện Transformer) qua cả 3 tầng.
-- **Thông điệp chốt & Lời chuyển giao:** *"Để hiểu bản chất vật lý từ những phép tính vi mô nhất bên trong phần cứng, xin mời TV1 bắt đầu với Mức Layer."*
+### Slide 3. Khung 3 mức đo & Sợi chỉ đỏ
+- **Bố cục:** Sơ đồ 3 mức xếp chồng, cạnh 2 mô hình theo dõi xuyên suốt.
+- **Nội dung:** 🟧 Layer (TV1) → 🟦 Model (TV2) → 🟩 Giai đoạn (TV3), trả lời CH1–CH6; 8 mô hình (CV, NLP, Tabular) trên laptop CPU và Colab T4. Sợi chỉ đỏ: **ResNet-50** (CNN) đối đầu **ViT / DistilBERT** (Transformer).
+- **Lời chuyển:** *"Trước khi vào thiết kế, TV1 trình bày các nghiên cứu đi trước và khoảng trống nhóm muốn lấp."*
 
 ---
 
-## 🟧 TV1: Phần 2. Mức Layer — Bản chất phần cứng & Kiểm chứng (Slide 4–9 · 7.0')
+## 🟧 TV1: Phần 2. Nghiên cứu liên quan (Slide 4–6 · 3.0')
 
-### Slide 4. Thách thức kỹ thuật: Đo GPU không dễ
-- **Bố cục trực quan:** Sơ đồ dòng thời gian (Timeline): So sánh cơ chế CPU gửi lệnh bất đồng bộ với GPU thực thi; chỉ ra lỗi sai số của đồng hồ CPU.
-- **Nội dung hiển thị:**
-  - *Bản chất bất đồng bộ:* CPU chỉ xếp lệnh vào hàng đợi rồi chạy tiếp $\rightarrow$ dùng đồng hồ CPU chỉ đo được thời gian phát lệnh (Launch latency).
-  - *Giải pháp Deferred CUDA Events:* Chèn Event đánh dấu trước/sau từng layer; chỉ đồng bộ `cudaStreamSynchronize` duy nhất 1 lần ở cuối vòng; dùng ngăn xếp LIFO cho layer tái sử dụng.
-- **Thông điệp chốt:** Kỹ thuật Deferred CUDA Events bảo toàn luồng chạy song song của GPU, phản ánh đúng thời gian tính toán thực tế.
+### Slide 4. Profiling học sâu: nhìn ở nhiều mức
+- **Bố cục:** Hình `docs/research/figures/06_mlmodelscope_fig1_L1_L5.png`, đánh dấu phần nhóm đo: L1 (Model + pipeline), L2–L3 (Layer).
+- **Nội dung:** Hiệu năng phụ thuộc cả chồng phần mềm, phần cứng (model → framework → layer → thư viện → phần cứng). Các công cụ trước thường chỉ nhìn một tầng.
+- **Nguồn:** Dakkak et al., MLModelScope, arXiv:2002.08295.
 
-### Slide 5. Nền tảng học thuật: Roofline Model & Nghịch lý Overhead
-- **Bố cục trực quan:** Chia 2 cột: Cột trái nhúng biểu đồ Roofline (`01_roofline_fig1.png`); Cột phải nhúng biểu đồ Overhead theo tầng đo từ paper XSP (`04_xsp_fig2_leveled_overhead.png`).
-- **Nội dung hiển thị:**
-  - *Roofline Model (Williams et al., CACM 2009):* Phân định ranh giới giữa nghẽn tính toán (Compute-Bound) và nghẽn băng thông bộ nhớ (Memory-Bound).
-  - *Nghịch lý Overhead (Li et al., XSP, IPDPS 2020):* Đo càng chi tiết ở mức sâu thì công cụ đo càng làm phình to thời gian chạy thực tế.
-- **Thông điệp chốt:** Mức Layer được thiết kế chuyên biệt để **phân rã tỷ lệ %**, việc chốt tổng thời gian sạch được giao cho Mức Model.
+### Slide 5. Roofline & nghịch lý overhead
+- **Bố cục:** Trái `01_roofline_fig1.png`; phải `04_xsp_fig2_leveled_overhead.png`.
+- **Nội dung:**
+  - *Roofline (Williams et al., CACM 2009):* hiệu năng đạt được = min(đỉnh tính toán, băng thông × FLOP/byte) → phân định compute-bound và memory-bound.
+  - *XSP (Li et al., IPDPS 2020):* đo càng sâu thì overhead của chính công cụ đo càng lớn; XSP đo lần lượt từng mức để khỏi sai.
+- **Thông điệp chốt:** Nhóm dùng Roofline cho từng layer và **tự kiểm chứng công cụ đo** (TN2); mức Layer dùng để phân rã tỷ lệ, tổng thời gian sạch giao cho mức Model.
 
-### Slide 6. CH1: Thời gian tập trung ở loại Layer nào?
-- **Bố cục trực quan:** Biểu đồ cơ cấu thời gian theo nhóm layer (`fig1_type_share.png`) kèm bảng tỷ trọng thành phần.
-- **Nội dung hiển thị:**
-  - *CNN (ResNet-50):* Phép tính tích chập (Conv) chiếm tỷ trọng thời gian áp đảo `[Điền % Conv CPU vs T4]`.
-  - *Transformer (ViT, BERT):* Nhân ma trận (Linear) và Attention chiếm tỷ trọng gần như tuyệt đối `[Điền % Linear+Attention]`.
-  - *Mô hình nhẹ (MobileNetV3):* Trên GPU, tỷ trọng Conv giảm nhường chỗ cho BatchNorm và hàm kích hoạt tăng vọt `[Điền bảng % thay đổi]`.
-- **Thông điệp chốt:** Các phép tính lớn được tăng tốc mạnh trên GPU khiến các thao tác phụ trợ nhỏ (element-wise) bộc lộ thành điểm nghẽn tỷ trọng.
-
-### Slide 7. CH1: GPU giúp được bao nhiêu, và vì sao?
-- **Bố cục trực quan:** Ghép biểu đồ cột Speedup GPU vs CPU (`fig2_gpu_speedup.png`) và Biểu đồ phân bố điểm làm việc trên Roofline (`fig3_roofline.png`).
-- **Nội dung hiển thị:**
-  - *So sánh gia tốc:* Transformer đạt mức tăng tốc vượt trội so với CNN nhờ cấu trúc nhân ma trận GEMM thân thiện với GPU `[Điền hệ số Speedup từng họ]`.
-  - *Khai thác trần phần cứng:* Biểu đồ Roofline chỉ ra ở Batch Size = 1, các layer lớn vẫn chưa khai thác hết công suất đỉnh của GPU `[Điền % công suất Roofline]`.
-- **Thông điệp chốt:** Kiến trúc Transformer tận dụng năng lực tính toán song song của GPU hiệu quả hơn nhiều so với kiến trúc tuần tự của CNN.
-
-### Slide 8. CH2: Công cụ đo có chính xác không? (Tự kiểm chứng TN2)
-- **Bố cục trực quan:** Biểu đồ đối chiếu sai số (`fig4_tn2_error.png`) kết hợp Bảng ma trận kiểm chứng độc lập so với `torch.profiler`.
-- **Nội dung hiển thị:**
-  - *Sai lệch thời gian:* Đạt độ chính xác khoa học cao so với công cụ chuẩn trên cả CPU và GPU `[Điền bảng sai số % CPU vs T4]`.
-  - *Đo lường Overhead:* Đo đạc minh bạch độ phồng thời gian của công cụ đo ở batch 1 `[Điền bảng % overhead CPU vs T4]`.
-  - *Phát hiện kỹ thuật:* Phân tích giới hạn sàn phần cứng của CUDA Event (~6 µs) gây đo dư ở các layer siêu ngắn (Sub-microsecond).
-- **Thông điệp chốt:** VisionProf chứng minh tính đúng đắn khoa học thông qua tự kiểm chứng và công khai chi phí can thiệp phần cứng.
-
-### Slide 9. Tổng kết Mức Layer & Khuyến nghị kỹ thuật
-- **Bố cục trực quan:** 3 khối hộp tóm tắt khuyến nghị có icon trực quan, đóng khung vai trò của Mức Layer.
-- **Nội dung hiển thị:**
-  - 1. Muốn tối ưu CNN phải nhắm vào Conv; tối ưu Transformer phải nhắm vào Linear và Attention.
-  - 2. Không lấy tổng thời gian từ Mức Layer do ảnh hưởng của overhead ghi nhận sự kiện (Events).
-  - 3. Chuyển giao nhiệm vụ chốt độ trễ toàn thể cho Mức Model.
-- **Thông điệp chốt & Lời chuyển giao:** *"Sau khi đã hiểu bản chất vi mô bên trong, xin mời TV2 trình bày bức tranh tổng thể ở Mức Model."*
+### Slide 6. So sánh & khoảng trống
+- **Bố cục:** Bảng so sánh ở `docs/research/TONG_HOP_NGHIEN_CUU.md` Mục 3 (XSP, PRoof, MLPerf, MLModelScope, AI Tax, Data Stalls, **VisionProf**).
+- **Nội dung:**
+  - Mỗi công trình đo **một** mức hoặc là hệ thống lớn (cụm máy, hardware counter). AI Tax: dưới 60% độ trễ ứng dụng thật là AI. Data Stalls: training thường phải chờ dữ liệu.
+  - **Khoảng trống:** gom cả 3 mức vào một công cụ nhẹ cho PyTorch; đo suy luận, training và pipeline thật; CPU laptop và GPU T4; tự kiểm chứng độ chính xác.
+  - Nói luôn hạn chế: không đo kernel GPU, không dùng hardware counter (thế mạnh của XSP, PRoof).
+- **Lời chuyển:** *"Bắt đầu từ mức sâu nhất: mức Layer."*
 
 ---
 
-## 🟦 TV2: Phần 3. Mức Model — Phân vị trễ & Sức mạnh phần cứng (Slide 10–15 · 7.0')
+## 🟧 TV1: Phần 3. Mức Layer (Slide 7–10 · 5.0')
 
-### Slide 10. Kiến trúc Mức Model & Kỹ thuật đo sạch 2 pha
-- **Bố cục trực quan:** Sơ đồ khối kiến trúc `ModelAdapter` chuẩn hóa 8 mô hình, kết hợp sơ đồ luồng quy trình đo 2 pha độc lập.
-- **Nội dung hiển thị:**
-  - *Nguyên tắc đo sạch 2 pha (Clean 2-Phase Profiling):*
-    - Pha 1: Vòng lặp đo Latency thuần túy (tắt toàn bộ profiler/hook) $\rightarrow$ triệt tiêu hoàn toàn độ phồng trễ.
-    - Pha 2: Bật profiler thu thập thông số bộ nhớ và tài nguyên hệ thống.
-  - *Thu thập VRAM chuẩn xác:* Đọc trực tiếp từ bộ cấp phát của GPU qua `torch.cuda.max_memory_allocated()`.
-- **Thông điệp chốt:** Tách biệt đo tốc độ và đo tài nguyên là nguyên tắc sống còn để thu được độ trễ sạch.
+### Slide 7. Thách thức: đo GPU không dễ
+- **Bố cục:** Dòng thời gian CPU gửi lệnh bất đồng bộ / GPU thực thi; chỉ ra sai số khi dùng đồng hồ CPU.
+- **Nội dung:** CPU chỉ xếp lệnh vào hàng đợi rồi chạy tiếp → đồng hồ CPU chỉ đo được thời gian gửi lệnh. Giải pháp: CUDA Event ghi trong hook, **đồng bộ 1 lần cuối vòng**, lấp hàng đợi để GPU chạy liền mạch, ngăn xếp cho layer dùng lại nhiều lần. Gắn vào mô hình bằng 5 dòng code, không sửa mô hình.
 
-### Slide 11. Chuẩn đo lường công nghiệp & Thiết lập thực nghiệm
-- **Bố cục trực quan:** Đồ thị hàm mật độ phân phối độ trễ (Latency Distribution) làm nổi bật các mốc phân vị P50, P90, P99 và dải trễ đuôi (Tail Latency).
-- **Nội dung hiển thị:**
-  - *Chuẩn công nghiệp MLPerf (Reddi et al., ISCA 2020):* Bác bỏ trung bình cộng đơn giản; bắt buộc dùng $P_{90}$ và $P_{99}$ để đánh giá độ ổn định dịch vụ.
-  - *Quy chuẩn thực nghiệm:* Khởi động ấm (Warm-up) 10 vòng, đo lặp 50 vòng thống kê, tự động kết xuất môi trường phần cứng `env.json`.
-  - *Lưu ý môi trường CPU:* Phân định rạch ròi 2 cấu hình máy CPU (laptop x86 của TV1 vs MacBook chip Apple ARM64 của TV2), không so sánh chéo trực tiếp số đo giữa 2 máy.
-- **Thông điệp chốt:** Đánh giá triển khai thực tế bắt buộc phải kiểm soát độ trễ đuôi $P_{99}$ chống hiện tượng nghẽn ngẫu ứng.
+### Slide 8. CH1: Thời gian tập trung ở loại layer nào?
+- **Bố cục:** `docs/tv1/figures/fig1_type_share.png` + bảng tỷ trọng.
+- **Nội dung:**
 
-### Slide 12. CH3: Nghịch lý tham số & Hiện tượng Memory-Bound (Đo thật CPU)
-- **Bố cục trực quan:** Biểu đồ đối đầu: Trục tung là Số lượng tham số, Trục hoành là Độ trễ thực tế trên CPU.
-- **Nội dung hiển thị:**
-  - *Nghịch lý đo thật:* Mô hình ít tham số nhất (MobileNetV3) lại có độ trễ lớn hơn nhiều lần so với mô hình nhiều tham số hơn (ResNet-50, DistilBERT) `[Điền số đo P50 và FPS CPU]`.
-  - *Bản chất phần cứng:* Depthwise Separable Conv có cường độ số học thấp, biến MobileNet thành tác vụ nghẽn băng thông bộ nhớ RAM (Memory-Bound). Trên chip ARM64, kernel PyTorch cho Depthwise Conv tối ưu chưa tốt bằng x86, làm độ trễ tăng vọt. Ngược lại, Standard Conv và Attention tận dụng tốt bộ đệm cache và tập lệnh SIMD.
-- **Thông điệp chốt:** Số lượng tham số **không** tỷ lệ thuận với tốc độ; độ tương thích giữa kiến trúc và phân cấp bộ nhớ mới là yếu tố quyết định.
+  | | CPU laptop (x86) | Colab T4 |
+  | :--- | :-: | :-: |
+  | ResNet-50: Conv | 85% | 83% |
+  | MobileNetV3: Conv / BatchNorm | 73% / 14% | 47% / 25% |
+  | BERT-base: Linear | 95% | 95% |
+  | ViT-B/16: Linear + Attention | 96% | 96% |
 
-### Slide 13. CH3: Thứ hạng đảo chiều trên GPU Colab T4
-- **Bố cục trực quan:** Biểu đồ đường dốc thay đổi thứ hạng (Rank-Shift Slope Chart) nối từ phía CPU sang phía GPU T4.
-- **Nội dung hiển thị:**
-  - *Sự đảo chiều:* Băng thông VRAM cực lớn của GPU giải tỏa nút thắt bộ nhớ; các phép nhân ma trận lớn bứt phá về hiệu năng `[Điền bảng thứ hạng trễ trên T4]`.
-  - *Nguyên tắc lựa chọn:* Khẳng định nguyên lý "Hardware-aware Selection" — không có mô hình nào tối ưu trên mọi loại phần cứng.
-- **Thông điệp chốt:** Lựa chọn kiến trúc mô hình bắt buộc phải căn cứ vào phần cứng triển khai thực tế.
+- **Thông điệp chốt:** CPU dồn vào Conv (CNN 73–85%) và Linear + Attention (Transformer 95–96%). Lên GPU, phép tính lớn được tăng tốc nên layer nhỏ (BatchNorm, activation) chiếm tỷ trọng lớn hơn, rõ nhất ở mô hình nhẹ.
 
-### Slide 14. CH4: Khả năng mở rộng Batch Size & Chiều dài chuỗi NLP
-- **Bố cục trực quan:** Đồ thị đường biểu diễn Throughput (FPS) theo Batch Size và Đồ thị trễ Self-Attention theo chiều dài token.
-- **Nội dung hiển thị:**
-  - *Mở rộng Batch Size:* Thông lượng tăng nhanh ở các batch đầu nhưng đạt điểm bão hòa sớm; GPU cần batch đủ lớn để bù đắp chi phí khởi tạo `[Điền điểm bão hòa Throughput]`.
-  - *Chiều dài chuỗi NLP:* Độ trễ bùng nổ theo bình phương chiều dài chuỗi $O(N^2)$ của cơ chế Attention, gây suy giảm mạnh thông lượng ở batch lớn `[Điền hệ số suy giảm FPS]`.
-- **Thông điệp chốt:** Dynamic Batching là giải pháp cốt lõi cho GPU; cần giới hạn chặt chẽ chiều dài chuỗi đầu vào trong NLP.
+### Slide 9. CH1: GPU giúp được bao nhiêu, và vì sao?
+- **Bố cục:** `fig2_gpu_speedup.png` + `fig3_roofline.png`.
+- **Nội dung:**
+  - Tăng tốc T4 so với CPU (tổng thời gian các layer): BERT-base 9.6×, ViT 9.3×, DistilBERT 9.3× · ResNet-50 6.2×, YOLOv8n 5.6×, MobileNetV3 2.8×.
+  - Layer lớn ở batch 1 chỉ đạt khoảng 30–55% sức tối đa của máy (Roofline).
+  - Phép toán element-wise ít FLOPs nhưng vẫn tốn thời gian trên GPU (ShuffleNet V2, Ma et al., ECCV 2018, nguyên tắc G4).
+- **Thông điệp chốt:** Transformer (nhân ma trận lớn) tận dụng GPU tốt hơn CNN, nhất là CNN nhẹ.
 
-### Slide 15. CH4: Sức mạnh Tensor Cores FP16 & Bảo toàn độ chính xác
-- **Bố cục trực quan:** Biểu đồ cột nhóm so sánh FP32 vs FP16 trên 2 trục: Hệ số tăng tốc độ trễ và Tỷ lệ tiết kiệm dung lượng VRAM; Hộp chỉ số tương đồng đầu ra.
-- **Nội dung hiển thị:**
-  - *Gia tốc phần cứng:* Bật nửa độ chính xác FP16 kích hoạt nhân Tensor Cores giúp giảm độ trễ đáng kể `[Điền hệ số tăng tốc FP16]`.
-  - *Tối ưu bộ nhớ:* Cắt giảm mạnh mẽ dung lượng VRAM đỉnh `[Điền % VRAM tiết kiệm]`.
-  - *Kiểm chứng sai số:* Chỉ số Cosine Similarity giữa đầu ra FP32 và FP16 đạt mức tiệm cận 1.0 `[Điền Cosine Similarity]`.
-- **Thông điệp chốt & Lời chuyển giao:** *"Mô hình AI chỉ là một mắt xích. Xin mời TV3 đưa chúng ta đến bức tranh toàn cảnh của Huấn luyện và Pipeline thực tế."*
+### Slide 10. CH2: Công cụ đo có đúng không? + tổng kết mức Layer
+- **Bố cục:** `fig4_tn2_error.png` + bảng.
+- **Nội dung:**
+
+  | | ResNet-50 CPU | BERT CPU | ResNet-50 T4 | BERT T4 |
+  | :--- | :-: | :-: | :-: | :-: |
+  | Sai lệch tổng so với `torch.profiler` | 0.35% | 0.27% | 7.5% | 0.8% |
+  | Overhead | 11% | 5% | 166% | 109% |
+  | Thời gian không thuộc layer nào | 3.9% | 9.2% | 9.0% | 10.3% |
+
+  - Đo lại trên T4 bằng code hiện tại (18/10): sai lệch 7.8% và 0.04%, cùng kết quả.
+  - Ngưỡng sàn CUDA event khoảng 6 µs: layer chỉ chạy vài µs (ReLU, BatchNorm ở batch 1) bị đo dư; chỉ dùng để so sánh tương đối.
+- **Thông điệp chốt:** Đủ chính xác để phân rã (< 1% CPU, < 8% GPU). Overhead GPU ở batch 1 lớn (khoảng 110–210% tuỳ phiên) → **không** lấy tổng thời gian từ mức Layer; việc đó của mức Model.
+- **Lời chuyển:** *"Đo tổng thời gian sạch của cả mô hình là phần của TV2."*
 
 ---
 
-## 🟩 TV3: Phần 4. Mức Giai đoạn, Chẩn đoán & Tổng kết (Slide 16–22 · 7.0')
+## 🟦 TV2: Phần 4. Mức Model (Slide 11–16 · 6.5')
 
-### Slide 16. Kỹ thuật Mức Giai đoạn: Context Manager & PhaseTimer
-- **Bố cục trực quan:** Sơ đồ phân rã các giai đoạn thực thi kết hợp đoạn mã mẫu bọc Context Manager (`with timer.phase():`) có đánh dấu đồng bộ luồng CUDA.
-- **Nội dung hiển thị:**
-  - *Cơ chế `PhaseTimer`:* Phân đoạn rạch ròi các công đoạn nối tiếp mà không xâm lấn kiến trúc mô hình; đồng bộ chính xác tại các biên thời gian.
-  - *Hai phạm vi khảo sát:* Chu trình Huấn luyện (Forward $\rightarrow$ Loss $\rightarrow$ Backward $\rightarrow$ Step) và Pipeline Triển khai (Tiền xử lý $\rightarrow$ Model Forward $\rightarrow$ Hậu xử lý).
-- **Thông điệp chốt:** Phân rã giai đoạn là phương pháp duy nhất định vị được chi phí nằm trong lõi mô hình hay ở các tác vụ bao quanh.
+### Slide 11. Kiến trúc mức Model & đo sạch 2 pha
+- **Bố cục:** Sơ đồ `ModelAdapter` (8 mô hình) + luồng đo 2 pha.
+- **Nội dung:** Pha 1 đo latency **không gắn hook**; pha 2 mới gắn bộ đo layer và tài nguyên. VRAM đỉnh lấy từ `torch.cuda.max_memory_allocated()`.
+- **Thông điệp chốt:** Tách đo tốc độ khỏi đo chi tiết là điều kiện để có độ trễ sạch (khớp Slide 5, 10).
 
-### Slide 17. CH5: Phân rã chu trình Huấn luyện & Bùng nổ VRAM
-- **Bố cục trực quan:** Biểu đồ thanh ngang tỷ số Backward/Forward và Biểu đồ cột chồng VRAM so sánh Training vs Suy luận.
-- **Nội dung hiển thị:**
-  - *Tỷ số thời gian Backward / Forward:* Đối chiếu số đo thực tế với lý thuyết giải tích lan truyền ngược ($2\times FLOPs$) và phân tích tối ưu cuDNN cho CNN `[Điền tỷ số Bwd/Fwd]`.
-  - *Bùng nổ bộ nhớ:* VRAM tăng vọt nhiều lần khi chuyển sang huấn luyện `[Điền tỷ lệ tăng VRAM]`.
-  - *Nguyên nhân kỹ thuật:* Cơ chế đạo hàm tự động bắt buộc lưu giữ toàn bộ các bản đồ kích hoạt trung gian (Activation maps) trên bộ nhớ (Zhu et al., IISWC 2018).
-- **Thông điệp chốt:** Định lượng nguyên nhân gây sập bộ nhớ (OOM) khi huấn luyện dù mô hình suy luận hoàn toàn bình thường.
+### Slide 12. Chuẩn đo & thiết lập thực nghiệm
+- **Bố cục:** Phân phối độ trễ, đánh dấu P50, P90, P99.
+- **Nội dung:**
+  - MLPerf Inference (Reddi et al., ISCA 2020) dùng độ trễ **phân vị 90 / 99**, không dùng trung bình.
+  - Khởi động rồi đo 50 vòng; tự lưu `env.json`.
+  - ⚠️ "Laptop CPU" là **2 máy khác nhau**: laptop x86 của TV1 (TN1, TN2) và MacBook chip Apple (arm64) của TV2 (TN3, TN4). Không so số CPU giữa 2 máy.
 
-### Slide 18. CH6: Điểm nghẽn ngoài mô hình & Định luật Amdahl
-- **Bố cục trực quan:** Biểu đồ Donut phân bổ các khâu của Pipeline (YOLOv8) kết hợp Biểu đồ thanh so sánh tương quan tỷ trọng trên CPU vs GPU.
-- **Nội dung hiển thị:**
-  - *Xác nhận điểm nghẽn ngoài mô hình:* Trên GPU, tổng thời gian của tiền xử lý ảnh và hậu xử lý NMS chiếm tỷ trọng áp đảo `[Điền % ngoài mô hình trên T4]`.
-  - *Nghịch lý Amdahl:* Trên CPU, mô hình chạy chậm che lấp tiền xử lý. Khi đưa lên GPU, mô hình được tăng tốc mạnh khiến khâu tiền xử lý ảnh trên CPU lộ ra thành nút thắt cổ chai lớn nhất.
-  - *Đối chứng học thuật:* Khớp với luận điểm của nghiên cứu AI Tax (Richins et al., HPCA 2020: Phần lớn thời gian ứng dụng thật nằm ngoài AI).
-- **Thông điệp chốt:** Tối ưu hóa mô hình AI trên GPU đã chạm trần; trọng tâm cải tiến phải chuyển sang khâu xử lý dữ liệu đầu vào.
+### Slide 13. CH3: Ít tham số có chắc nhanh hơn? (batch 1, FP32)
+- **Bố cục:** Bảng 8 mô hình × (T4, CPU Mac) + `fig_ch3_speedup.png`.
+- **Nội dung:**
 
-### Slide 19. Động cơ Chẩn đoán tự động (19 Luật v2.0) & So sánh A/B
-- **Bố cục trực quan:** Chia 2 nửa: Nửa trái hiển thị Danh mục luật chẩn đoán heuristic (PASS / WARNING / CRITICAL); Nửa phải hiển thị Đồ thị phân phối kiểm định A/B Testing.
-- **Nội dung hiển thị:**
-  - *19 Luật Heuristic v2.0:* Tự động quét 4 nhóm bất thường (Tài nguyên RA, Độ trễ RB, Dữ liệu RC, Cấu trúc RD); chuẩn hóa đơn vị ms/GFLOP và phân định Process RSS vs Tensor Memory.
-  - *Kiểm định thống kê A/B:* Đánh giá cải tiến dựa trên tổng thời gian chu trình; sử dụng kiểm định phi tham số **Mann-Whitney U** ($p\text{-value}$) và thước đo **Cliff's Delta** để khẳng định ý nghĩa khoa học.
-- **Thông điệp chốt:** Tự động hóa quá trình phát hiện điểm nghẽn và cung cấp khuyến nghị kỹ thuật có cơ sở toán học tin cậy.
+  | Mô hình | Tham số | T4 P50 | CPU Mac P50 |
+  | :--- | :-: | :-: | :-: |
+  | DistilBERT | 66 M | 5.3 ms | 18.7 ms |
+  | ResNet-50 | 26 M | 6.0 ms | 22.5 ms |
+  | MobileNetV3-L | 5.5 M | 6.0 ms | 176.3 ms |
+  | YOLOv8n | 3.2 M | 7.5 ms | 61.8 ms |
+  | BERT-base | 110 M | 8.6 ms | 38.0 ms |
+  | ViT-B/16 | 87 M | 13.0 ms | 45.8 ms |
+  | MLP / XGBoost | < 0.1 M | 0.28 / 1.56 ms | 0.04 / 0.13 ms |
 
-### Slide 20. Video Walkthrough Dashboard (90 giây)
-- **Bố cục trực quan:** Khung phát video 16:9 chất lượng cao nhúng giữa slide kèm 4 thẻ định danh 4 tab tính năng trọng tâm.
-- **Nội dung thuyết minh theo Video:**
-  - *Phân đoạn 1 (Tab Layer):* Trực quan hóa tỷ trọng Layer và Biểu đồ tương tác Roofline trên GPU.
-  - *Phân đoạn 2 (Tab Model):* Đối đầu hiệu năng các mô hình và công cụ khảo sát Batch scaling.
-  - *Phân đoạn 3 (Tab Pipeline):* Biểu đồ Donut bóc tách chi phí tiền/hậu xử lý của Pipeline ứng dụng.
-  - *Phân đoạn 4 (Tab Chẩn đoán & A/B):* Danh mục vi phạm luật tự động và bảng so sánh A/B.
-  - *(Chế độ phòng ngự: Streamlit Dashboard localhost:8501 chạy sẵn sàng phục vụ kiểm tra trực tiếp trong Q&A).*
-- **Thông điệp chốt:** Thể hiện sản phẩm phần mềm hoàn thiện, vận hành trơn tru và trực quan hóa dữ liệu mạnh mẽ.
+- **Thông điệp chốt:**
+  1. **Trên T4 ở batch 1, tham số và FLOPs không quyết định độ trễ:** ResNet-50 (8.2 GFLOPs) và MobileNetV3 (0.43 GFLOPs, ít hơn 19 lần) cùng khoảng 6 ms vì GPU bị giới hạn bởi chi phí gửi kernel.
+  2. **Mô hình rất nhỏ chạy GPU còn chậm hơn CPU** (MLP 0.28 ms so với 0.04 ms).
+  3. MobileNetV3 chậm bất thường trên CPU ARM của Mac (176 ms; trên laptop x86 của TV1 khoảng 12 ms) → kết quả phụ thuộc cả phần cứng lẫn mức tối ưu thư viện cho phần cứng đó.
 
-### Slide 21. Bảng tổng kết giải đáp 6 Câu hỏi nghiên cứu (CH1–CH6)
-- **Bố cục trực quan:** Bảng ma trận 6 dòng tương ứng 6 câu hỏi, gồm 3 cột: Mã câu hỏi, Luận điểm khẳng định và Cơ chế kỹ thuật chứng minh.
-- **Nội dung hiển thị:**
-  - **CH1 (Layer):** Tỷ trọng tập trung ở Conv (CNN) và Linear/Attention (Transformer); batch 1 chưa khai thác hết trần Roofline `[Điền tóm tắt %]`.
-  - **CH2 (Kiểm chứng):** Đạt độ chính xác cao so với `torch.profiler`; làm rõ ngưỡng sàn event `[Điền tóm tắt sai số]`.
-  - **CH3 (Model):** Tham số không quyết định tốc độ; Memory-bound trên CPU; đảo chiều thứ hạng trên GPU `[Điền tóm tắt trễ]`.
-  - **CH4 (Scaling):** Batch bão hòa sớm; Attention trễ bậc hai theo độ dài chuỗi; FP16 tăng tốc và giảm VRAM `[Điền tóm tắt tăng tốc]`.
-  - **CH5 (Training):** Tỷ số Backward/Forward khớp lý thuyết; VRAM bùng nổ do lưu trữ Activation maps `[Điền tóm tắt VRAM]`.
-  - **CH6 (Pipeline):** Lên GPU bộc lộ chi phí ngoài mô hình chiếm tỷ trọng chi phối theo Định luật Amdahl `[Điền tóm tắt % ngoài model]`.
-- **Thông điệp chốt:** Khẳng định đề tài đã trả lời trọn vẹn và thuyết phục toàn bộ 6 câu hỏi nghiên cứu ban đầu.
+### Slide 14. CH3: Thứ hạng thay đổi theo phần cứng
+- **Bố cục:** `fig_ch3_rank_shift.png` (nhãn trái: CPU Mac).
+- **Nội dung:** Thứ hạng CPU Mac → T4: MobileNetV3 8 → 5, YOLOv8n 7 → 6, BERT-base 5 → 7, ViT 6 → 8; DistilBERT, ResNet-50 giữ hạng 3, 4.
+- **Thông điệp chốt:** Không có mô hình "nhanh nhất mọi nơi"; chọn mô hình phải đo trên phần cứng triển khai thật. Lưu ý phần lớn thay đổi đến từ MobileNetV3 trên Mac (Slide 13).
 
-### Slide 22. Hạn chế, Hướng phát triển & Mời Q&A
-- **Bố cục trực quan:** Cột trái trình bày Hạn chế & Hướng phát triển; Cột phải hiển thị Mã QR dẫn tới GitHub Repository và Lời cảm ơn Hội đồng.
-- **Nội dung hiển thị:**
-  - *Hạn chế hiện tại:* Chưa phân tích sâu vào kernel GPU bằng CUPTI/hardware counters; giới hạn khảo sát trên đơn GPU; áp dụng cho PyTorch Eager mode.
-  - *Hướng phát triển:* Mở rộng sang đồ thị tĩnh `torch.compile`, hỗ trợ profiling phân tán đa GPU (DDP).
-  - *Lời kết:* Chân thành cảm ơn Quý Thầy/Cô và các bạn; Nhóm sẵn sàng giải đáp câu hỏi và thực hiện live demo theo yêu cầu.
-- **Thông điệp chốt:** Kết thúc bài trình bày với phong thái tự tin, khiêm tốn học thuật và làm chủ hoàn toàn công nghệ.
+### Slide 15. CH4: Tăng batch & độ dài câu
+- **Bố cục:** `fig_ch4_batch_scaling.png` + bảng NLP theo độ dài câu.
+- **Nội dung:**
+  - Throughput T4, batch 1 → 32: MobileNetV3 **8.8×** (170 → 1 499 ảnh/s), ResNet-50 2.2×, YOLOv8n 2.0×, DistilBERT 1.5×, BERT 1.4×, ViT 1.3× (bão hoà từ batch 8).
+  - BERT-base batch 32: 127 ms (seq 64) → 228 ms (128) → 507 ms (256): mỗi lần gấp đôi độ dài, độ trễ tăng 1.8× rồi 2.2× (Attention tăng theo bình phương).
+- **Thông điệp chốt:** Mô hình nhẹ cần batch lớn mới lấp đầy GPU; mô hình nặng bão hoà sớm. Với NLP cần giới hạn độ dài câu.
+
+### Slide 16. CH4: FP16 trên T4 (batch 1)
+- **Bố cục:** `fig_ch4_fp16.png`.
+- **Nội dung:**
+
+  | | ViT-B/16 | DistilBERT | BERT-base | ResNet-50 | MobileNetV3 | YOLOv8n |
+  | :--- | :-: | :-: | :-: | :-: | :-: | :-: |
+  | Tăng tốc FP16 | **2.81×** | 1.55× | 1.23× | **0.87×** | 0.85× | **0.77×** |
+  | VRAM giảm | 45% | 45% | 46% | 43% | 38% | 49% |
+
+  - Cosine FP16 / FP32 (cùng trọng số, cùng input): ≥ 0.999999 với ResNet-50, YOLOv8n, DistilBERT, BERT, MLP. ViT, MobileNetV3: không xác định vì trọng số khởi tạo ngẫu nhiên cho output bằng 0.
+- **Thông điệp chốt:** FP16 **luôn giảm VRAM** nhưng **chỉ tăng tốc Transformer**; CNN ở batch 1 còn chậm hơn vì bị giới hạn bởi gửi kernel, không phải tính toán.
+- **Lời chuyển:** *"Mô hình chỉ là một mắt xích. TV3 đưa chúng ta đến training và pipeline thật."*
 
 ---
 
-## 🎯 Bộ câu hỏi phản biện dự kiến (Defense Prep - Trả lời theo cơ chế)
+## 🟩 TV3: Phần 5. Mức Giai đoạn, Chẩn đoán & Tổng kết (Slide 17–23 · 7.0')
 
-- 🟧 **TV1 (Mức Layer):**
-  - *Câu hỏi:* Vì sao overhead đo lường trên GPU ở batch 1 lớn mà nhóm vẫn khẳng định số liệu là đáng tin cậy?
-  - *Trả lời dựa trên cơ chế:* Sai lệch thời gian đo độc lập của từng layer so với `torch.profiler` vẫn nằm trong giới hạn kiểm soát ($<8\%$); bản chất overhead nằm ở chi phí ghi event giữa các layer, hoàn toàn không làm chậm thời gian thực thi của kernel GPU. Vì vậy nhóm chỉ dùng Mức Layer để xác định tỷ trọng %, còn độ trễ tổng thể sạch được đo riêng ở Mức Model.
-- 🟦 **TV2 (Mức Model):**
-  - *Câu hỏi:* Tại sao MobileNetV3 được thiết kế cho thiết bị nhẹ mà lại chạy chậm hơn ResNet-50 trên CPU Laptop?
-  - *Trả lời dựa trên cơ chế:* MobileNetV3 dùng Depthwise Separable Conv có cường độ số học (FLOP/Byte) rất thấp. Phép toán này bị giới hạn bởi băng thông truy xuất bộ nhớ RAM (Memory-Bound) thay vì năng lực tính toán của CPU. Khi bộ nhớ đệm cache CPU không đủ lớn hoặc trên kiến trúc ARM kernel chưa tối ưu sâu, việc đọc/ghi liên tục gây nghẽn cổ chai.
-- 🟩 **TV3 (Mức Giai đoạn):**
-  - *Câu hỏi:* Nếu khâu tiền xử lý của Pipeline chiếm tỷ trọng lớn trên GPU, giải pháp khắc phục triệt để trong sản xuất là gì?
-  - *Trả lời dựa trên cơ chế:* Cần chuyển toàn bộ quy trình tiền xử lý ảnh (giải mã, resize, chuẩn hóa) lên thực thi song song trực tiếp trên GPU (sử dụng NVIDIA DALI hoặc Torchvision GPU tensors), triệt tiêu chi phí truyền dữ liệu và xử lý tuần tự trên CPU.
+### Slide 17. CH5 (1/2): Training tốn thời gian và bộ nhớ ở đâu?
+- **Bố cục:** Code mẫu `with timer.phase("backward"):` + `fig_ch5_backward_forward_ratio.png` + `fig_ch5_memory_train_vs_infer.png`.
+- **Nội dung:**
+  - `PhaseTimer` đồng bộ GPU ở biên mỗi giai đoạn; không sửa mô hình.
+  - Backward / forward trên T4: DistilBERT 2.21× · ResNet-50 1.82× · MobileNetV3 1.65× · MLP 1.39×.
+  - VRAM training / suy luận: ResNet-50 420 → 1 139 MB (2.7×) · MobileNetV3 140 → 460 MB (3.3×).
+  - Feature map chiếm 62–89% bộ nhớ khi training (TBD, Zhu et al., IISWC 2018).
+- **Thông điệp chốt:** Backward khoảng 1.4–2.2× forward (gần mức lý thuyết 2×); training tốn bộ nhớ gấp 3 lần vì phải giữ activation.
+
+### Slide 18. CH5 (2/2): Nạp dữ liệu có làm GPU phải chờ?
+- **Bố cục:** Biểu đồ cột chồng data_load / forward / backward / optimizer theo `num_workers` (vẽ từ `results/colab_t4/*/TN6/bs32_fp32_w*/dataloader_summary.json`).
+- **Nội dung:** DataLoader thật (ảnh JPEG giải mã + augmentation trên CPU), batch 32, Colab 2 vCPU:
+
+  | | `num_workers=0` | `num_workers=2` | `num_workers=4` |
+  | :--- | :-: | :-: | :-: |
+  | MobileNetV3: % chờ dữ liệu / ảnh/s | **62.6%** / 132 | 3.3% / **274** | 3.2% / 267 |
+  | ResNet-50: % chờ dữ liệu / ảnh/s | **30.1%** / 69 | 0.6% / **95** | 0.6% / 90 |
+
+- **Thông điệp chốt:** Không có worker, GPU ngồi chờ dữ liệu tới 63% thời gian; 2 worker tăng gấp đôi tốc độ huấn luyện MobileNetV3. 4 worker không nhanh hơn vì Colab chỉ có 2 vCPU. Khớp Data Stalls (Mohan et al., PVLDB 2021).
+
+### Slide 19. CH6: Điểm nghẽn ngoài mô hình & định luật Amdahl
+- **Bố cục:** `fig_ch6_pipeline_breakdown.png` + `fig_ch6_cpu_vs_gpu_pipeline.png`.
+- **Nội dung:**
+  - YOLOv8n trên T4: tiền xử lý 3.23 ms (30.3%) + NMS 1.15 ms (10.7%) = **41% ngoài mô hình**. Trên Colab CPU: mô hình chiếm 94%.
+  - Lên GPU, mô hình nhanh hơn khoảng 26× (163.6 → 6.3 ms) nên phần ngoài mô hình lộ ra. BERT-base trên T4: tokenize 13.5%.
+  - Khớp AI Tax (Richins et al., HPCA 2020): dưới 60% độ trễ ứng dụng thật là AI; nhóm đo được 59% là mô hình.
+- **Thông điệp chốt:** Tăng tốc riêng mô hình nhanh chóng hết tác dụng; phải tối ưu cả tiền / hậu xử lý.
+
+### Slide 20. Chẩn đoán tự động (19 luật) & so sánh A/B
+- **Bố cục:** Trái: danh mục luật với trạng thái **PASS / WARN / FAIL / SKIPPED**; phải: kiểm định A/B.
+- **Nội dung:** 4 nhóm luật (bộ nhớ RA, tính toán RB, nạp dữ liệu RC, kiến trúc RD); RB-04 dùng ms/GFLOP; A/B bằng Mann-Whitney U và Cliff's delta, speedup tính trên tổng thời gian mỗi vòng.
+
+### Slide 21. Video demo dashboard (90 giây)
+- **Bố cục:** Video 16:9 nhúng giữa slide.
+- **Nội dung:** Tab Layer (tỷ trọng + Roofline) → Tab Model (CPU / GPU, batch) → Tab Training & Pipeline → Tab Chẩn đoán & A/B. Dashboard `streamlit run src/dashboard/app.py` chạy sẵn để demo trực tiếp khi hỏi đáp.
+
+### Slide 22. Tổng kết 6 câu hỏi nghiên cứu
+- **Bố cục:** Bảng 6 dòng: câu hỏi · câu trả lời · bằng chứng.
+- **Nội dung:**
+  - **CH1:** Conv (CNN 73–85%), Linear + Attention (Transformer 95–96%); lên GPU layer nhỏ chiếm tỷ trọng lớn hơn (MobileNetV3 BatchNorm 14% → 25%).
+  - **CH2:** Sai lệch < 1% CPU, < 8% GPU so với `torch.profiler`; overhead GPU batch 1 lớn → mức Layer chỉ dùng để phân rã.
+  - **CH3:** Trên T4 ở batch 1, tham số / FLOPs không quyết định độ trễ (ResNet-50 ≈ MobileNetV3 ≈ 6 ms); thứ hạng thay đổi theo phần cứng.
+  - **CH4:** Batch 1 → 32 tăng 1.3–8.8× tuỳ mô hình; FP16 giảm VRAM 38–49% nhưng chỉ tăng tốc Transformer (đến 2.8×).
+  - **CH5:** Backward 1.4–2.2× forward; VRAM training gấp 2.7–3.3×; thiếu worker thì GPU chờ dữ liệu tới 63%.
+  - **CH6:** YOLOv8n trên T4: 41% thời gian nằm ngoài mô hình.
+
+### Slide 23. Hạn chế, hướng phát triển & Q&A
+- **Nội dung:**
+  - *Hạn chế:* không đo kernel GPU / hardware counter; khoảng 4–10% thời gian không thuộc layer nào (phép toán dạng hàm); 1 GPU; PyTorch eager; mô hình dùng trọng số khởi tạo ngẫu nhiên (đủ cho đo tốc độ, không dùng cho độ chính xác).
+  - *Hướng phát triển (cuối kỳ):* `torch.compile`, bắt toán tử bằng `TorchDispatchMode`, gợi ý sửa code trong chẩn đoán, thí nghiệm ablation.
+  - Tài liệu tham khảo (IEEE) ở slide phụ lục; mã QR tới repo.
 
 ---
 
-## ✅ Checklist chuẩn bị thuyết trình
+## 🎯 Câu hỏi phản biện dự kiến
 
-- [ ] **TV2:** Cập nhật các bảng số liệu thực tế vào các vị trí `[Điền số đo...]` sau khi hoàn tất lượt đo chính thức.
-- [ ] **TV3:** Xuất video clip 90 giây quay màn hình Dashboard Streamlit để nhúng trực tiếp vào Slide 20.
-- [ ] **Cả nhóm:** Đồng bộ slide theo mã màu nhận diện (🟩 TV3 · 🟧 TV1 · 🟦 TV2) và tổng duyệt khớp đúng thời lượng 22–24 phút.
+- 🟧 **TV1:**
+  - *Overhead GPU batch 1 lớn, sao vẫn tin số đo?* → Sai lệch **tổng** so với `torch.profiler` < 8% (đo lại 18/10 vẫn vậy). Overhead nằm ở chi phí ghi event và gọi hook giữa các layer, nên mức Layer chỉ dùng để phân rã tỷ lệ; tổng thời gian lấy từ mức Model. Riêng layer siêu nhỏ (ReLU, BatchNorm ở batch 1) sai số theo loại lớn hơn nhiều vì ngưỡng sàn event ~6 µs.
+  - *Phép toán dạng hàm (`x + shortcut`, `torch.cat`) đi đâu?* → Đo thành chỉ số "thời gian không thuộc layer nào": 3.9–9.2% (CPU), 9–10% (T4) trên ResNet-50 và BERT-base.
+- 🟦 **TV2:**
+  - *Sao MobileNetV3 trên CPU chậm hơn ResNet-50 8 lần?* → Chỉ xảy ra trên MacBook chip Apple (176 ms); trên laptop x86 khoảng 12 ms. Đây là đặc thù kernel PyTorch trên CPU ARM, không phải tính chất chung của CPU. Trên T4, hai mô hình bằng nhau (~6 ms) vì batch 1 bị giới hạn bởi gửi kernel.
+  - *Sao FP16 làm CNN chậm hơn?* → Ở batch 1, thời gian chủ yếu là gửi kernel và các layer nhỏ, Tensor Core không có việc; FP16 thêm thao tác chuyển kiểu. Transformer có phép nhân ma trận lớn nên hưởng lợi.
+- 🟩 **TV3:**
+  - *Tiền xử lý chiếm 41% trên GPU thì khắc phục thế nào?* → Đưa giải mã / resize / chuẩn hoá lên GPU (NVIDIA DALI, torchvision trên tensor GPU), chạy NMS trên GPU.
+  - *Sao 4 worker không nhanh hơn 2?* → Colab chỉ có 2 vCPU; thêm worker chỉ tranh CPU với tiến trình chính.
+
+---
+
+## ✅ Checklist trước buổi trình bày
+
+- [ ] **TV1:** Slide 4–10.
+- [ ] **TV2:** Slide 11–16; đổi nhãn "CPU Laptop" thành "CPU MacBook (TV2)" trong `docs/tv2/figures/`; viết lại CH3, CH4 trong `docs/tv2/BAO_CAO_TV2.md` theo `docs/KET_QUA_COLAB_GIUA_KY.md`.
+- [ ] **TV3:** Slide 1–3, 17–23; vẽ hình cho Slide 18 từ `dataloader_summary.json`; quay video 90 giây cho Slide 21.
+- [ ] **Cả nhóm:** Mẫu slide chung theo màu (🟩 TV3 · 🟧 TV1 · 🟦 TV2); tổng duyệt đúng 24 phút.
