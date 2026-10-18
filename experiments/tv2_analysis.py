@@ -66,7 +66,7 @@ def plot_ch3_speedup(cpu_data: Dict[str, float], gpu_data: Dict[str, float], out
     plt.figure(figsize=(10, 5))
     bars = plt.bar(models, speedups, color="#2b5c8f", edgecolor="#1a365d", width=0.55)
     plt.axhline(1.0, color="#e53e3e", linestyle="--", linewidth=1.2, label="Parity (1.0x)")
-    plt.title("CH3: Hardware Speedup Factor (CPU Laptop vs Colab Tesla T4, Batch=1)", fontsize=12, fontweight="bold")
+    plt.title("CH3: Hardware Speedup Factor (CPU MacBook vs Colab Tesla T4, Batch=1)", fontsize=12, fontweight="bold")
     plt.ylabel("Speedup Multiplier (x)", fontsize=11)
     plt.xticks(rotation=25, ha="right", fontsize=10)
     plt.grid(axis="y", linestyle=":", alpha=0.6)
@@ -101,14 +101,14 @@ def plot_ch3_rank_shift(cpu_data: Dict[str, float], gpu_data: Dict[str, float], 
         r_cpu = cpu_ranks[m]
         r_gpu = gpu_ranks[m]
         plt.plot([0, 1], [r_cpu, r_gpu], marker="o", linewidth=2.5, color=colors[i], label=f"{m} ({r_cpu} -> {r_gpu})")
-        plt.text(-0.05, r_cpu, f"{m} (#{r_cpu})", ha="right", va="center", fontsize=9, fontweight="bold")
+        plt.text(-0.05, r_cpu, (f"{m} (#{r_cpu}, {cpu_data[m]:.2f}ms)" if cpu_data[m] < 1 else f"{m} (#{r_cpu}, {cpu_data[m]:.1f}ms)"), ha="right", va="center", fontsize=9, fontweight="bold")
         plt.text(1.05, r_gpu, f"#{r_gpu} ({gpu_data[m]:.1f}ms)", ha="left", va="center", fontsize=9)
 
-    plt.xticks([0, 1], ["CPU Laptop Rank", "Colab T4 GPU Rank"], fontsize=11, fontweight="bold")
-    plt.yticks(range(1, len(models) + 1), range(1, len(models) + 1))
+    plt.xticks([0, 1], ["CPU MacBook Rank", "Colab T4 GPU Rank"], fontsize=11, fontweight="bold")
+    plt.yticks(range(1, len(models) + 1), [])
     plt.gca().invert_yaxis()
-    plt.title("CH3: Model Latency Rank Inversion (Rank Shift from CPU to GPU)", fontsize=12, fontweight="bold")
-    plt.xlim(-0.35, 1.35)
+    plt.title("CH3: Latency rank, CPU MacBook vs Colab T4 (batch 1, FP32)", fontsize=12, fontweight="bold")
+    plt.xlim(-0.6, 1.35)
     plt.grid(axis="y", linestyle=":", alpha=0.4)
     plt.tight_layout()
     _safe_savefig(out_path)
@@ -137,7 +137,7 @@ def plot_ch4_batch_scaling(out_path: Path) -> None:
         if any(fps > 0 for fps in t4_fps):
             plt.plot(batches, t4_fps, marker=markers[i], linewidth=2.2, label=f"{m} (Colab T4)")
         if any(fps > 0 for fps in cpu_fps):
-            plt.plot(batches, cpu_fps, marker=markers[i], linestyle="--", linewidth=1.5, alpha=0.7, label=f"{m} (CPU Laptop)")
+            plt.plot(batches, cpu_fps, marker=markers[i], linestyle="--", linewidth=1.5, alpha=0.7, label=f"{m} (CPU MacBook)")
 
     plt.title("CH4: Throughput Scaling vs Batch Size (Finding Hardware Saturation Points)", fontsize=12, fontweight="bold")
     plt.xlabel("Batch Size", fontsize=11)
