@@ -1,6 +1,6 @@
 # 04. Tính Chuẩn Xác Khoa Học & Quy Tắc Đo Hiệu Năng (Scientific Rigor & Profiling Rules)
 
-Tài liệu này tổng hợp toàn bộ các yêu cầu phương pháp luận và các lỗi kỹ thuật cốt tử đã được chỉ ra trong `SYSTEM_AUDIT_REPORT.md` và định hướng giải quyết chuẩn tắc trong `PROJECT_PLAN.md`.
+Tài liệu này tổng hợp toàn bộ các yêu cầu phương pháp luận và các lỗi kỹ thuật cốt tử đã được chỉ ra khi rà soát code v1.0 và định hướng giải quyết chuẩn tắc trong `PROJECT_PLAN.md`.
 
 ---
 

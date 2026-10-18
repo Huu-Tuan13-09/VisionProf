@@ -556,4 +556,4 @@ flowchart TD
 
 ---
 
-<p align="center"><i>Tài liệu định hướng chính của dự án. Các file cũ (<code>research\_plan\_profiling\_framework.md</code>, <code>TECHNICAL\_SPECIFICATION.md</code>, <code>SYSTEM\_AUDIT\_REPORT.md</code>) chỉ dùng để tham khảo chi tiết kỹ thuật.</i></p>
+<p align="center"><i>Tài liệu định hướng chính của dự án. Mục 3 mô tả code nền v1.0 lúc bắt đầu; code v1.0 đã được thay bằng kiến trúc module trong <code>src/</code>.</i></p>

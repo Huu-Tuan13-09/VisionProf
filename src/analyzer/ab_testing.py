@@ -13,69 +13,8 @@ except ImportError:
     HAS_SCIPY = False
 
 
-_LEGACY_ENGINE_CLS = None
-
-
 class ABComparisonEngine:
     """Computes statistical significance, effect sizes, and speedup for A/B runs."""
-
-    def __init__(
-        self,
-        df_a: Any = None,
-        df_b: Any = None,
-        name_a: str = "Session A",
-        name_b: str = "Session B",
-        regression_threshold_pct: float = 5.0,
-        improvement_threshold_pct: float = 5.0,
-        alpha: float = 0.05,
-    ) -> None:
-        """Initialize comparison engine for either DataFrame/file sessions or direct metrics."""
-        self.df_a = df_a
-        self.df_b = df_b
-        self.name_a = name_a
-        self.name_b = name_b
-        self.reg_pct = regression_threshold_pct
-        self.imp_pct = improvement_threshold_pct
-        self.alpha = alpha
-        self._legacy_engine: Any = None
-        if df_a is not None and df_b is not None:
-            legacy_cls = self._get_legacy_engine_cls()
-            if legacy_cls is not None:
-                self._legacy_engine = legacy_cls(
-                    df_a=df_a,
-                    df_b=df_b,
-                    name_a=name_a,
-                    name_b=name_b,
-                    regression_threshold_pct=regression_threshold_pct,
-                    improvement_threshold_pct=improvement_threshold_pct,
-                    alpha=alpha,
-                )
-
-    @classmethod
-    def _get_legacy_engine_cls(cls) -> Any:
-        global _LEGACY_ENGINE_CLS
-        if _LEGACY_ENGINE_CLS is None:
-            import importlib.util
-            import sys
-            from pathlib import Path
-            legacy_path = Path(__file__).resolve().parent.parent / "analyzer.py"
-            if legacy_path.exists():
-                spec = importlib.util.spec_from_file_location("src.analyzer_legacy_ab", legacy_path)
-                if spec and spec.loader:
-                    mod = importlib.util.module_from_spec(spec)
-                    sys.modules[spec.name] = mod
-                    try:
-                        spec.loader.exec_module(mod)
-                        _LEGACY_ENGINE_CLS = getattr(mod, "ABComparisonEngine", None)
-                    except Exception as exc:
-                        logger.debug("Failed loading legacy ABComparisonEngine: %s", exc)
-        return _LEGACY_ENGINE_CLS
-
-    def compare(self) -> Any:
-        """Execute session-level A/B comparison and return an ABReport."""
-        if self._legacy_engine is not None:
-            return self._legacy_engine.compare()
-        raise RuntimeError("DataFrames df_a and df_b must be provided to run session comparison.")
 
     @staticmethod
     def compute_speedup(latencies_a: List[float], latencies_b: List[float]) -> float:

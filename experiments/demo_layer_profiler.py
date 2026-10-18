@@ -19,7 +19,7 @@ import logging
 import torch
 
 from tv1_common import TORCH_MODELS, load_model
-from src.collector import LayerProfiler
+from src.layer.plugin import LayerProfilerPlugin
 from src.layer import add_efficiency, analyze_layers, detect_hardware, model_total_flops, run_model, to_markdown, top_k_layers, type_share
 
 
@@ -30,7 +30,7 @@ def main() -> None:
     p.add_argument("--device", default="cpu")
     p.add_argument("--iters", type=int, default=20)
     args = p.parse_args()
-    logging.getLogger("collector").setLevel(logging.WARNING)
+    logging.getLogger("src.layer").setLevel(logging.WARNING)
 
     model, x = load_model(args.model, args.device)
     with torch.no_grad():
@@ -38,22 +38,24 @@ def main() -> None:
             run_model(model, x)
 
         # ── Phần tích hợp: chỉ cần chừng này dòng ────────────────────────────
-        profiler = LayerProfiler(model, device=args.device)
+        profiler = LayerProfilerPlugin()
+        profiler.attach(model, args.device)
         for i in range(args.iters):
-            with profiler.profile_context(iteration=i):
-                run_model(model, x)
+            profiler.start(i)
+            run_model(model, x)
+            profiler.stop()
+        profiler.detach()
         df = profiler.to_dataframe()
         # ─────────────────────────────────────────────────────────────────────
 
-    layers = df.rename(columns={"forward_time_ms": "time_ms"})
     print(f"\n=== {args.model} · {args.device} · {df['layer_name'].nunique()} layer · {args.iters} vòng đo ===\n")
     print("Top-10 layer chậm nhất (ms / 1 lần forward):\n")
-    print(to_markdown(top_k_layers(layers, 10)))
+    print(to_markdown(top_k_layers(df, 10)))
     print("\nTỷ trọng theo loại layer:\n")
-    print(to_markdown(type_share(layers)))
+    print(to_markdown(type_share(df)))
 
     analysis = analyze_layers(model, x)
-    eff = add_efficiency(df, analysis, detect_hardware(args.device))
+    eff = add_efficiency(df, analysis, detect_hardware(args.device), time_col="time_ms")
     eff = eff[eff["flops_source"] == "counter"].sort_values("efficiency_pct")
     print(f"\nTổng FLOPs: {analysis.attrs['global_flops'] / 1e9:.2f} G "
           f"(Σ layer: {model_total_flops(analysis) / 1e9:.2f} G)")

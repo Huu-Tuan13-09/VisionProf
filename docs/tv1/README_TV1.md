@@ -5,13 +5,16 @@
 Gắn profiler vào bất kỳ mô hình PyTorch nào mà không sửa mã mô hình:
 
 ```python
-from src.collector import LayerProfiler
+from src.layer.plugin import LayerProfilerPlugin
 
-profiler = LayerProfiler(model, device="cuda")      # hoặc "cpu"
+profiler = LayerProfilerPlugin()
+profiler.attach(model, device="cuda")               # hoặc "cpu"
 with torch.no_grad():
     for i in range(50):
-        with profiler.profile_context(iteration=i):
-            model(x)
+        profiler.start(i)
+        model(x)
+        profiler.stop()                              # chỉ ghi giữa start() và stop()
+profiler.detach()
 df = profiler.to_dataframe()                         # 1 dòng / layer / lần gọi / vòng đo
 ```
 
@@ -24,24 +27,24 @@ df = profiler.to_dataframe()                         # 1 dòng / layer / lần g
 ### FLOPs và % hiệu suất (Roofline)
 
 ```python
-from src.flops import analyze_layers, add_efficiency
-from src.hw_specs import detect_hardware
+from src.layer import add_efficiency, analyze_layers, detect_hardware
 
 analysis = analyze_layers(model, x)                  # FLOPs, bytes, arithmetic intensity / layer
-eff = add_efficiency(df, analysis, detect_hardware("cuda"))
+eff = add_efficiency(df, analysis, detect_hardware("cuda"), time_col="time_ms")
 # → achieved_gflops, efficiency_pct, bound ("compute" / "memory") cho từng layer
 ```
 
 ### Dùng như plugin trong script chạy chung
 
-```python
-from src.layer_plugin import LayerPlugin
+`scripts/run_experiment.py --profilers layer` đã gọi sẵn plugin theo hợp đồng chung:
 
-plugin = LayerPlugin()
+```python
+plugin = LayerProfilerPlugin()
 plugin.attach(model, device)
 for i in range(n_iter):
     plugin.start(i); model(x); plugin.stop()
 plugin.save(out_dir)        # → layers.csv, layers_summary.csv, layer_meta.json
+plugin.detach()
 ```
 
 Mô hình không phải PyTorch (vd XGBoost) → plugin tự bỏ qua.
@@ -56,7 +59,7 @@ Mô hình không phải PyTorch (vd XGBoost) → plugin tự bỏ qua.
 | `python experiments/tn2_validate_profiler.py --device cpu\|cuda` | TN2: sai lệch so với `torch.profiler`, overhead, thời gian bỏ sót |
 | `python experiments/tv1_figures.py` | Vẽ hình cho báo cáo → `docs/tv1/figures/` |
 | `python experiments/demo_layer_profiler.py --model resnet50` | Demo nhanh: top-10 layer, tỷ trọng, FLOPs |
-| `streamlit run src/dashboard_tabs/layer_tab.py` | Xem riêng tab dashboard "Layer" |
+| `streamlit run src/dashboard/app.py` | Dashboard chung; tab "Layer" và "Roofline" là phần của TV1 |
 
 Tuỳ chọn hay dùng: `--models resnet50 vit_b_16` (chỉ chạy vài mô hình), `--iters 50`, `--warmup 10`.
 Đổi thư mục kết quả: đặt biến môi trường `VISIONPROF_RESULTS` (vd thư mục Google Drive khi chạy Colab).
@@ -76,7 +79,7 @@ import os; os.environ["VISIONPROF_RESULTS"] = "/content/drive/MyDrive/VisionProf
 ### Kiểm thử
 
 ```bash
-pytest tests/test_layer_profiler.py tests/test_layer_flops_plugin.py -q   # 22 test
+pytest tests/test_layer_profiler.py tests/test_layer_flops_roofline.py tests/test_layer_scientific_accuracy.py -q   # 29 test (2 test GPU cần CUDA)
 ```
 
 ### Lưu ý

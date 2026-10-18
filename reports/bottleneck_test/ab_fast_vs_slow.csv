@@ -1,3 +1,0 @@
-layer_name,mean_time_a_ms,mean_time_b_ms,delta_ms,delta_pct,mem_delta_a_mb,mem_delta_b_mb,mem_delta_diff_mb,is_regression,is_improvement,statistical_sig,p_value
-Compute,592.1066,880.8195,288.7129,48.76,0.0,0.0,0.0,True,False,True,0.0
-DataLoading,3.0433,177.7055,174.6622,5739.3,0.0,0.0,0.0,True,False,True,0.0

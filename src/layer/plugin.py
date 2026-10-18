@@ -9,6 +9,7 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
+import psutil
 
 from src.core.interfaces import ProfilerPlugin
 from src.layer.events import DeferredCudaDispatcher
@@ -30,7 +31,7 @@ except ImportError:
 _LAYER_CSV_COLS = [
     "iteration", "layer_name", "layer_type", "time_ms", "activation_mb", "flops", "params",
     "call_index", "exec_order", "raw_time_ms", "flops_source", "in_shape", "out_shape",
-    "timing_backend", "device",
+    "process_rss_mb", "timing_backend", "device",
 ]
 
 
@@ -71,6 +72,7 @@ class LayerProfilerPlugin(ProfilerPlugin):
         self._fixed_precision = precision is not None
         self._hooks: List[Any] = []
         self._current_iter, self._exec_counter, self._iter_t0_ns = 0, 0, 0
+        self._rss_mb = 0.0
         self._cuda_dispatcher: Optional[DeferredCudaDispatcher] = None
         self._cpu_stacks: Dict[str, List[int]] = {}
         self._call_counts: Dict[str, int] = {}
@@ -161,6 +163,8 @@ class LayerProfilerPlugin(ProfilerPlugin):
         self._call_counts.clear()
         self._cpu_stacks.clear()
         self._pending.clear()
+        # RAM of the whole process, once per iteration and kept apart from per-layer memory
+        self._rss_mb = psutil.Process().memory_info().rss / (1024.0 * 1024.0)
         if self._is_cuda and self._cuda_dispatcher:
             self._cuda_dispatcher.begin_iteration()
         self._active = True
@@ -184,6 +188,7 @@ class LayerProfilerPlugin(ProfilerPlugin):
             raw = r["raw_time_ms"] if r["raw_time_ms"] is not None else durations.get((r["layer_name"], r["call_index"]), 0.0)
             r["raw_time_ms"], r["time_ms"] = round(raw, 5), round(max(0.0, raw - bias), 5)
             r["timing_backend"], r["device"] = backend, self.device
+            r["process_rss_mb"] = round(self._rss_mb, 2)
             self._raw_rows.append(r)
         self._pending = []
         self._iter_totals[self._current_iter] = round(total_ms, 5)

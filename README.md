@@ -4,7 +4,6 @@
 ![PyTorch 2.x](https://img.shields.io/badge/PyTorch-2.x-EE4C2C.svg)
 ![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Overhead](https://img.shields.io/badge/Profiler_Overhead-%3C5%25-success.svg)
 ![Colab Ready](https://img.shields.io/badge/Google_Colab-T4_GPU_%26_CPU-F9AB00.svg)
 
 > **Cross-Platform Deep Learning Profiling & Automated Heuristic Diagnostic Framework**  
@@ -71,7 +70,7 @@ VisionProf/
 │   ├── tv1/               # BAO_CAO_TV1.md, README_TV1.md, SLIDES_TV1.md, figures/
 │   ├── tv2/               # BAO_CAO_TV2.md, README_TV2.md, SLIDES_TV2.md, figures/
 │   └── tv3/               # BAO_CAO_TV3.md, README_TV3.md, SLIDES_TV3.md, figures/
-├── experiments/           # Scripts vẽ biểu đồ khoa học (tv1_figures.py, tv3_figures.py)
+├── experiments/           # Script thực nghiệm & vẽ hình của từng TV (tn1_*, tn2_*, tv1_*, tv2_*, tv3_*)
 ├── notebooks/             # colab_runner.ipynb (Tự động hóa chạy trên Google Colab)
 ├── scripts/               # CLI Runners (run_experiment.py, run_tn6_training.py, ...)
 ├── tests/                 # Unit tests tự động cho từng thành viên
@@ -94,10 +93,12 @@ VisionProf/
 | **Tabular** | **MLP** | Mạng nơ-ron truyền thẳng 7 tầng (Covertype) | 0.05M | `[B, 54]` đặc trưng |
 | | **XGBoost** | 50 Cây quyết định tăng cường Gradient (GBDT) | — | 54 đặc trưng |
 
-### Chuẩn Hóa Phần Cứng (Loại bỏ sai số máy cá nhân):
-- ☁️ **`colab_cpu`**: Intel Xeon CPU @ 2.20GHz (2 vCPU, 12GB RAM) — Chuẩn hóa số liệu CPU.
-- ☁️ **`colab_t4`**: NVIDIA Tesla T4 16GB GDDR6 (Turing Tensor Cores, 320 GB/s) — Chuẩn hóa số liệu GPU.
-- 💻 **`cpu_laptop`**: Môi trường phát triển cục bộ và host Dashboard.
+### Các máy đo (tên thư mục trong `results/`):
+- 💻 **`cpu_laptop`**: Laptop của thành viên — số liệu CPU của TN1–TN4 và một phần TN6, TN7.
+- ☁️ **`colab_cpu`**: Google Colab CPU (Intel Xeon 2 vCPU, 12GB RAM) — số liệu CPU của TN6, TN7.
+- ☁️ **`colab_t4`**: Google Colab GPU NVIDIA Tesla T4 16GB (Turing Tensor Cores, 320 GB/s) — số liệu GPU.
+
+Mỗi lần chạy tự lưu thông tin máy và phiên bản thư viện vào `env.json` cạnh kết quả.
 
 ---
 
@@ -105,10 +106,10 @@ VisionProf/
 
 | STT | Thành viên | Câu hỏi nghiên cứu (CH) | Thực nghiệm | Phát hiện cốt lõi đã được kiểm chứng |
 | :---: | :---: | :--- | :---: | :--- |
-| **1** | **TV1** | **CH1.** Thời gian tốn nhiều nhất ở loại layer nào? CPU vs GPU khác nhau ra sao? | **TN1** | Trên CPU, Conv/Linear chiếm 73–85%. Lên GPU, các layer nhỏ (Norm, Activation) tăng tỷ trọng rõ rệt (MobileNetV3: Conv 73% $\rightarrow$ 47%, Norm 14% $\rightarrow$ 25%). |
-| **2** | **TV1** | **CH2.** Công cụ đo có chính xác không và làm chậm mô hình bao nhiêu? | **TN2** | Sai lệch $< 10\%$ so với `torch.profiler`; overhead gắn hook $< 5\%$ khi đo sạch. |
-| **3** | **TV2** | **CH3.** Mô hình ít tham số có chắc chạy nhanh hơn? Thứ hạng có bị đảo khi lên GPU? | **TN3** | **Có đảo thứ hạng!** Trên CPU, MobileNetV3 (5.5M) nhanh gấp 4 lần DistilBERT (66M). Lên GPU T4, DistilBERT tăng tốc $8.8\times$ và vượt mặt MobileNetV3. |
-| **4** | **TV2** | **CH4.** Tăng Batch size và dùng FP16 Tensor Cores thì tốc độ tăng bao nhiêu? | **TN4, TN5** | GPU tăng thông lượng $7.5\times$ khi tăng batch từ 1 lên 32; FP16 trên T4 tăng tốc thêm $1.5\times - 2.1\times$ mà cosine similarity vẫn đạt $> 0.999$. |
+| **1** | **TV1** | **CH1.** Thời gian tốn nhiều nhất ở loại layer nào? CPU vs GPU khác nhau ra sao? | **TN1** | Trên CPU, Conv chiếm 73–85% (CNN), Linear + Attention chiếm 95–96% (Transformer). Lên GPU, Transformer tăng tốc nhiều nhất (~$9\times$) và tỷ trọng gần như không đổi; CNN tăng tốc ít hơn ($3-6\times$) và layer nhỏ chiếm tỷ trọng lớn hơn, rõ nhất ở MobileNetV3 (BatchNorm 14% $\rightarrow$ 25%). |
+| **2** | **TV1** | **CH2.** Công cụ đo có chính xác không và làm chậm mô hình bao nhiêu? | **TN2** | Sai lệch tổng so với `torch.profiler` $< 1\%$ trên CPU, $< 8\%$ trên GPU T4. Overhead CPU 5–11%; GPU ở batch 1 là 109–166% $\rightarrow$ mức Layer dùng để phân rã thời gian, không dùng để đo tổng thời gian. |
+| **3** | **TV2** | **CH3.** Mô hình ít tham số có chắc chạy nhanh hơn? Thứ hạng có bị đảo khi lên GPU? | **TN3** | ⏳ Đang cập nhật — số liệu Colab T4 của TN3 đang được đo lại. |
+| **4** | **TV2** | **CH4.** Tăng Batch size và dùng FP16 Tensor Cores thì tốc độ tăng bao nhiêu? | **TN4, TN5** | ⏳ Đang cập nhật — số liệu Colab T4 của TN4, TN5 đang được đo lại. |
 | **5** | **TV3** | **CH5.** Khi Training, Backward tốn gấp mấy lần Forward? VRAM bùng nổ bao nhiêu? | **TN6** | Tỷ số Backward/Forward đạt **$1.82\times - 2.21\times$** (khớp lý thuyết $2\times$). Đỉnh VRAM khi training **tăng $2.7\times - 3.3\times$** so với suy luận do lưu trữ activations. |
 | **6** | **TV3** | **CH6.** Trong ứng dụng thật, chi phí ngoài mô hình (Pre/Post/NMS) chiếm bao nhiêu %? | **TN7** | Với YOLOv8n trên GPU T4, tiền xử lý và NMS chiếm tới **$41.0\%$ ($> 30\%$)**, minh chứng thực nghiệm cho **Định luật Amdahl**. |
 
@@ -128,7 +129,7 @@ Hoặc truy cập qua ngrok tunnel khi chạy trên Google Colab: `http://localh
 - **Tab 4: Roofline Model (TV1)**: Bản đồ hiệu suất phần cứng (% Peak GFLOPs), phân định Compute-bound vs Memory-bound.
 - **Tab 5: TN6 — Training Phases (TV3)**: Phân rã Forward / Backward / Optimizer, kiểm chứng tỷ số $Bwd/Fwd$ và VRAM ratio.
 - **Tab 6: TN7 — Pipeline Breakdown (TV3)**: Donut chart tỷ lệ ngoài mô hình, thanh đo vi phạm ngưỡng $30\%$, nghịch lý CPU vs GPU.
-- **Tab 7: Diagnostic Engine (TV3)**: Bảng chẩn đoán tự động theo 19 luật heuristic v2.0 (CRITICAL, WARN, PASS).
+- **Tab 7: Diagnostic Engine (TV3)**: Bảng chẩn đoán tự động theo 19 luật heuristic v2.0 (PASS, WARN, FAIL, SKIPPED).
 - **Tab 8: A/B Testing & Speedup (TV3)**: So sánh đối đầu 2 cấu hình với kiểm định Mann-Whitney U và Cliff's Delta.
 
 ---
@@ -164,6 +165,14 @@ Mở notebook [`notebooks/colab_runner.ipynb`](./notebooks/colab_runner.ipynb) t
 
 ### 6.3. Chạy Kịch Bản Thực Nghiệm bằng Lệnh CLI
 ```bash
+# Script chạy chung (TV2): đo mức Model, kèm plugin mức Layer và mức Giai đoạn
+python scripts/run_experiment.py --model resnet50 --experiment TN3 --device cpu_laptop --profilers layer,phase
+
+# TN1 (phân rã theo layer) và TN2 (kiểm chứng công cụ đo) của TV1
+python experiments/tn1_layer_breakdown.py --device cpu      # hoặc --device cuda trên Colab
+python experiments/tn2_validate_profiler.py --device cpu
+python experiments/tn1_layer_breakdown.py --analyze         # gộp CPU + GPU → results/analysis/TN1/
+
 # Chạy TN6 (Training Breakdown) trên Colab T4
 python scripts/run_tn6_training.py --device colab_t4 --batch-size 8
 
@@ -175,22 +184,37 @@ python experiments/tv1_figures.py
 python experiments/tv3_figures.py
 ```
 
+### 6.4. Kiểm thử
+```bash
+pytest -q                        # toàn bộ unit test (test GPU tự bỏ qua nếu máy không có CUDA)
+python scripts/verify_rules.py   # quy chuẩn mã nguồn: ≤ 300 dòng/file, type hints, không print() trong module lõi
+```
+
 ---
 
 ## 💻 7. Hướng Dẫn Lập Trình (API Usage Examples)
 
 ### Mức Layer (TV1): Gắn Hook & Roofline
 ```python
-from src.collector import LayerProfiler
-from src.flops import analyze_layers
+from src.layer import add_efficiency, analyze_layers, detect_hardware
+from src.layer.plugin import LayerProfilerPlugin
 
-# Khởi tạo profiler không sửa mã nguồn model
-profiler = LayerProfiler(model, device="cuda")
-with profiler.profile_context(iteration=0):
-    output = model(inputs)
+# Gắn hook vào mọi leaf layer, không sửa mã nguồn model
+profiler = LayerProfilerPlugin()
+profiler.attach(model, device="cuda")
+with torch.no_grad():
+    for i in range(50):
+        profiler.start(i)          # chỉ ghi giữa start() và stop()
+        model(inputs)
+        profiler.stop()            # GPU: đồng bộ 1 lần cuối vòng
+profiler.save(out_dir)             # → layers.csv, layers_summary.csv, layer_meta.json
+profiler.detach()
 
 df_layers = profiler.to_dataframe()
 print(df_layers[["layer_name", "time_ms", "activation_mb"]].head())
+
+# FLOPs và % hiệu suất theo Roofline
+eff = add_efficiency(df_layers, analyze_layers(model, inputs), detect_hardware("cuda"), time_col="time_ms")
 ```
 
 ### Mức Model (TV2): Benchmark Sạch & Resource Sampler
@@ -202,10 +226,10 @@ adapter = get_adapter("resnet50")
 model = adapter.load("cuda", precision="fp16")
 bench = ModelBenchmark(warmup_iters=15, measure_iters=50)
 
-bench.run_warmup(adapter, model, batch_size=8, device="cuda")
-metrics = bench.measure(adapter, model, batch_size=8, device="cuda")
+bench.run_warmup(adapter, model, batch_size=8, device="cuda", precision="fp16")
+metrics = bench.measure(adapter, model, batch_size=8, device="cuda", precision="fp16")
 summary = bench.summarize(batch_size=8)
-print(f"P50: {summary['p50_ms']:.2f} ms | FPS: {summary['throughput_fps']:.1f}")
+print(f"P50: {summary.p50_ms:.2f} ms | FPS: {summary.throughput_fps:.1f}")
 ```
 
 ### Mức Giai đoạn (TV3): PhaseTimer, Sentinel & Chẩn đoán
@@ -231,8 +255,8 @@ for batch in sentinel:
 engine = DiagnosticEngine()
 results = engine.evaluate_directory(Path("results/colab_t4/resnet50/TN6/bs8_fp32"))
 for r in results:
-    if r.status.value in ["WARN", "CRITICAL"]:
-        print(f"[{r.status.value}] {r.rule_name}: {r.message}")
+    if r.status.value in ["WARN", "FAIL"]:
+        print(f"[{r.status.value}] {r.rule_id} {r.title}: {r.message}")
 ```
 
 ---

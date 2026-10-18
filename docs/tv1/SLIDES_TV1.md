@@ -111,7 +111,7 @@
    → in top-10 layer, tỷ trọng theo loại layer, tổng FLOPs (8.18 G) sau vài giây.
 3. Chuyển sang dashboard:
    ```bash
-   streamlit run src/dashboard_tabs/layer_tab.py
+   streamlit run src/dashboard/app.py          # mở tab "Layer"
    ```
    → chọn **ViT-B/16**, chỉ vào chỉ số "GPU nhanh hơn ×9.5" và biểu đồ tỷ trọng; rê chuột lên một
    điểm trên Roofline để xem tên layer và % hiệu suất.

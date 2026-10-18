@@ -82,5 +82,5 @@ class ActivationMemoryTracker:
                 seen_keys.add(key)
             total_bytes += t.numel() * t.element_size()
 
-        act_mb = round(total_bytes / (1024.0 * 1024.0), 4)
+        act_mb = round(total_bytes / (1024.0 * 1024.0), 6)
         return out_shape, act_mb
