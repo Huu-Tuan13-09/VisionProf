@@ -1,0 +1,10 @@
+{
+  "model": "resnet50",
+  "device": "cpu_laptop",
+  "batch_size": 4,
+  "precision": "fp32",
+  "num_workers": 0,
+  "warmup": 2,
+  "measure": 5,
+  "experiment": "TN6"
+}

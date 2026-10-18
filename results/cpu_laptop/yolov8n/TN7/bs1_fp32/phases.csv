@@ -1,0 +1,16 @@
+iteration,phase,time_ms
+0,preprocess,4.4668
+0,model_forward,162.2395
+0,postprocess_nms,0.0449
+1,preprocess,5.0378
+1,model_forward,167.7777
+1,postprocess_nms,0.0393
+2,preprocess,9.8693
+2,model_forward,171.5191
+2,postprocess_nms,0.0326
+3,preprocess,8.4861
+3,model_forward,158.4924
+3,postprocess_nms,0.0382
+4,preprocess,11.7539
+4,model_forward,157.7301
+4,postprocess_nms,0.0307

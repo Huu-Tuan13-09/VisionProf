@@ -1,0 +1,16 @@
+iteration,phase,time_ms
+0,forward,841.3145
+0,backward,1852.4194
+0,optimizer,276.5905
+1,forward,1033.576
+1,backward,1271.1771
+1,optimizer,265.3402
+2,forward,783.7149
+2,backward,1996.0672
+2,optimizer,269.2059
+3,forward,1033.6804
+3,backward,1813.519
+3,optimizer,557.4225
+4,forward,924.6854
+4,backward,1461.7633
+4,optimizer,463.9754

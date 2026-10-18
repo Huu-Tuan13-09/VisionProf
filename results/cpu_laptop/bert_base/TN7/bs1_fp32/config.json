@@ -1,0 +1,10 @@
+{
+  "model": "bert_base",
+  "device": "cpu_laptop",
+  "batch_size": 1,
+  "precision": "fp32",
+  "seq_len": 128,
+  "warmup": 2,
+  "measure": 3,
+  "experiment": "TN7"
+}

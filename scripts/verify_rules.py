@@ -134,4 +134,10 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # Fix Windows console encoding to support Unicode/emoji output
+    if hasattr(sys.stdout, "reconfigure"):
+        try:
+            sys.stdout.reconfigure(encoding="utf-8")
+        except Exception:
+            pass
     sys.exit(main())

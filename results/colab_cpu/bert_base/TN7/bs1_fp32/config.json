@@ -1,0 +1,10 @@
+{
+  "model": "bert_base",
+  "device": "colab_cpu",
+  "batch_size": 1,
+  "precision": "fp32",
+  "seq_len": 128,
+  "warmup": 10,
+  "measure": 50,
+  "experiment": "TN7"
+}
