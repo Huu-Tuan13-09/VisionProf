@@ -35,7 +35,7 @@ import torch
 from torch.profiler import ProfilerActivity, profile
 
 from tv1_common import (
-    RESULTS_DIR, TORCH_MODELS, hw_id_for, load_model, profile_layers, result_dir, sync,
+    RESULTS_DIR, hw_id_for, load_model, profile_layers, result_dir, sync,
 )
 
 from src.layer.overhead import calibrate_overhead_details, estimate_timer_bias
@@ -131,16 +131,12 @@ def validate_model(name: str, device: str, batch_size: int, precision: str, n_it
     out_dir = result_dir(device, name, "TN2", batch_size, precision)
     model, inputs = load_model(name, device, batch_size, precision)
 
-    # 1. Overhead (xen kẽ có / không hook)
-    first = inputs if isinstance(inputs, torch.Tensor) else None
-    if first is not None:
-        over = calibrate_overhead_details(model, first, n_warmup=10, n_measure=n_iter, device=device)
-    else:  # model nhận dict (BERT): tự đo theo cùng cách
-        over = _overhead_generic(model, inputs, device, n_iter)
+    # 1. Overhead (xen kẽ có / không hook) — nhận cả input dạng Tensor, tuple và dict (BERT)
+    over = calibrate_overhead_details(model, inputs, n_warmup=10, n_measure=n_iter, device=device)
 
     # 2. Đo bằng profiler của mình
     plugin = profile_layers(model, inputs, device, out_dir, n_warmup=10, n_iter=n_iter)
-    layers = plugin.profiler.to_dataframe().rename(columns={"forward_time_ms": "time_ms"})
+    layers = plugin.profiler.to_dataframe()
 
     # 3. Đo tham chiếu bằng torch.profiler
     ref = reference_by_type(model, inputs, device, n_iter)
@@ -193,44 +189,9 @@ def validate_model(name: str, device: str, batch_size: int, precision: str, n_it
     return summary
 
 
-def _overhead_generic(model, inputs, device: str, n_iter: int) -> dict:
-    """Như calibrate_overhead_details nhưng cho input dạng dict / tuple."""
-    import time
-    import numpy as np
-    from src.layer.plugin import LayerProfilerPlugin
-
-    plugin = LayerProfilerPlugin()
-    clean, hooked = [], []
-    n_hooked = 0
-    with torch.no_grad():
-        for _ in range(10):
-            run_model(model, inputs)
-        for i in range(n_iter):
-            sync(device)
-            t0 = time.perf_counter()
-            run_model(model, inputs)
-            sync(device)
-            clean.append((time.perf_counter() - t0) * 1000.0)
-
-            plugin.attach(model, device=device)
-            t0 = time.perf_counter()
-            plugin.start(i)
-            run_model(model, inputs)
-            plugin.stop()
-            hooked.append((time.perf_counter() - t0) * 1000.0)
-            n_hooked = len(plugin._hooks) // 2
-            plugin.detach()
-    t_clean, t_hooked = float(np.median(clean)), float(np.median(hooked))
-    diff = max(0.0, t_hooked - t_clean)
-    return {"t_clean_ms": t_clean, "t_hooked_ms": t_hooked, "n_hooked": n_hooked,
-            "overhead_pct": diff / t_clean * 100.0, "per_layer_ms": diff / max(n_hooked, 1)}
-
-
-
 def main() -> None:
     p = argparse.ArgumentParser(description="TN2 — Kiểm chứng công cụ đo mức Layer")
-    p.add_argument("--models", nargs="+", default=TORCH_MODELS)
-
+    p.add_argument("--models", nargs="+", default=["resnet50", "bert_base"])  # TN2: PROJECT_PLAN Mục 6.2
     p.add_argument("--device", default="cpu")
     p.add_argument("--batch", type=int, default=1)
     p.add_argument("--precision", default="fp32", choices=["fp32", "fp16"])
