@@ -1,8 +1,8 @@
 # TỔNG QUAN NGHIÊN CỨU KHOA HỌC, ĐỐI SÁNH LÝ THUYẾT & CƠ SỞ PHÁT TRIỂN HỆ THỐNG VISIONPROF (MASTER RESEARCH REPORT)
 
 > **Tài liệu tham chiếu chuyên sâu (Comprehensive Research & Codebase Audit)**  
-> **Dự án**: [VisionProf](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/README.md) (Cross-Platform Deep Learning Profiling & Automated Heuristic Diagnostic Framework)  
-> **Phạm vi đối chiếu**: Đề cương nghiên cứu ([`research_plan_profiling_framework.md`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/research_plan_profiling_framework.md)), Đặc tả kỹ thuật ([`TECHNICAL_SPECIFICATION.md`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/TECHNICAL_SPECIFICATION.md)), Báo cáo kiểm toán ([`SYSTEM_AUDIT_REPORT.md`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/SYSTEM_AUDIT_REPORT.md)) và **Toàn bộ mã nguồn thực tế tại [`src/`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src)**.  
+> **Dự án**: [VisionProf](../README.md) (Cross-Platform Deep Learning Profiling & Automated Heuristic Diagnostic Framework)  
+> **Phạm vi đối chiếu**: Các tài liệu thiết kế v1.0 (đề cương nghiên cứu, đặc tả kỹ thuật, báo cáo kiểm toán; đã gỡ khỏi repo, xem lịch sử git) và **toàn bộ mã nguồn thực tế tại [`src/`](../src)**.  
 > **Mục tiêu**: Làm cơ sở lý thuyết, chỗ dựa học thuật chuẩn mực (*MLSys, USENIX ATC, OSDI, EuroSys, CVPR, NeurIPS*) và kế hoạch hành động chi tiết để bảo vệ đồ án hoặc phát triển thành công bố khoa học.
 
 ---
@@ -31,7 +31,7 @@
 ## 1. PHÂN TÍCH BẢN CHẤT ĐỀ TÀI & KIẾN TRÚC HỆ THỐNG VISIONPROF
 
 ### 1.1. Tam giác phân định: Evaluation vs. Benchmarking vs. Profiling
-Một trong những sai lầm kinh điển trong cộng đồng nghiên cứu AI là đánh đồng tốc độ thực tế với số lượng tham số hoặc FLOPs. [VisionProf](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/README.md) định vị rõ ranh giới khoa học qua tam giác khái niệm:
+Một trong những sai lầm kinh điển trong cộng đồng nghiên cứu AI là đánh đồng tốc độ thực tế với số lượng tham số hoặc FLOPs. [VisionProf](../README.md) định vị rõ ranh giới khoa học qua tam giác khái niệm:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -61,7 +61,7 @@ Một trong những sai lầm kinh điển trong cộng đồng nghiên cứu AI
 ---
 
 ### 1.2. Kiến trúc 3 mức đo lường chuẩn hóa (3-Tier Canonical Modular)
-Hệ thống được tổ chức thành 3 phân hệ độc lập, giao tiếp thông qua hợp đồng dữ liệu ([`src/core/types.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/core/types.py)) và giao diện công khai ([`src/core/interfaces.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/core/interfaces.py)):
+Hệ thống được tổ chức thành 3 phân hệ độc lập, giao tiếp thông qua hợp đồng dữ liệu ([`src/core/types.py`](../src/core/types.py)) và giao diện công khai ([`src/core/interfaces.py`](../src/core/interfaces.py)):
 
 ```
 +-------------------------------------------------------------------------------+
@@ -81,7 +81,7 @@ Hệ thống được tổ chức thành 3 phân hệ độc lập, giao tiếp 
 |  - Zero-Config Leaf Module Hook   |       |  - PhaseTimer (Context Manager)   |
 |  - Deferred CUDA Events (1x sync) |       |  - DataLoaderSentinel (Bỏ batch 0)|
 |  - Queue Prefill (_sleep)         |       |  - PhaseProfilerPlugin (TN6, TN7) |
-|  - FLOPs (fvcore & FlopCounter)   |       |  - 19 Heuristic Rules v2.0        |
+|  - FLOPs (FlopCounterMode)        |       |  - 19 Heuristic Rules v2.0        |
 |  - % Peak Roofline Model          |       |  - ABComparisonEngine (Mann-Wh.)  |
 |  - Calibrate Hook Overhead        |       |  - DiagnosticEngine (Engine lõi)  |
 +-----------------------------------+       +-----------------------------------+
@@ -103,10 +103,10 @@ Hệ thống được tổ chức thành 3 phân hệ độc lập, giao tiếp 
 
 | STT | Thành viên | Câu hỏi nghiên cứu (CH) | Thực nghiệm | Phát hiện khoa học thực chứng |
 | :---: | :---: | :--- | :---: | :--- |
-| **1** | **TV1** | **CH1**: Thời gian tốn nhiều nhất ở loại layer nào? Sự dịch chuyển điểm nghẽn giữa CPU và GPU ra sao? | **TN1** | Trên CPU, các layer nặng tính toán (`Conv2d`, `Linear`) chiếm 73–85% thời gian. Khi lên GPU T4, nhờ Tensor Cores tăng tốc ma trận cực mạnh, điểm nghẽn dịch chuyển sang các layer phần tử và chuẩn hóa (`BatchNorm2d`, `LayerNorm`, `ReLU`). Cụ thể trên MobileNetV3: Conv giảm từ 73% xuống 47%, trong khi Norm tăng từ 14% lên 25%. |
-| **2** | **TV1** | **CH2**: Công cụ đo có chính xác không và làm chậm mô hình bao nhiêu %? | **TN2** | Sai lệch thời gian $< 10\%$ so với `torch.profiler` (CUPTI). Chi phí overhead gắn hook duy trì $< 5\%$ nhờ kỹ thuật **Deferred CUDA Events** kết hợp **Queue Prefill**, không gây đứt gãy hàng đợi CUDA Stream. |
-| **3** | **TV2** | **CH3**: Mô hình ít tham số có chắc chạy nhanh hơn? Thứ hạng có bị đảo khi đổi phần cứng? | **TN3** | **Có hiện tượng đảo chiều thứ hạng (Performance Inversion)!** Trên CPU, `MobileNetV3` (5.5M) nhanh gấp 4 lần `DistilBERT` (66M). Nhưng trên GPU T4, `DistilBERT` tăng tốc $8.8\times$ và vượt mặt `MobileNetV3`. Nguyên nhân: GPU tối ưu cho Dense GEMM lớn, trong khi Depthwise Conv bị giới hạn bởi Memory Bandwidth và kernel launch overhead. |
-| **4** | **TV2** | **CH4**: Tăng Batch size và dùng FP16 Tensor Cores thì tốc độ tăng bao nhiêu? | **TN4, TN5** | GPU tăng thông lượng $7.5\times$ khi mở rộng batch từ 1 lên 32; FP16 trên T4 tăng tốc thêm $1.5\times - 2.1\times$ mà sai lệch output (`Cosine Similarity`) vẫn đạt $> 0.999$. |
+| **1** | **TV1** | **CH1**: Thời gian tốn nhiều nhất ở loại layer nào? Sự dịch chuyển điểm nghẽn giữa CPU và GPU ra sao? | **TN1** | Trên CPU, Conv chiếm 73–85% (CNN), Linear + Attention chiếm 95–96% (Transformer). Lên GPU, Transformer tăng tốc nhiều nhất (~$9\times$) và tỷ trọng gần như không đổi; CNN tăng tốc ít hơn ($3-6\times$) và layer nhỏ chiếm tỷ trọng lớn hơn, rõ nhất ở MobileNetV3 (Conv 73% $\rightarrow$ 47%, BatchNorm 14% $\rightarrow$ 25%). |
+| **2** | **TV1** | **CH2**: Công cụ đo có chính xác không và làm chậm mô hình bao nhiêu %? | **TN2** | Sai lệch tổng so với `torch.profiler` $< 1\%$ trên CPU, $< 8\%$ trên GPU T4. Overhead CPU 5–11%; GPU ở batch 1 là 109–166%, nên mức Layer chỉ dùng để phân rã thời gian, không dùng để đo tổng thời gian (việc đó thuộc mức Model). |
+| **3** | **TV2** | **CH3**: Mô hình ít tham số có chắc chạy nhanh hơn? Thứ hạng có bị đảo khi đổi phần cứng? | **TN3** | ⏳ Đang đo lại trên Colab T4 (xem `docs/tv2/YEU_CAU_DO_LAI_TN3_TN5.md`). |
+| **4** | **TV2** | **CH4**: Tăng Batch size và dùng FP16 Tensor Cores thì tốc độ tăng bao nhiêu? | **TN4, TN5** | ⏳ Đang đo lại trên Colab T4 (xem `docs/tv2/YEU_CAU_DO_LAI_TN3_TN5.md`). |
 | **5** | **TV3** | **CH5**: Khi Training, Backward tốn gấp mấy lần Forward? VRAM bùng nổ bao nhiêu? | **TN6** | Tỷ số thời gian $Backward / Forward$ thực nghiệm đạt **$1.82\times - 2.21\times$** (khớp hoàn hảo với lý thuyết vi tích phân $2.0\times$). Đỉnh VRAM khi training **tăng $2.7\times - 3.3\times$** so với suy luận do bắt buộc phải lưu trữ toàn bộ Intermediate Activations. |
 | **6** | **TV3** | **CH6**: Trong ứng dụng thật, chi phí ngoài mô hình (Pre/Post/NMS) chiếm bao nhiêu %? | **TN7** | Với `YOLOv8n` trên GPU T4, tiền xử lý và NMS chiếm tới **$41.0\%$** tổng chu kỳ frame ($> 30\%$), chứng minh thực nghiệm cho **Định luật Amdahl**: Tối ưu mạng nơ-ron đơn lẻ sẽ nhanh chóng chạm ngưỡng bão hòa nếu bỏ quên pipeline dữ liệu. |
 
@@ -133,11 +133,11 @@ BẢN ĐỒ VĂN HIẾN NGHIÊN CỨU LIÊN QUAN
 │   └── [7] RepVGG (CVPR '21) — Tái cấu trúc tham số (Structural Re-parameterization)
 │
 ├── [Trục 4] Đường ống Đầu cuối, NMS & I/O Pipeline
-│   ├── [8] RT-DETR (Baidu, 2023) — Phân tích điểm nghẽn NMS của YOLO
+│   ├── [8] RT-DETR (CVPR '24) — Phân tích điểm nghẽn NMS của YOLO
 │   └── [9] Plumber (MLSys '22) — Tự động chẩn đoán và gỡ nghẽn Data Pipeline
 │
 ├── [Trục 5] Động học Huấn luyện, Activation Memory & Trễ Đuôi
-│   ├── [10] ActNN (NeurIPS '21) — Nén Activation Memory khi training (2-bit)
+│   ├── [10] ActNN (ICML '21) — Nén Activation Memory khi training (2-bit)
 │   ├── [11] Gist (ISCA '18) — Tối ưu hóa bộ nhớ đệm Forward-Backward
 │   └── [12] vLLM / PagedAttention (SOSP '23) — Quản lý phân mảnh bộ nhớ động
 │
@@ -166,7 +166,7 @@ BẢN ĐỒ VĂN HIẾN NGHIÊN CỨU LIÊN QUAN
 - **Tác giả / Tổ chức**: Meta AI & PyTorch Engineering Team.
 - **Hội nghị / Nền tảng**: Open Source Infrastructure / MLSys Community.
 - **Đóng góp**: Libkineto là chuẩn công nghiệp nhúng trong PyTorch để bắt timeline trace đa thiết bị (CPU thread, CUDA streams). HTA cung cấp các giải thuật phân tích trace sau khi chạy.
-- **Ánh xạ vào VisionProf**: VisionProf dùng `torch.profiler` làm **Ground Truth** trong thực nghiệm TN2 ([`experiments/tn2_validate_profiler.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/experiments/tn2_validate_profiler.py)). VisionProf khắc phục nhược điểm của Kineto đối với kỹ sư ứng dụng: Kineto xuất file trace JSON khổng lồ khó đọc, trong khi VisionProf xuất bảng phân rã layer trực quan kèm luật chẩn đoán tức thì.
+- **Ánh xạ vào VisionProf**: VisionProf dùng `torch.profiler` làm **Ground Truth** trong thực nghiệm TN2 ([`experiments/tn2_validate_profiler.py`](../experiments/tn2_validate_profiler.py)). VisionProf khắc phục nhược điểm của Kineto đối với kỹ sư ứng dụng: Kineto xuất file trace JSON khổng lồ khó đọc, trong khi VisionProf xuất bảng phân rã layer trực quan kèm luật chẩn đoán tức thì.
 
 ---
 
@@ -178,7 +178,7 @@ BẢN ĐỒ VĂN HIẾN NGHIÊN CỨU LIÊN QUAN
 - **Đóng góp**: Đặt nền móng cho mô hình Roofline kinh điển:
   $$P_{\text{attainable}} = \min\left(P_{\text{peak}},\; B_{\text{peak}} \times AI\right)$$
   với $AI = \frac{\text{FLOPs}}{\text{Bytes}}$ (Arithmetic Intensity). Điểm gãy $AI^* = \frac{P_{\text{peak}}}{B_{\text{peak}}}$ phân định hai miền giới hạn: **Memory-Bandwidth Bound** và **Compute Bound**.
-- **Ánh xạ vào VisionProf**: Là nền tảng toán học cho toàn bộ Tab 4 ([`src/dashboard/tabs/tab_roofline.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/dashboard/tabs/tab_roofline.py)) và module tính toán hiệu suất phần cứng ([`src/layer/roofline.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/layer/roofline.py)).
+- **Ánh xạ vào VisionProf**: Là nền tảng toán học cho toàn bộ Tab 4 ([`src/dashboard/tabs/tab_roofline.py`](../src/dashboard/tabs/tab_roofline.py)) và module tính toán hiệu suất phần cứng ([`src/layer/roofline.py`](../src/layer/roofline.py)).
 
 #### 5. An Instruction / Hierarchical Roofline Model for GPUs
 - **Tác giả**: Nan Ding, Samuel Williams.
@@ -213,16 +213,16 @@ BẢN ĐỒ VĂN HIẾN NGHIÊN CỨU LIÊN QUAN
 ### 2.4. Trục 4: Đường ống Đầu cuối, NMS & I/O Pipeline
 
 #### 8. DETRs Beat YOLOs on Real-time Object Detection (RT-DETR)
-- **Tác giả**: Yian Zhao, Wenyu Liu, et al. (Baidu Inc.).
-- **Xuất bản**: **arXiv 2023** / SOTA Real-Time Object Detection.
+- **Tác giả**: Yian Zhao, Wenyu Lv, Shangliang Xu, et al. (Baidu Inc.).
+- **Xuất bản**: **CVPR 2024** (bản arXiv 2023).
 - **Đóng góp**: Bóc tách chi tiết bản chất **NMS Bottleneck** trong các mạng phát hiện vật thể dạng YOLO: NMS là thuật toán tuần tự trên CPU, thời gian chạy biến thiên theo số lượng vật thể trong frame ảnh, gây ra độ trễ không ổn định (latency jitter) và phá vỡ tính thời gian thực.
-- **Ánh xạ vào VisionProf**: Cơ sở lý thuyết cho **CH6 & TN7** ([`scripts/run_tn7_pipeline.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/scripts/run_tn7_pipeline.py)), chứng minh thực nghiệm rằng trên GPU T4, khâu tiền xử lý ảnh và NMS chiếm tới **$41.0\%$** chu kỳ frame của YOLOv8n.
+- **Ánh xạ vào VisionProf**: Cơ sở lý thuyết cho **CH6 & TN7** ([`scripts/run_tn7_pipeline.py`](../scripts/run_tn7_pipeline.py)), chứng minh thực nghiệm rằng trên GPU T4, khâu tiền xử lý ảnh và NMS chiếm tới **$41.0\%$** chu kỳ frame của YOLOv8n.
 
 #### 9. Plumber: Diagnosing and Removing Performance Bottlenecks in Machine Learning Data Pipelines
 - **Tác giả**: Michael Kuchnik, Ana Klimovic, Jiri Simsa, Virginia Smith, George Amvrosiadis.
 - **Hội nghị**: **MLSys 2022** (Conference on Machine Learning and Systems).
-- **Đóng góp**: Khảo sát hàng triệu job huấn luyện tại Google và chứng minh phần lớn GPU bị đói tính toán (GPU Starvation) là do pipeline nạp dữ liệu trên CPU không theo kịp tốc độ của GPU. Plumber tự động phát hiện nút thắt cổ chai và tự động cấu hình parallelism, prefetching và caching.
-- **Ánh xạ vào VisionProf**: Cơ sở lý thuyết cho công cụ [`DataLoaderSentinel`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/phase/dataloader.py) và các quy tắc chẩn đoán `RC-01`, `RC-03` trong việc phát hiện Compute Starvation.
+- **Đóng góp**: Khảo sát hơn 2 triệu job huấn luyện tại Google và chứng minh phần lớn GPU bị đói tính toán (GPU Starvation) là do pipeline nạp dữ liệu trên CPU không theo kịp tốc độ của GPU. Plumber tự động phát hiện nút thắt cổ chai và tự động cấu hình parallelism, prefetching và caching.
+- **Ánh xạ vào VisionProf**: Cơ sở lý thuyết cho công cụ [`DataLoaderSentinel`](../src/phase/dataloader.py) và các quy tắc chẩn đoán `RC-01`, `RC-03` trong việc phát hiện Compute Starvation.
 
 ---
 
@@ -230,21 +230,21 @@ BẢN ĐỒ VĂN HIẾN NGHIÊN CỨU LIÊN QUAN
 
 #### 10. ActNN: Reducing Training Memory Footprint via 2-Bit Activation Compressed Training
 - **Tác giả**: Jianfei Chen, Lianmin Zheng, Zhewei Yao, Ion Stoica, Joseph E. Gonzalez, Michael W. Mahoney.
-- **Hội nghị**: **NeurIPS 2021** (Neural Information Processing Systems).
-- **Đóng góp**: Chứng minh bộ nhớ VRAM trong quá trình huấn luyện chủ yếu bị chiếm dụng bởi **Intermediate Activations** (được lưu lại từ Forward pass để dùng cho Backward pass), chứ không phải trọng số mô hình. ActNN nén các activation này xuống 2-bit ngẫu nhiên để tiết kiệm 80% VRAM.
+- **Hội nghị**: **ICML 2021** (PMLR 139, pp. 1803–1813).
+- **Đóng góp**: Chứng minh bộ nhớ VRAM trong quá trình huấn luyện chủ yếu bị chiếm dụng bởi **Intermediate Activations** (được lưu lại từ Forward pass để dùng cho Backward pass), chứ không phải trọng số mô hình. ActNN lượng tử hoá ngẫu nhiên activation xuống trung bình 2-bit, giảm bộ nhớ activation 12× và cho phép batch lớn hơn 6.6–14×.
 - **Ánh xạ vào VisionProf**: Giải thích trực tiếp kết quả thực nghiệm **TN6 (CH5)** của VisionProf: Đỉnh VRAM khi training tăng gấp **$2.7\times - 3.3\times$** so với khi suy luận.
 
 #### 11. Gist: Efficient Data Encoding for Deep Neural Network Training
-- **Tác giả**: Paras Jain, Xiang Cheng, et al.
+- **Tác giả**: Animesh Jain, Amar Phanishayee, Jason Mars, Lingjia Tang, Gennady Pekhimenko.
 - **Hội nghị**: **ISCA 2018** (International Symposium on Computer Architecture).
-- **Đóng góp**: Chứng minh bằng kiến trúc máy tính tính bất đối xứng giữa Forward và Backward: Backward pass tốn gấp đôi số phép toán FLOPs và đòi hỏi duy trì toàn bộ trạng thái kích hoạt.
-- **Ánh xạ vào VisionProf**: Củng cố cho giả thuyết khoa học và kết quả đo đạc thực nghiệm của [`PhaseTimer`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/phase/timer.py): Tỷ số thời gian $Backward / Forward \approx 1.82\times - 2.21\times$ (xấp xỉ $2.0\times$ theo lý thuyết vi tích phân).
+- **Đóng góp**: Chỉ ra feature map lưu lại từ forward để dùng cho backward chiếm phần lớn bộ nhớ khi training, và mã hoá (encode) chúng gọn hơn trong khoảng thời gian chờ backward để giảm bộ nhớ.
+- **Ánh xạ vào VisionProf**: Giải thích vì sao bộ nhớ training trong TN6 (CH5) lớn hơn suy luận $2.7\times - 3.3\times$: phải giữ activation cho backward. (Tỷ số $Backward / Forward \approx 2\times$ đo bằng [`PhaseTimer`](../src/phase/timer.py) là xấp xỉ quen thuộc về số phép tính, không phải kết luận của Gist.)
 
 #### 12. vLLM: Efficient Memory Management for Large Language Model Serving with PagedAttention
 - **Tác giả**: Woosuk Kwon, Zhuohan Li, Siyuan Zhuang, Ying Sheng, Lianmin Zheng, Cody Hao Yu, Joseph E. Gonzalez, Hao Zhang, Ion Stoica.
 - **Hội nghị**: **SOSP 2023** (ACM Symposium on Operating Systems Principles).
 - **Đóng góp**: Chỉ ra rằng sự phân mảnh bộ nhớ động (Memory Fragmentation) làm lãng phí 60–80% VRAM của GPU. Cơ chế PagedAttention lấy cảm hứng từ phân trang bộ nhớ ảo của Hệ điều hành để triệt tiêu phân mảnh.
-- **Ánh xạ vào VisionProf**: Là cơ sở lý thuyết cho luật chẩn đoán phân mảnh bộ nhớ `RA-02` ([`src/analyzer/rules/memory.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/analyzer/rules/memory.py)) đánh giá tỷ số giữa bộ nhớ dành riêng (Reserved) và bộ nhớ thực cấp phát (Allocated).
+- **Ánh xạ vào VisionProf**: Là cơ sở lý thuyết cho luật chẩn đoán phân mảnh bộ nhớ `RA-02` ([`src/analyzer/rules/memory.py`](../src/analyzer/rules/memory.py)) đánh giá tỷ số giữa bộ nhớ dành riêng (Reserved) và bộ nhớ thực cấp phát (Allocated).
 
 ---
 
@@ -279,33 +279,33 @@ Bảng đối chiếu minh bạch giữa mã nguồn thực tế triển khai v�
 
 ### 3.1. Danh mục các thành phần ĐÃ ÁP DỤNG HOÀN TOÀN trong mã nguồn
 
-1. **Cơ chế đo GPU bất đồng bộ chuẩn xác ([`src/layer/events.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/layer/events.py))**:
+1. **Cơ chế đo GPU bất đồng bộ chuẩn xác ([`src/layer/events.py`](../src/layer/events.py))**:
    - `DeferredCudaDispatcher`: Thu thập cặp `torch.cuda.Event` trên CUDA stream của từng leaf module mà không gọi `synchronize()` trong hook. Chỉ đồng bộ 1 lần duy nhất ở `end_iteration()`.
    - **Queue Prefill**: Dùng `torch.cuda._sleep()` làm GPU bận rộn đủ lâu để CPU kịp enqueue toàn bộ các kernel của forward pass, giúp GPU chạy back-to-back, triệt tiêu thời gian GPU rảnh chờ CPU.
    - **LIFO Stack Event**: Sử dụng ngăn xếp `_stacks[layer_name]` để quản lý hoàn hảo các module được gọi lặp lại (re-entrant modules như activation `SiLU` trong YOLOv8).
 
-2. **Mô hình Roofline & Phân tích FLOPs giải tích ([`src/layer/roofline.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/layer/roofline.py) & [`src/layer/flops.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/layer/flops.py))**:
-   - Tự động tính FLOPs qua `fvcore` (fallback công thức giải tích cho Conv/Linear/Attention).
+2. **Mô hình Roofline & Phân tích FLOPs giải tích ([`src/layer/roofline.py`](../src/layer/roofline.py) & [`src/layer/flops.py`](../src/layer/flops.py))**:
+   - Tự động tính FLOPs qua `torch.utils.flop_counter.FlopCounterMode` (fallback công thức giải tích cho các layer không đếm được, ví dụ BatchNorm, activation).
    - Tính toán lưu lượng bộ nhớ tổng hợp ($bytes = input + weights + output$) và $AI = FLOPs / bytes$.
    - Tính toán hiệu suất phần cứng `% Peak GFLOPs` và phân loại nhãn `bound` ("compute" vs "memory").
-   - Cung cấp bảng thông số phần cứng chuẩn `HardwareSpec` cho Tesla T4 ([`src/layer/hw_specs.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/layer/hw_specs.py)).
+   - Cung cấp bảng thông số phần cứng chuẩn `HardwareSpec` cho Tesla T4 ([`src/layer/hw_specs.py`](../src/layer/hw_specs.py)).
 
-3. **Harness đo lường Model Zoo & 12 chỉ số khoa học ([`src/model/benchmark.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/model/benchmark.py) & [`src/zoo/`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/zoo))**:
+3. **Harness đo lường Model Zoo & 12 chỉ số khoa học ([`src/model/benchmark.py`](../src/model/benchmark.py) & [`src/zoo/`](../src/zoo))**:
    - Cung cấp đủ 8 Model Adapters: CV (`mobilenet_v3_large`, `resnet50`, `vit_b_16`, `yolov8n`), NLP (`distilbert`, `bert_base`), Tabular (`mlp`, `xgboost`).
    - Loại bỏ bẫy đồng bộ ngầm của BERT (không truyền `attention_mask` khi input không có padding).
    - Đo đạc đủ 12 chỉ số: `mean_ms`, `std_ms`, `p50_ms`, `p90_ms`, `p95_ms`, `p99_ms`, `tail_ratio`, `throughput_fps`, `params_m`, `peak_vram_mb`, `rss_mb`, `cold_start_ms`.
    - Bắt đỉnh VRAM chính xác 100% qua `torch.cuda.max_memory_allocated()`.
-   - Runner 2 pha ([`scripts/run_experiment.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/scripts/run_experiment.py)): Pha 1 đo latency sạch không hook $\rightarrow$ Pha 2 mới gắn hook đo phân rã layer.
+   - Runner 2 pha ([`scripts/run_experiment.py`](../scripts/run_experiment.py)): Pha 1 đo latency sạch không hook $\rightarrow$ Pha 2 mới gắn hook đo phân rã layer.
 
-4. **Giám sát tài nguyên không xâm lấn ([`src/model/resources.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/model/resources.py))**:
+4. **Giám sát tài nguyên không xâm lấn ([`src/model/resources.py`](../src/model/resources.py))**:
    - `ResourceSampler`: Chạy trên luồng Daemon phụ độc lập với chu kỳ lấy mẫu 100ms, thu thập CPU%, RAM RSS, GPU Util%, VRAM, Power (Watts), Nhiệt độ (°C).
    - Tuyệt đối không gọi NVML trong hook của layer (chống gây trễ bubble).
 
-5. **Bộ đo Giai đoạn & Chống nhiễu I/O ([`src/phase/timer.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/phase/timer.py) & [`src/phase/dataloader.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/phase/dataloader.py))**:
+5. **Bộ đo Giai đoạn & Chống nhiễu I/O ([`src/phase/timer.py`](../src/phase/timer.py) & [`src/phase/dataloader.py`](../src/phase/dataloader.py))**:
    - `PhaseTimer`: Context manager bọc các pha `forward`, `backward`, `optimizer`, `preprocess`, `postprocess`, có đồng bộ CUDA đúng quy chuẩn ở biên mỗi pha.
    - `DataLoaderSentinel`: Bọc DataLoader, tự động loại trừ cold-start của batch 0, đo thời gian fetch dữ liệu và phát hiện nghẽn I/O.
 
-6. **Động cơ Chẩn đoán 19 Luật v2.0 & A/B Testing ([`src/analyzer/`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/analyzer))**:
+6. **Động cơ Chẩn đoán 19 Luật v2.0 & A/B Testing ([`src/analyzer/`](../src/analyzer))**:
    - Đã hiện thực hóa đủ 19 luật v2.0 trong thư mục `src/analyzer/rules/`, sửa triệt để 4 lỗi logic:
      - `RB-04` & `RD-05`: Bỏ hoàn toàn $\text{ms/Mparam}$, chuyển sang so sánh với Roofline và $\text{ms/GFLOP}$.
      - `RD-02`: Đổi từ "Dead layer" thành "Sub-microsecond layer" ($< 1\mu s$).
@@ -324,7 +324,7 @@ Bảng đối chiếu minh bạch giữa mã nguồn thực tế triển khai v�
 
 2. **Kịch bản kiểm chuẩn tự động qua NVIDIA Nsight Systems CLI (`nsys profile`)**:
    - *Hiện trạng đề cương*: Đề xuất kịch bản CLI tự động đối chiếu NVTX marker với trace SQLite từ Nsight.
-   - *Thực tế codebase*: Chưa có script gọi CLI của Nsight. Thay vào đó, nhóm kiểm chuẩn đối chiếu Ground Truth trực tiếp bằng thư viện `torch.profiler` trong [`experiments/tn2_validate_profiler.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/experiments/tn2_validate_profiler.py).
+   - *Thực tế codebase*: Chưa có script gọi CLI của Nsight. Thay vào đó, nhóm kiểm chuẩn đối chiếu Ground Truth trực tiếp bằng thư viện `torch.profiler` trong [`experiments/tn2_validate_profiler.py`](../experiments/tn2_validate_profiler.py).
 
 3. **Bộ kịch bản tự động cho 7 bài toán Ablation Studies (AB-1 đến AB-7)**:
    - *Hiện trạng đề cương*: Đề xuất 7 bài toán bóc tách thành phần chạy tự động qua CLI.
@@ -334,7 +334,7 @@ Bảng đối chiếu minh bạch giữa mã nguồn thực tế triển khai v�
    - *Thực tế codebase*: Tối ưu hóa 100% cho **PyTorch Eager Mode**. Chưa hỗ trợ profiling nội bộ cho `torch.compile` (Inductor Triton kernels), NVIDIA TensorRT, hay ONNX Runtime cho các mô hình Deep Learning (chỉ hỗ trợ hộp đen cho XGBoost).
 
 5. **Khả năng tự động viết lại code (Prescriptive Code Rewriter / Auto-Tuning)**:
-   - *Thực tế codebase*: `DiagnosticEngine` dừng lại ở việc đưa ra cảnh báo (`CRITICAL`, `WARN`, `PASS`) và lời khuyên kỹ thuật dạng văn bản (Recommendation string). Chưa có module tự động biến đổi đồ thị hoặc sinh mã tối ưu hóa như Plumber hay Daydream.
+   - *Thực tế codebase*: `DiagnosticEngine` dừng lại ở việc đưa ra cảnh báo (`PASS`, `WARN`, `FAIL`, `SKIPPED`) và lời khuyên kỹ thuật dạng văn bản (Recommendation string). Chưa có module tự động biến đổi đồ thị hoặc sinh mã tối ưu hóa như Plumber hay Daydream.
 
 ---
 
@@ -343,9 +343,9 @@ Bảng đối chiếu minh bạch giữa mã nguồn thực tế triển khai v�
 Khi làm việc với các hệ thống đo lường hiệu năng học sâu, có **8 cạm bẫy kỹ thuật vi mô** mà người phát triển cần nắm vững để tránh sai lệch kết quả:
 
 ### R1. Ngưỡng sàn đo lường của CUDA Events (CUDA Event Timing Floor)
-- **Vấn đề**: Mỗi cặp `cudaEventRecord` và `cudaEventElapsedTime` có một độ phân giải vật lý tối thiểu. Trên Linux, ngưỡng sàn này là khoảng $0.5 - 1.5\,\mu s$. Tuy nhiên, trên Windows với driver WDDM, cơ chế gom lệnh (command batching) của hệ điều hành có thể đẩy ngưỡng sàn lên tới $10 - 30\,\mu s$!
+- **Vấn đề**: Mỗi cặp `cudaEventRecord` và `cudaEventElapsedTime` có một độ phân giải vật lý tối thiểu. TN2 đo được ngưỡng sàn này khoảng $6\,\mu s$ trên Colab T4 (Linux) bằng `estimate_timer_bias(tiny_kernel=True)` (`timer_floor_ms` trong `results/analysis/TN2/summary_colab_t4.csv`). Trên Windows với driver WDDM, cơ chế gom lệnh của hệ điều hành đẩy ngưỡng này lên khoảng $20\,\mu s$.
 - **Hệ quả**: Đối với các layer cực nhỏ ở batch size 1 (như `nn.ReLU`, `nn.Identity`), thời gian đo được chủ yếu là chi phí của chính event, dẫn đến việc tổng thời gian các layer bị đội lên (overestimation).
-- **Cách VisionProf xử lý**: Bổ sung hàm `estimate_timer_bias(tiny_kernel=True)` trong [`src/layer/overhead.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/layer/overhead.py) và đưa ra cột `layers_below_3x_floor_pct` trong báo cáo TN2 để cảnh báo người dùng.
+- **Cách VisionProf xử lý**: Bổ sung hàm `estimate_timer_bias(tiny_kernel=True)` trong [`src/layer/overhead.py`](../src/layer/overhead.py) và đưa ra cột `layers_below_3x_floor_pct` trong báo cáo TN2 để cảnh báo người dùng.
 
 ### R2. "Thời gian không thuộc layer nào" (Unattributed Time)
 - **Vấn đề**: PyTorch forward hooks chỉ can thiệp vào các lớp kế thừa `nn.Module`. Các phép toán gọi trực tiếp dưới dạng hàm (functional ops) như `x + shortcut` (residual add trong ResNet), `torch.cat`, hay phép nhân ma trận `Q @ K.T` trong Multi-Head Attention không có module đại diện.
@@ -354,23 +354,23 @@ Khi làm việc với các hệ thống đo lường hiệu năng học sâu, c�
 
 ### R3. Nhập nhằng bộ nhớ: Process RSS vs. Activation Memory trên CPU
 - **Vấn đề**: Trên CPU, không có bộ cấp phát CUDA Allocator độc lập. Bộ nhớ RAM tiến trình (`psutil.Process().memory_info().rss`) chịu sự chi phối của cơ chế cấp phát trang lười (Lazy OS Paging) và Garbage Collector của Python, không phản ánh đúng bộ nhớ tensor của từng layer.
-- **Cách VisionProf xử lý**: Tách biệt hoàn toàn: Dùng Process RSS chỉ cho việc phát hiện rò rỉ bộ nhớ dài hạn (`RA-04`), còn bộ nhớ kích hoạt của từng layer được tính toán giải tích trực tiếp từ kích thước và kiểu dữ liệu của tensor output ([`src/layer/memory.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/layer/memory.py)).
+- **Cách VisionProf xử lý**: Tách biệt hoàn toàn: Dùng Process RSS chỉ cho việc phát hiện rò rỉ bộ nhớ dài hạn (`RA-04`), còn bộ nhớ kích hoạt của từng layer được tính toán giải tích trực tiếp từ kích thước và kiểu dữ liệu của tensor output ([`src/layer/memory.py`](../src/layer/memory.py)).
 
 ### R4. Module được gọi lặp lại trong một pass (Re-entrant Modules)
 - **Vấn đề**: Nhiều kiến trúc hiện đại dùng chung một thể hiện module cho nhiều vị trí (ví dụ: YOLOv8n dùng chung một instance `nn.SiLU()` cho hàng chục khối C2f). Nếu lưu sự kiện bắt đầu bằng một biến đơn lẻ, lần gọi sau sẽ ghi đè lên lần gọi trước.
-- **Cách VisionProf xử lý**: Quản lý sự kiện bằng cấu trúc ngăn xếp **LIFO Stack** (`_stacks[layer_name] = []`) trong [`src/layer/events.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/layer/events.py). Hook pre-forward đẩy event vào stack; hook post-forward rút event đỉnh ra và ghi nhận thời gian.
+- **Cách VisionProf xử lý**: Quản lý sự kiện bằng cấu trúc ngăn xếp **LIFO Stack** (`_stacks[layer_name] = []`) trong [`src/layer/events.py`](../src/layer/events.py). Hook pre-forward đẩy event vào stack; hook post-forward rút event đỉnh ra và ghi nhận thời gian.
 
 ### R5. Trôi nhiệt (Thermal Throttling) & Xung nhịp GPU
 - **Vấn đề**: Khi chạy benchmark liên tục trên GPU Colab T4 hoặc laptop, nhiệt độ chip tăng cao dẫn đến việc phần cứng tự động hạ xung nhịp (Thermal Throttling). Nếu chạy toàn bộ cấu hình A rồi mới chạy cấu hình B, cấu hình B sẽ bị thiệt thòi về thời gian.
-- **Cách VisionProf xử lý**: Áp dụng giao thức chạy xen kẽ luân phiên (**Interleaved Protocol**: $A_1 \rightarrow B_1 \rightarrow A_2 \rightarrow B_2 \dots$) trong công cụ đo A/B ([`src/layer/overhead.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/layer/overhead.py)), kết hợp số vòng warm-up $N_{warmup} \ge 15$.
+- **Cách VisionProf xử lý**: Áp dụng giao thức chạy xen kẽ luân phiên (**Interleaved Protocol**: $A_1 \rightarrow B_1 \rightarrow A_2 \rightarrow B_2 \dots$) trong công cụ đo A/B ([`src/layer/overhead.py`](../src/layer/overhead.py)), kết hợp số vòng warm-up $N_{warmup} \ge 15$.
 
 ### R6. Bẫy đồng bộ ngầm CPU-GPU (Implicit Synchronization Traps)
 - **Vấn đề**: Các thao tác vô tình trong Python như `tensor.item()`, `tensor.tolist()`, `print(tensor)` hay các câu lệnh điều kiện `if tensor > 0:` sẽ ép CPU phải dừng lại chờ GPU hoàn tất toàn bộ pipeline, làm sai lệch hoàn toàn thời gian đo lường bất đồng bộ.
-- **Cách VisionProf xử lý**: Kiểm duyệt toàn bộ adapter trong `src/zoo/` (đặc biệt là adapter `bert_base` trong [`src/zoo/nlp.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/zoo/nlp.py), bỏ qua `attention_mask` khi input ngẫu nhiên để tránh hàm kiểm tra mask của thư viện Transformers kích hoạt đồng bộ ngầm).
+- **Cách VisionProf xử lý**: Kiểm duyệt toàn bộ adapter trong `src/zoo/` (đặc biệt là adapter `bert_base` trong [`src/zoo/nlp.py`](../src/zoo/nlp.py), bỏ qua `attention_mask` khi input ngẫu nhiên để tránh hàm kiểm tra mask của thư viện Transformers kích hoạt đồng bộ ngầm).
 
-### R7. Hạn chế của fvcore & FlopCounterMode với Custom Ops
+### R7. Hạn chế của bộ đếm FLOPs tự động (FlopCounterMode) với Custom Ops
 - **Vấn đề**: Các bộ đếm FLOPs tự động phụ thuộc vào bảng đăng ký toán tử `aten`. Khi gặp các toán tử tùy biến (Custom C++/CUDA extensions) hoặc các phép toán không đăng ký công thức FLOPs, bộ đếm sẽ bỏ sót.
-- **Cách VisionProf xử lý**: Xây dựng kiến trúc 3 tầng tính FLOPs ([`src/layer/flops.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/layer/flops.py)): Tầng 1 dùng `FlopCounterMode` $\rightarrow$ Tầng 2 fallback sang bảng công thức chuẩn `_ANALYTIC_FLOPS` (LayerNorm, GELU, SiLU) $\rightarrow$ Tầng 3 dùng công thức hình học `FlopsCalculator` (Conv2d, Linear).
+- **Cách VisionProf xử lý**: Xây dựng kiến trúc 3 tầng tính FLOPs ([`src/layer/flops.py`](../src/layer/flops.py)): Tầng 1 dùng `FlopCounterMode` $\rightarrow$ Tầng 2 fallback sang bảng công thức chuẩn `_ANALYTIC_FLOPS` (LayerNorm, GELU, SiLU) $\rightarrow$ Tầng 3 dùng công thức hình học `FlopsCalculator` (Conv2d, Linear).
 
 ### R8. Quá tải hàng đợi Queue Prefill (Prefill Drain vs Overfill)
 - **Vấn đề**: Kỹ thuật Queue Prefill dùng `torch.cuda._sleep()` để giữ chân GPU. Nếu thời gian sleep quá ngắn, GPU sẽ hoàn thành sleep trước khi CPU kịp enqueue xong $\rightarrow$ GPU lại bị rảnh. Nếu sleep quá dài, thời gian đo cả pass sẽ bị kéo dài không cần thiết.
@@ -380,7 +380,7 @@ Khi làm việc với các hệ thống đo lường hiệu năng học sâu, c�
 
 ## 5. ĐẶC TẢ CHI TIẾT 19 QUY TẮC HEURISTIC DIAGNOSTIC V2.0 TRONG CODEBASE
 
-Toàn bộ 19 quy tắc được chia thành 4 nhóm độc lập trong thư mục [`src/analyzer/rules/`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/analyzer/rules):
+Toàn bộ 19 quy tắc được chia thành 4 nhóm độc lập trong thư mục [`src/analyzer/rules/`](../src/analyzer/rules):
 
 ### Nhóm 1: Bộ Nhớ (Memory Rules - RA)
 1. **RA-01 (OOM Risk)**: So sánh Peak VRAM với dung lượng bộ nhớ vật lý.
@@ -464,10 +464,10 @@ LỘ TRÌNH NÂNG CẤP HỆ THỐNG VISIONPROF
    - *Hành động*: Khi luật `RD-02` (Sub-microsecond layers) được kích hoạt $\rightarrow$ Hệ thống tự động sinh đoạn code gợi ý gộp Conv-BN-ReLU bằng `torch.ao.quantization.fuse_modules`. Khi luật `RC-03` (GPU Starvation) được kích hoạt $\rightarrow$ Sinh đoạn code mẫu tối ưu: `DataLoader(..., num_workers=4, pin_memory=True, persistent_workers=True)`.
 
 2. **Hướng 2: Khảo sát Tác Động Của Trình Biên Dịch Học Máy (`torch.compile`)**:
-   - *Hành động*: Thêm cờ `--compile` vào [`scripts/run_experiment.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/scripts/run_experiment.py). Sử dụng Tab 8 (A/B Testing) để so sánh đối đầu giữa chế độ PyTorch Eager truyền thống và TorchInductor. Định lượng xem trình biên dịch đã giúp đẩy điểm biểu diễn của các layer Norm/Activation lên gần trần Roofline như thế nào.
+   - *Hành động*: Thêm cờ `--compile` vào [`scripts/run_experiment.py`](../scripts/run_experiment.py). Sử dụng Tab 8 (A/B Testing) để so sánh đối đầu giữa chế độ PyTorch Eager truyền thống và TorchInductor. Định lượng xem trình biên dịch đã giúp đẩy điểm biểu diễn của các layer Norm/Activation lên gần trần Roofline như thế nào.
 
 3. **Hướng 3: Bổ Sung Mô Hình Đa Phương Thức (Vision-Language Models)**:
-   - *Hành động*: Tạo adapter `clip_vit_b32` trong thư mục [`src/zoo/`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/src/zoo). Bóc tách thời gian chạy của nhánh Text Encoder (1D sequence) và Vision Encoder (2D patches), mở rộng phạm vi ứng dụng của framework sang thời đại Multimodal AI.
+   - *Hành động*: Tạo adapter `clip_vit_b32` trong thư mục [`src/zoo/`](../src/zoo). Bóc tách thời gian chạy của nhánh Text Encoder (1D sequence) và Vision Encoder (2D patches), mở rộng phạm vi ứng dụng của framework sang thời đại Multimodal AI.
 
 4. **Hướng 4: Hoàn Thiện Bài Toán Ablation Chuẩn Bị Cho Bài Báo Khoa Học**:
    - *Hành động*: Viết kịch bản `experiments/run_ablation_studies.py` để quét tự động $N_{warmup}$ từ 0 đến 50 và đo phương sai độ trễ, chứng minh điểm bão hòa tối ưu $N=15$; đồng thời bóc tách riêng rẽ chi phí overhead của Timer Hook, Memory Tracker và Background Sampler.
