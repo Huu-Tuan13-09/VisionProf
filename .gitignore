@@ -27,3 +27,6 @@ BAO_CAO_TIEN_DO_NHOM.md
 
 # Internal tracking & tasks
 tasks/
+
+# Paper PDFs downloaded for figure cropping (copyrighted, not versioned)
+docs/research/*.pdf
