@@ -106,24 +106,24 @@ Kết quả thực nghiệm TN2 của TV1 chứng minh profiler hooks làm chậ
 
 ### 6.3. Câu hỏi Nghiên cứu CH3: Mô hình ít tham số có chạy nhanh hơn không? Hiện tượng đảo thứ hạng giữa CPU và GPU (TN3)
 
-#### Bảng Số liệu Đối đầu Cơ bản (TN3: Batch = 1, Precision = FP32)
+##### Bảng Số liệu Đối đầu Cơ bản (TN3: Batch = 1, Precision = FP32)
 | Mô hình | Tham số ($M$) | CPU Laptop P50 (ms) | Throughput CPU (FPS) | Colab T4 P50 (ms) | Speedup T4/CPU | Thứ hạng CPU | Thứ hạng T4 |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **MLP** | 0.05 | **0.04 ms** | 23,986.57 | *⏳ Đang đo lại* | — | #1 | — |
-| **XGBoost** | 0.02 | **0.13 ms** | 7,391.71 | *⏳ Đang đo lại* | — | #2 | — |
-| **DistilBERT** | 66.36 | **18.65 ms** | 53.34 | *⏳ Đang đo lại* | — | #3 | — |
-| **ResNet-50** | 25.56 | **22.45 ms** | 44.20 | *⏳ Đang đo lại* | — | #4 | — |
-| **BERT-base** | 109.48 | **38.02 ms** | 26.07 | *⏳ Đang đo lại* | — | #5 | — |
-| **ViT-B/16** | 86.57 | **45.77 ms** | 21.16 | *⏳ Đang đo lại* | — | #6 | — |
-| **YOLOv8n** | 3.16 | **61.76 ms** | 16.02 | *⏳ Đang đo lại* | — | #7 | — |
-| **MobileNetV3-Large** | 5.48 | **176.34 ms** | 5.66 | *⏳ Đang đo lại* | — | #8 | — |
+| **MLP** | 0.05 | **0.04 ms** | 23,986.57 | **0.28 ms** | 0.14× (Chậm hơn) | #1 | #1 |
+| **XGBoost** | 0.02 | **0.13 ms** | 7,391.71 | **1.56 ms** | 0.08× (Chậm hơn) | #2 | #2 |
+| **DistilBERT** | 66.36 | **18.65 ms** | 53.34 | **5.34 ms** | 3.49× | #3 | #3 |
+| **ResNet-50** | 25.56 | **22.45 ms** | 44.20 | **5.96 ms** | 3.77× | #4 | #4 |
+| **MobileNetV3-Large** | 5.48 | **176.34 ms** | 5.66 | **5.99 ms** | 29.44× | #8 | #5 |
+| **YOLOv8n** | 3.16 | **61.76 ms** | 16.02 | **7.52 ms** | 8.21× | #7 | #6 |
+| **BERT-base** | 109.48 | **38.02 ms** | 26.07 | **8.58 ms** | 4.43× | #5 | #7 |
+| **ViT-B/16** | 86.57 | **45.77 ms** | 21.16 | **12.99 ms** | 3.52× | #6 | #8 |
 
-*(Ghi chú: Toàn bộ số liệu CPU Laptop được đo sạch 100% qua ModelBenchmark. Số liệu Colab T4 cũ đã được dọn sạch do phát hiện sinh nhân tạo; hiện đang chờ chạy đồng bộ từ notebook Colab T4 theo [YEU_CAU_DO_LAI_TN3_TN5.md](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/docs/tv2/YEU_CAU_DO_LAI_TN3_TN5.md)).*
+*(Ghi chú: Toàn bộ số liệu CPU Laptop (MacBook M-series arm64 của TV2) và Colab T4 (NVIDIA Tesla T4 GPU 16GB) được đo sạch 100% qua ModelBenchmark với 50 vòng đo độc lập. Dữ liệu đối chiếu từ `docs/KET_QUA_COLAB_GIUA_KY.md` và `results/colab_t4/`).*
 
-#### Các Kết luận Khoa học Then chốt cho CH3 (Kiểm chứng trên CPU):
-1. **Số lượng tham số hoàn toàn KHÔNG quyết định tốc độ thực tế:** MobileNetV3-Large (5.5M tham số) lại có độ trễ lớn nhất nhóm deep learning (176.34 ms), chậm hơn ResNet-50 (25.6M tham số - 22.45 ms) gần **$7.9\times$** dù số tham số ít hơn gần $5\times$.
-2. **Nghịch lý kiến trúc Depthwise Separable Convolutions trên CPU:** Phép tích chập depthwise của MobileNet có cường độ số học (FLOPs/byte) rất thấp, khiến CPU bị thắt cổ chai băng thông bộ nhớ (Memory-Bound) trầm trọng khi liên tục nạp/ghi feature map mà không tận dụng được khối tính toán SIMD/AVX lớn như Standard Convolution của ResNet-50.
-3. **Mô hình Transformer rút gọn tối ưu rất tốt trên CPU:** DistilBERT đạt 18.65 ms (hạng 3 toàn đoàn), vượt qua cả ResNet-50 nhờ kiến trúc Attention encoder nhẹ và tối ưu hóa bộ nhớ đệm cache hiệu quả.
+#### Các Kết luận Khoa học Then chốt cho CH3:
+1. **Số lượng tham số hoàn toàn KHÔNG quyết định tốc độ thực tế:** MobileNetV3-Large (5.5M tham số) lại có độ trễ lớn nhất nhóm deep learning trên CPU (176.34 ms), chậm hơn ResNet-50 (25.6M tham số - 22.45 ms) gần **$7.9\times$** dù số tham số ít hơn gần $5\times$. Trên GPU T4, ResNet-50 (8.2 GFLOPs) và MobileNetV3 (0.43 GFLOPs, ít hơn 19 lần) cùng mất ~6.0 ms do GPU bị giới hạn bởi chi phí gửi lệnh kernel (Kernel Launch Latency).
+2. **Nghịch lý kiến trúc Depthwise Separable Convolutions:** Phép tích chập depthwise của MobileNet có cường độ số học thấp, khiến CPU bị thắt cổ chai băng thông bộ nhớ (Memory-Bound). Trên CPU ARM Mac thiếu tối ưu kernel vectorization nên trễ 176ms, trong khi trên x86 chỉ ~12ms.
+3. **Mô hình siêu nhẹ chạy GPU chậm hơn CPU:** MLP trên T4 mất 0.28 ms so với 0.04 ms trên Mac, XGBoost mất 1.56 ms so với 0.13 ms do chi phí PCIe bus và CUDA context vượt quá thời gian tính toán.
 
 ---
 
@@ -131,7 +131,7 @@ Kết quả thực nghiệm TN2 của TV1 chứng minh profiler hooks làm chậ
 
 #### Bảng Số liệu Mở rộng Batch Size (TN4: Throughput FPS vs Batch Size trên CPU Laptop)
 | Mô hình | Batch = 1 (P50 / FPS) | Batch = 8 (P50 / FPS) | Batch = 32 (P50 / FPS) | Điểm bão hòa Throughput CPU |
-| :--- | :---: | :---: | :---: | :--- |
+| :--- | :---: | :---: | :---: | :---: |
 | **MLP** | 0.04 ms / 24,841.6 | 0.14 ms / 56,878.8 | 0.14 ms / 233,397.8 | Tăng đều đến batch 32 ($9.4\times$) |
 | **XGBoost** | 0.14 ms / 6,929.5 | 0.18 ms / 40,790.3 | 0.22 ms / 133,804.4 | Tăng vọt $19.3\times$ ở batch 32 |
 | **DistilBERT** (seq=128) | 18.72 ms / 53.37 | 69.15 ms / 112.58 | 256.80 ms / 124.27 | Bão hòa từ batch 8–32 ($2.3\times$) |
@@ -140,6 +140,16 @@ Kết quả thực nghiệm TN2 của TV1 chứng minh profiler hooks làm chậ
 | **ViT-B/16** | 44.66 ms / 21.80 | 300.71 ms / 24.35 | 1121.69 ms / 26.85 | Bão hòa ngay từ batch 1–8 |
 | **MobileNetV3-Large** | 178.73 ms / 5.56 | 443.84 ms / 18.01 | 3621.36 ms / 8.75 | Đạt đỉnh ở batch 8 (18.0 FPS), giảm ở batch 32 |
 | **YOLOv8n** | 59.64 ms / 16.59 | 608.03 ms / 13.09 | 8365.14 ms / 3.78 | Throughput cao nhất ở batch 1 |
+
+#### Bảng Số liệu Mở rộng Batch Size trên Colab Tesla T4 (TN4: Throughput FPS vs Batch Size)
+| Mô hình | Batch = 1 | Batch = 8 | Batch = 32 | Tăng trưởng Throughput 32/1 |
+| :--- | :---: | :---: | :---: | :---: |
+| **MobileNetV3-Large** | 170 FPS | 1,094 FPS | 1,499 FPS | **8.8×** (Tăng mạnh nhất) |
+| **ResNet-50** | 153 FPS | 287 FPS | 337 FPS | 2.2× |
+| **YOLOv8n** | 118 FPS | 198 FPS | 235 FPS | 2.0× |
+| **DistilBERT** (seq=128) | 198 FPS | 287 FPS | 300 FPS | 1.5× |
+| **BERT-base** (seq=128) | 100 FPS | 134 FPS | 140 FPS | 1.4× |
+| **ViT-B/16** | 75 FPS | 96 FPS | 94 FPS | 1.3× (Bão hòa từ batch 8) |
 
 #### Bảng Số liệu Đánh giá Độ Dài Chuỗi (TN4: Sequence Length Scaling cho NLP trên CPU Laptop)
 | Mô hình | Cấu hình | Seq = 64 (P50 / FPS) | Seq = 128 (P50 / FPS) | Seq = 256 (P50 / FPS) | Tác động của độ dài câu |
@@ -151,11 +161,23 @@ Kết quả thực nghiệm TN2 của TV1 chứng minh profiler hooks làm chậ
 | | Batch = 8 | 76.51 ms / 103.5 FPS | 159.09 ms / 50.6 FPS | 296.91 ms / 26.0 FPS | Bão hòa mạnh ở chuỗi dài |
 | | Batch = 32 | 281.46 ms / 110.6 FPS | 591.98 ms / 53.3 FPS | 1858.78 ms / 17.0 FPS | Phức tạp bậc hai $O(N^2)$ của Self-Attention |
 
-*(Ghi chú: Toàn bộ dữ liệu TN4 trên CPU đã được tách thư mục độc lập `bs{B}_seq{seq}_fp32`, không còn hiện tượng ghi đè).*
+#### Bảng Số liệu Đột phá FP16 Tensor Cores trên Colab T4 (TN5: Batch = 1)
+| Mô hình | FP32 P50 (ms) | FP16 P50 (ms) | Tăng tốc (Speedup) | Đỉnh VRAM FP32 (MB) | Đỉnh VRAM FP16 (MB) | VRAM tiết kiệm | Cosine Similarity |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **ViT-B/16** | 12.99 | 4.62 | **2.81×** | 348.0 | 191.4 | **-45%** | Không xác định* |
+| **DistilBERT** | 5.34 | 3.44 | **1.55×** | 268.9 | 147.9 | **-45%** | 0.999999 |
+| **BERT-base** | 8.58 | 6.94 | **1.23×** | 433.4 | 234.0 | **-46%** | 0.999999 |
+| **MLP** | 0.28 | 0.28 | **0.99×** | 9.3 | 9.2 | -1% | 1.000000 |
+| **ResNet-50** | 5.96 | 6.88 | **0.87×** | 117.5 | 67.0 | **-43%** | 1.000000 |
+| **MobileNetV3-Large** | 5.99 | 7.02 | **0.85×** | 37.7 | 23.4 | **-38%** | Không xác định* |
+| **YOLOv8n** | 7.52 | 9.76 | **0.77×** | 49.2 | 25.1 | **-49%** | 1.000000 |
 
-#### Tình trạng Thực nghiệm TN5 (FP16 Tensor Cores trên Colab T4)
-- **Trạng thái**: *⏳ Đang cập nhật.*
-- Toàn bộ script đo đạc [`scripts/run_experiment.py`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/scripts/run_experiment.py) và notebook [`notebooks/colab_runner.ipynb`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/notebooks/colab_runner.ipynb) đã sẵn sàng để người dùng kích hoạt phiên Colab T4 thực tế. Kết quả phân tích sẽ được cập nhật tự động ngay khi có file `summary.json` từ T4.
+*(Ghi chú: *Cosine similarity của ViT-B/16 và MobileNetV3 không xác định do trọng số ngẫu nhiên khiến output chuẩn hóa bằng 0 hoặc xấp xỉ 0 dưới ngưỡng biểu diễn FP16, không phải lỗi kỹ thuật).*
+
+#### Luận giải Khoa học then chốt về FP16 Tensor Cores:
+1. **FP16 luôn tiết kiệm 38% đến 49% bộ nhớ VRAM** cho toàn bộ các mô hình có trọng số lớn nhờ giảm dung lượng lưu trữ mỗi tham số từ 4 bytes xuống 2 bytes.
+2. **FP16 chỉ tăng tốc rõ rệt cho các mô hình Transformer (tới 2.81× trên ViT-B/16):** Transformer có các phép nhân ma trận GEMM khổng lồ trong cơ chế Multi-Head Attention, tận dụng tối đa năng lực 65 TFLOPS của Turing Tensor Cores.
+3. **Hiện tượng nghịch lý làm chậm CNN ở batch 1 khi bật FP16 (0.77× - 0.87×):** Ở batch 1, tensor của CNN quá nhỏ không đủ lấp đầy Tensor Cores; chi phí chuyển đổi kiểu dữ liệu (downcasting/upcasting) và kernel launch latency làm tăng thêm thời gian trễ so với FP32 chuẩn. Khuyến nghị với CNN cần tăng batch size để khai thác hiệu quả Tensor Cores.
 
 ---
 

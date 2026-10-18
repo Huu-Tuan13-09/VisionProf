@@ -35,7 +35,7 @@ Sau khi thực hiện rà soát trực tiếp toàn bộ cây mã nguồn, dữ 
 │ 4. Dữ liệu Colab T4           │ ✅ ĐÃ ĐO THẬT TN3, TN4, TN5 + TN6 nạp dữ liệu (18/10)  │
 │ 5. Lỗi ghi đè độ dài câu NLP  │ ✅ ĐÃ SỬA XONG trong src/core/paths.py & runner        │
 │ 6. Hạ tầng đo GPU bất đồng bộ │ ✅ HOÀN THIỆN: Deferred CUDA Events + Queue Prefill   │
-│ 7. Động cơ 19 Luật chẩn đoán  │ ✅ HOÀN THIỆN logic v2.0 (nhưng chưa có code mẫu)      │
+│ 7. Động cơ 19 Luật chẩn đoán  │ ✅ HOÀN THIỆN logic v2.0 + code mẫu cho 19 luật        │
 │ 8. Dashboard Web Streamlit    │ ✅ HOÀN THIỆN 8 Tabs tương tác Plotly                  │
 └───────────────────────────────┴────────────────────────────────────────────────────────┘
 ```
@@ -138,7 +138,7 @@ Dưới đây là phân tích và phản biện kỹ lưỡng 10 vấn đề k�
   - Một hệ thống chẩn đoán xuất sắc không chỉ "bắt bệnh" mà phải "kê đơn". Nếu người dùng thấy cảnh báo `RD-02: 30% layers < 1us`, họ không biết phải sửa thế nào.
   - Nếu hệ thống tự động in ra đoạn code mẫu (`code_snippet`): `torch.ao.quantization.fuse_modules(...)` hay cấu hình chuẩn `DataLoader(..., num_workers=4, pin_memory=True)`, giá trị thực tiễn của công cụ sẽ tăng vọt.
   - **Khả thi**: Việc này cực kỳ dễ làm trong mã nguồn hiện tại, chỉ cần bổ sung text string vào hàm kiểm tra rule mà không làm vỡ schema dữ liệu.
-* **Mức độ nghiêm trọng**: **P1 (Rất quan trọng — Nên hoàn thiện ngay trước báo cáo)**.
+* **Mức độ nghiêm trọng**: **P1**. ✅ **Đã hoàn thiện 18/10** (Đã bổ sung code recommendations cho đầy đủ 19 luật v2.0 và hiển thị trực quan dạng alert card trên Tab 7 Dashboard).
 
 ---
 
@@ -185,8 +185,8 @@ Dựa trên phân tích phản biện ở trên, dưới đây là bảng phân 
 │    - Cập nhật số liệu & biểu đồ CH3, CH4 chuẩn xác.    │ 2. Hỗ trợ mô hình biên dịch   │
 │ 2. [P0] Sửa dứt điểm phân biệt seq_len NLP             │    (torch.compile, TensorRT). │
 │    - Đã có code trong paths.py, cần verify khi đo thật │ 3. Cài đặt Layer Backtracking │
-│ 3. [P1] Bổ sung Code mẫu vào 3 Luật Chẩn đoán chính   │    và toán tử ảo _FusedOp.    │
-│    - Thêm actionable snippets cho RD-02, RC-03, RD-06  │ 4. Mô hình hóa SRAM vs DRAM   │
+│ 3. [P1] Bổ sung Code mẫu vào Luật Chẩn đoán (Xong)  │    và toán tử ảo _FusedOp.    │
+│    - ✅ Đã bổ sung snippets cho 19 luật v2.0 (Tab 7)    │ 4. Mô hình hóa SRAM vs DRAM   │
 │ 4. [P1] Viết kịch bản tự động Ablation Study mini      │    (loại trừ cache traffic).  │
 │    - Quét bão hòa N_warmup và bóc tách overhead.       │ 5. Calling Context Tree (CCT) │
 │ 5. [P0] Chuẩn bị Luận cứ bảo vệ về các hạn chế đã biết │    và Online Aggregation.     │
@@ -233,16 +233,11 @@ Dựa trên phân tích phản biện ở trên, dưới đây là bảng phân 
 
 ### 🟩 4.3. Nhiệm vụ Thành viên 3 (TV3 - Mức Giai đoạn, Chẩn đoán & Tổng kết)
 * **Việc cần hoàn thiện ngay để báo cáo**:
-  1. **Nâng cấp Động cơ Chẩn đoán với Code mẫu gợi ý (Actionable Code Suggestions)**:
-     - Trong [`src/analyzer/rules/architecture.py`](../src/analyzer/rules/architecture.py), cập nhật luật `RD-02` (Sub-microsecond layers) bổ sung gợi ý gộp tầng:
-       ```python
-       recommendation = "Gợi ý: Áp dụng torch.ao.quantization.fuse_modules(model, [['conv', 'bn', 'relu']]) để triệt tiêu overhead."
-       ```
-     - Trong [`src/analyzer/rules/dataloader.py`](../src/analyzer/rules/dataloader.py), cập nhật luật `RC-03` (GPU Starvation) bổ sung cấu hình DataLoader tối ưu:
-       ```python
-       recommendation = "Gợi ý: Cấu hình DataLoader(..., num_workers=4, pin_memory=True, persistent_workers=True)."
-       ```
-     - Thêm trường `recommendation` hiển thị rõ ràng trên Tab 7 của Dashboard ([`src/dashboard/tabs/tab_diagnostics.py`](../src/dashboard/tabs/tab_diagnostics.py)).
+  1. **Nâng cấp Động cơ Chẩn đoán với Code mẫu gợi ý (Actionable Code Suggestions)** (✅ Đã hoàn thành 18/10):
+     - Trong [`src/analyzer/rules/architecture.py`](../src/analyzer/rules/architecture.py), cập nhật luật `RD-01` đến `RD-05` (Sub-microsecond, Unattributed, FLOP density, High share) bổ sung gợi ý gộp tầng (`torch.ao.quantization.fuse_modules`).
+     - Trong [`src/analyzer/rules/dataloader.py`](../src/analyzer/rules/dataloader.py), cập nhật luật `RC-01` đến `RC-04` (DataLoader I/O, GPU Starvation) bổ sung cấu hình DataLoader tối ưu (`num_workers=2-4, pin_memory=True`).
+     - Trong [`src/analyzer/rules/compute.py`](../src/analyzer/rules/compute.py) và [`src/analyzer/rules/memory.py`](../src/analyzer/rules/memory.py), bổ sung gợi ý cho toàn bộ luật `RB` và `RA`.
+     - Thêm trường `recommendation` hiển thị rõ ràng với Alert Cards tương tác trên Tab 7 Dashboard ([`src/dashboard/tabs/tab_diagnostics.py`](../src/dashboard/tabs/tab_diagnostics.py)).
   2. **Chuẩn bị Demo và Slide báo cáo chung**:
      - Quay video chất lượng cao 90 giây walkthrough 4 Tab trọng tâm của Streamlit Dashboard, nhúng trực tiếp vào Slide 20 (theo dàn ý [`DAN_Y_SLIDE.md`](DAN_Y_SLIDE.md)).
      - Tổng duyệt bài thuyết trình 24 phút, bảo đảm phân phối thời gian nhịp nhàng giữa 3 thành viên.
@@ -308,7 +303,7 @@ Dưới đây là 5 câu hỏi "hóc búa" nhất mà Hội đồng chấm đồ
 │ *(Ưu tiên 1)* │   TN5 cho 8 mô hình.                                    │              │
 │               │ • Chạy tv2_analysis.py cập nhật biểu đồ CH3, CH4.       │              │
 ├───────────────┼─────────────────────────────────────────────────────────┼──────────────┤
-│ **BƯỚC 2**    │ • Bổ sung Code gợi ý sửa lỗi vào 3 luật (RD-02, RC-03). │ 🟩 **TV3**   │
+│ **BƯỚC 2**    │ • ✅ Đã bổ sung code gợi ý sửa lỗi cho 19 luật (Tab 7). │ 🟩 **TV3**   │
 │ *(Ưu tiên 2)* │ • Viết script run_ablation_mini.py đo bão hòa warm-up.  │ 🟧 **TV1**   │
 │               │ • Quay video 90s Demo Dashboard chèn vào Slide 20.      │ 🟩 **TV3**   │
 ├───────────────┼─────────────────────────────────────────────────────────┼──────────────┤

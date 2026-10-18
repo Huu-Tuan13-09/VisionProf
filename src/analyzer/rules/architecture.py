@@ -15,7 +15,8 @@ def check_rd01_param_concentration(layer_params: List[Tuple[str, int]]) -> RuleR
     max_name, max_p = max(layer_params, key=lambda item: item[1])
     ratio = max_p / float(total_p)
     if ratio > 0.60:
-        return RuleResult("RD-01", RuleStatus.WARN, "Heavy Parameter Layer", f"Layer '{max_name}' holds {ratio:.1%} of parameters.")
+        rec = "Gợi ý: Cân nhắc phân rã ma trận trọng số hoặc áp dụng cấu trúc Bottleneck/Low-Rank Factorization."
+        return RuleResult("RD-01", RuleStatus.WARN, "Heavy Parameter Layer", f"Layer '{max_name}' holds {ratio:.1%} of parameters.", recommendation=rec)
     return RuleResult("RD-01", RuleStatus.PASS, "Balanced Parameter Spread", f"Top layer holds {ratio:.1%} of parameters.")
 
 
@@ -26,7 +27,8 @@ def check_rd02_sub_microsecond_layers(layer_durations_ms: List[Tuple[str, float]
     sub_count = sum(1 for _, d in layer_durations_ms if d < 0.001)
     ratio = sub_count / float(len(layer_durations_ms))
     if ratio > 0.30:
-        return RuleResult("RD-02", RuleStatus.WARN, "High Sub-Microsecond Layer Ratio", f"{sub_count} layers ({ratio:.1%}) run in <1 microsecond; fusion recommended.")
+        rec = "Gợi ý: Áp dụng torch.ao.quantization.fuse_modules(model, [['conv', 'bn', 'relu']]) hoặc TorchInductor để triệt tiêu overhead dispatch."
+        return RuleResult("RD-02", RuleStatus.WARN, "High Sub-Microsecond Layer Ratio", f"{sub_count} layers ({ratio:.1%}) run in <1 microsecond; fusion recommended.", recommendation=rec)
     return RuleResult("RD-02", RuleStatus.PASS, "Acceptable Layer Granularity", f"{sub_count} sub-microsecond layers detected.")
 
 
@@ -36,7 +38,8 @@ def check_rd03_memory_compute_disparity(act_mb: float, gflops: float) -> RuleRes
         return RuleResult("RD-03", RuleStatus.SKIPPED, "Memory-Compute Ratio", "Insufficient layer data.")
     ratio = act_mb / gflops
     if ratio > 50.0:
-        return RuleResult("RD-03", RuleStatus.WARN, "High Memory-to-Compute Ratio", f"Ratio is {ratio:.1f} MB/GFLOP (Memory-bound).")
+        rec = "Gợi ý: Tối ưu bộ nhớ đệm cache hoặc áp dụng FlashAttention / Kernel Fusion để giảm lưu lượng DRAM."
+        return RuleResult("RD-03", RuleStatus.WARN, "High Memory-to-Compute Ratio", f"Ratio is {ratio:.1f} MB/GFLOP (Memory-bound).", recommendation=rec)
     return RuleResult("RD-03", RuleStatus.PASS, "Balanced Memory-Compute", f"Ratio is {ratio:.1f} MB/GFLOP.")
 
 
@@ -50,7 +53,8 @@ def check_rd04_layer_bottleneck(layer_times: List[Tuple[str, float]]) -> RuleRes
     top_name, top_time = max(layer_times, key=lambda x: x[1])
     ratio = top_time / total_time
     if ratio > 0.35:
-        return RuleResult("RD-04", RuleStatus.WARN, "Single Layer Bottleneck", f"Layer '{top_name}' takes {ratio:.1%} of forward time.")
+        rec = f"Gợi ý: Tối ưu riêng kernel cho layer '{top_name}' (cắt giảm channel, thay bằng Depthwise separable hoặc dùng TensorRT ops)."
+        return RuleResult("RD-04", RuleStatus.WARN, "Single Layer Bottleneck", f"Layer '{top_name}' takes {ratio:.1%} of forward time.", recommendation=rec)
     return RuleResult("RD-04", RuleStatus.PASS, "Even Latency Distribution", f"Top layer takes {ratio:.1%}.")
 
 
@@ -65,5 +69,6 @@ def check_rd05_latency_flops_outliers(layer_stats: List[Tuple[str, float, float]
         if time_pct > 15.0 and flops < 1_000_000:
             outliers.append(name)
     if outliers:
-        return RuleResult("RD-05", RuleStatus.WARN, "Inefficient Non-Compute Layers", f"Outliers with high latency but low FLOPs: {', '.join(outliers[:3])}")
+        rec = "Gợi ý: Thay thế bằng in-place activations (inplace=True) hoặc loại bỏ các phép sao chép bộ nhớ trung gian không cần thiết."
+        return RuleResult("RD-05", RuleStatus.WARN, "Inefficient Non-Compute Layers", f"Outliers with high latency but low FLOPs: {', '.join(outliers[:3])}", recommendation=rec)
     return RuleResult("RD-05", RuleStatus.PASS, "Proportional Latency/FLOPs", "No anomalous low-FLOP bottlenecks detected.")

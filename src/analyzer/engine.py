@@ -128,6 +128,11 @@ class DiagnosticEngine:
 
         # 4. Phase Breakdown Data (Graceful SKIPPED if missing or empty)
         phase_file = run_dir / "phases.csv"
+        if not (phase_file.exists() and phase_file.stat().st_size > 0):
+            dl_file = run_dir / "dataloader_phases.csv"
+            if dl_file.exists() and dl_file.stat().st_size > 0:
+                phase_file = dl_file
+
         if phase_file.exists() and phase_file.stat().st_size > 0:
             results.extend(self._evaluate_phase_rules(phase_file))
         else:
@@ -193,6 +198,7 @@ class DiagnosticEngine:
         bwd_ms = 0.0
         opt_ms = 0.0
         io_ms = 0.0
+        transfer_ms = 0.0
         total_ms = 0.0
         io_samples: List[float] = []
 
@@ -200,23 +206,25 @@ class DiagnosticEngine:
             with open(phase_file, "r", encoding="utf-8") as f:
                 reader = csv.DictReader(f)
                 for row in reader:
-                    phase = row.get("phase", "")
+                    phase = row.get("phase", "").lower()
                     t_ms = _safe_float(row.get("time_ms", 0.0))
                     total_ms += t_ms
-                    if "forward" in phase:
+                    if "forward" in phase or "model" in phase:
                         fwd_ms += t_ms
                     elif "backward" in phase:
                         bwd_ms += t_ms
                     elif "opt" in phase:
                         opt_ms += t_ms
-                    elif "data" in phase or "dataloader" in phase:
+                    elif "data" in phase or "dataloader" in phase or "preprocess" in phase:
                         io_ms += t_ms
                         io_samples.append(t_ms)
+                    elif "transfer" in phase or "h2d" in phase:
+                        transfer_ms += t_ms
         except Exception:
             pass
 
         return [
-            check_ra05_host_device_transfer(0.0, total_ms),
+            check_ra05_host_device_transfer(transfer_ms, total_ms),
             check_rb03_backward_bottleneck(fwd_ms, bwd_ms),
             check_rb05_optimizer_stall(opt_ms, total_ms),
             check_rc01_io_ratio(io_ms, total_ms),

@@ -43,5 +43,15 @@ def render(results_dir: Path) -> None:
     c3.metric("FAIL", fail_cnt)
     c4.metric("SKIPPED", skip_cnt)
 
-    st.subheader("Chi Tiết Từng Quy Tắc")
-    st.dataframe(df[["rule_id", "status", "title", "message"]], use_container_width=True)
+    st.subheader("Chi Tiết Từng Quy Tắc & Đề Xuất Khắc Phục")
+    display_cols = ["rule_id", "status", "title", "message", "recommendation"]
+    st.dataframe(df[display_cols], use_container_width=True)
+
+    actionable_rules = [r for r in results if r.status.value in ("WARN", "FAIL") and r.recommendation]
+    if actionable_rules:
+        st.subheader("💡 Khuyến Nghị Kỹ Thuật & Đoạn Mã Mẫu (Actionable Code Suggestions)")
+        for r in actionable_rules:
+            icon = "⚠️" if r.status.value == "WARN" else "🚨"
+            with st.expander(f"{icon} [{r.rule_id}] {r.title} — {r.status.value}"):
+                st.markdown(f"**Triệu chứng**: {r.message}")
+                st.info(f"**Hành động đề xuất**: {r.recommendation}")

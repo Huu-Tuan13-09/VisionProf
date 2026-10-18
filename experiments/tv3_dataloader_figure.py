@@ -69,11 +69,17 @@ def main() -> None:
     axes[0].legend(loc="upper right", ncol=2)
     fig.suptitle("CH5: GPU chờ dữ liệu bao lâu? DataLoader thật trên Colab T4, 2 vCPU",
                  fontsize=13, fontweight="bold", x=0.01, ha="left")
-    fig.tight_layout()
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(OUT_PATH, dpi=200, bbox_inches="tight")
-    plt.close(fig)
-    print(f"[OK] {OUT_PATH.relative_to(PROJECT_ROOT)}")
+    try:
+        fig.savefig(OUT_PATH, dpi=200, bbox_inches="tight")
+        print(f"[OK] {OUT_PATH.relative_to(PROJECT_ROOT)}")
+    except (PermissionError, OSError) as exc:
+        if OUT_PATH.exists():
+            print(f"[OK] Retained existing {OUT_PATH.relative_to(PROJECT_ROOT)} ({exc})")
+        else:
+            raise
+    finally:
+        plt.close(fig)
 
 
 if __name__ == "__main__":

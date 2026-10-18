@@ -36,7 +36,9 @@ def render(results_dir: Path) -> None:
 
     # Section 1: CH3 - Đối Đầu Cơ Bản & Hệ Số Tăng Tốc (TN3)
     st.subheader("1. Đối Đầu Cơ Bản & Hệ Số Tăng Tốc (TN3: Batch=1, FP32)")
-    tn3_df = df[(df["experiment"] == "TN3") | (df["config"] == "bs1_fp32")]
+    tn3_df = df[df["experiment"] == "TN3"]
+    if tn3_df.empty:
+        tn3_df = df[df["config"] == "bs1_fp32"]
 
     if not tn3_df.empty:
         try:
@@ -66,9 +68,12 @@ def render(results_dir: Path) -> None:
                 st.plotly_chart(fig_speedup, use_container_width=True)
 
                 st.info(
-                    "💡 **Nhận xét hiện tượng Đảo Thứ Hạng (CH3):** Các mô hình Transformer (BERT, ViT) "
-                    "hưởng lợi vượt trội từ GPU T4 (~8.7x - 9.3x speedup) do chứa các ma trận GEMM lớn song song hóa cao. "
-                    "Ngược lại, MobileNetV3 chỉ tăng tốc ~1.9x do kiến trúc depthwise separable convolution bị giới hạn băng thông bộ nhớ (memory-bound)."
+                    "💡 **Nhận xét hiện tượng Đảo Thứ Hạng & Nghịch lý Tham số (CH3):**\n"
+                    "- **Ở batch 1 trên T4, FLOPs/Tham số không quyết định độ trễ:** ResNet-50 (8.2 GFLOPs) và MobileNetV3 (0.43 GFLOPs, ít hơn 19 lần) "
+                    "cùng mất ~6.0 ms do GPU bị giới hạn bởi chi phí gửi lệnh kernel (Kernel Launch Latency).\n"
+                    "- **Mô hình siêu nhẹ chạy GPU chậm hơn CPU:** MLP trên GPU mất 0.28 ms trong khi trên CPU Mac chỉ mất 0.04 ms (chậm hơn 7 lần) "
+                    "do chi phí truyền dữ liệu bus PCIe vượt quá thời gian tính toán.\n"
+                    "- **MobileNetV3 trên CPU ARM:** Độ trễ 176.3 ms do kernel PyTorch thiếu tối ưu vector hóa cho depthwise convolution trên ARM (trên CPU x86 chỉ ~12 ms)."
                 )
         except Exception as exc:
             st.error(f"Lỗi tính toán bảng so sánh TN3: {exc}")
@@ -100,35 +105,54 @@ def render(results_dir: Path) -> None:
 
     # Section 3: CH4 - Tăng Tốc Tensor Cores FP32 vs FP16 (TN5)
     st.subheader("3. Tăng Tốc Số Học FP16 Tensor Cores (TN5: Colab T4)")
-    t4_data = df[df["device"] == "colab_t4"]
-    t4_fp32 = t4_data[t4_data["config"] == "bs1_fp32"].set_index("model")
-    t4_fp16 = t4_data[t4_data["config"] == "bs1_fp16"].set_index("model")
-
-    fp16_rows = []
-    for m in t4_fp16.index:
-        if m in t4_fp32.index:
-            p32 = t4_fp32.loc[m, "p50_ms"]
-            p16 = t4_fp16.loc[m, "p50_ms"]
-            v32 = t4_fp32.loc[m, "peak_vram_mb"]
-            v16 = t4_fp16.loc[m, "peak_vram_mb"]
-            speedup_fp16 = round(p32 / p16, 2) if p16 > 0 else 1.0
-            vram_saved = round((1.0 - v16 / v32) * 100.0, 1) if v32 > 0 else 0.0
-            cos_sim = t4_fp16.loc[m].get("extra", {}).get("cosine_similarity", 0.9998)
-            fp16_rows.append({
-                "model": m,
-                "FP32_p50_ms": p32,
-                "FP16_p50_ms": p16,
-                "Speedup_FP16": speedup_fp16,
-                "VRAM_FP32_mb": v32,
-                "VRAM_FP16_mb": v16,
-                "VRAM_Reduction_%": vram_saved,
-                "Cosine_Similarity": cos_sim,
-            })
-
-    if fp16_rows:
-        df_fp16 = pd.DataFrame(fp16_rows)
-        st.dataframe(df_fp16, use_container_width=True)
-        st.success(
-            "✅ **Kết luận TN5 (FP16):** Độ trễ giảm trung bình 1.5x–2.1x trên GPU T4 nhờ nhân tính toán Tensor Cores; "
-            "dung lượng Peak VRAM tiết kiệm ~46%–50%; chỉ số Cosine Similarity > 0.999 chứng minh độ ổn định số học hoàn hảo."
+    try:
+        t4_data = df[df["device"] == "colab_t4"]
+        t4_fp32 = (
+            t4_data[(t4_data["experiment"] == "TN3") & (t4_data["config"] == "bs1_fp32")]
+            .drop_duplicates(subset=["model"])
+            .set_index("model")
         )
+        t4_fp16 = (
+            t4_data[(t4_data["experiment"] == "TN5") & (t4_data["config"] == "bs1_fp16")]
+            .drop_duplicates(subset=["model"])
+            .set_index("model")
+        )
+
+        fp16_rows = []
+        for m in t4_fp16.index:
+            if m in t4_fp32.index:
+                p32 = float(t4_fp32.loc[m, "p50_ms"])
+                p16 = float(t4_fp16.loc[m, "p50_ms"])
+                v32 = float(t4_fp32.loc[m, "peak_vram_mb"])
+                v16 = float(t4_fp16.loc[m, "peak_vram_mb"])
+                speedup_fp16 = round(p32 / p16, 2) if p16 > 0 else 1.0
+                vram_saved = round((1.0 - v16 / v32) * 100.0, 1) if v32 > 0 else 0.0
+
+                extra = t4_fp16.loc[m, "extra"] if "extra" in t4_fp16.columns else {}
+                cos_val = extra.get("cosine_similarity", None) if isinstance(extra, dict) else None
+                cos_str = f"{cos_val:.6f}" if isinstance(cos_val, (float, int)) and cos_val > 0 else "Không xác định*"
+
+                fp16_rows.append({
+                    "model": m,
+                    "FP32_p50_ms": round(p32, 2),
+                    "FP16_p50_ms": round(p16, 2),
+                    "Speedup_FP16": f"{speedup_fp16}x",
+                    "VRAM_FP32_mb": round(v32, 1),
+                    "VRAM_FP16_mb": round(v16, 1),
+                    "VRAM_Saved_%": f"-{vram_saved:.0f}%",
+                    "Cosine_Sim": cos_str,
+                })
+
+        if fp16_rows:
+            df_fp16 = pd.DataFrame(fp16_rows)
+            st.dataframe(df_fp16, use_container_width=True)
+            st.info(
+                "💡 **Kết luận TN5 (FP16 Tensor Cores trên T4):**\n"
+                "- **Tiết kiệm VRAM:** FP16 cắt giảm 38%–49% Peak VRAM cho toàn bộ các mô hình có tham số lớn.\n"
+                "- **Tăng tốc chọn lọc:** FP16 tăng tốc vượt trội cho Transformer (ViT-B/16 tăng **2.81x**, DistilBERT tăng 1.55x) "
+                "do chứa các ma trận GEMM lớn lấp đầy Tensor Cores. Với CNN ở batch 1 (ResNet 0.87x, YOLO 0.77x), "
+                "mô hình bị chậm hơn vì khối tính toán nhỏ không bù đắp được chi phí gửi kernel và chuyển đổi kiểu dữ liệu.\n"
+                "- *Cosine similarity của ViT-B/16 và MobileNetV3 không xác định do khởi tạo ngẫu nhiên cho output xấp xỉ 0."
+            )
+    except Exception as exc:
+        st.error(f"Lỗi tính toán bảng TN5 (FP16): {exc}")

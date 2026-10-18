@@ -137,6 +137,9 @@ Hệ thống được chia thành 4 nhóm quy tắc khoa học:
 4. **Khắc phục luật RA-04 (Cách ly Process RSS và Activation Memory)**:
    - *Hạn chế v1.0*: Nhầm lẫn giữa RAM của toàn bộ tiến trình hệ điều hành (RSS) và bộ nhớ kích hoạt (activation memory) của PyTorch, dẫn đến báo lỗi giả về rò rỉ bộ nhớ.
    - *Khắc phục v2.0*: Phân định ranh giới rõ ràng: theo dõi biến thiên RSS qua từng iteration để phát hiện leak bộ nhớ C++/Python thật, tách biệt hoàn toàn với bộ nhớ tensor PyTorch.
+5. **Bổ sung Khuyến nghị Hành động & Đoạn mã Mẫu (Actionable Code Recommendations)**:
+   - *Hạn chế v1.0*: Hệ thống chỉ đưa ra thông báo cảnh báo thụ động, người dùng không biết cách khắc phục trong code.
+   - *Khắc phục v2.0*: Cả 19 luật v2.0 được tích hợp trường `recommendation` với mã lệnh PyTorch tối ưu hóa cụ thể (như `torch.ao.quantization.fuse_modules` cho RD-02, `DataLoader(num_workers=2, pin_memory=True)` cho RC-03, `fused=True` cho RB-01, `autocast` cho RA-01/RA-02), được hiển thị dưới dạng Alert Card tương tác trên Tab 7 Dashboard.
 
 ### 4.5. Động Cơ So Sánh A/B Chuẩn Khoa Học (`ABComparisonEngine`)
 - **Sửa lỗi logic Speedup v1.0**: Trước đây, engine tính speedup bằng cách lấy trung bình cộng speedup của từng layer đơn lẻ $\frac{1}{N}\sum \frac{t_{A,i}}{t_{B,i}}$, dẫn đến sai số trầm trọng do các layer siêu nhỏ gây nhiễu số học. TV3 tái cấu trúc thuật toán tính Speedup dựa trên tổng thời gian của toàn mô hình theo từng vòng lặp:
@@ -197,9 +200,22 @@ Toàn bộ biểu đồ phân tích được tạo tự động bởi script [`e
 - Đối với ResNet-50, VRAM tăng vọt từ **$420.11$ MB lên $1139.05$ MB ($2.71\times$)**. Đặc biệt với MobileNetV3, tỷ lệ phóng đại đạt tới **$3.28\times$** do số lượng tensor trung gian của các khối Inverted Residuals rất lớn so với kích thước tham số thực tế của mô hình.
 - Ngoài ra, thuật toán tối ưu hóa **AdamW** duy trì thêm 2 trạng thái nội bộ ($1^{\text{st}}$ moment vector $m_t$ và $2^{\text{nd}}$ moment vector $v_t$) cho mỗi tham số có thể huấn luyện, làm tăng kích thước bộ nhớ optimizer tỷ lệ thuận với số lượng tham số.
 
-##### c) Ảnh hưởng của DataLoader và GPU Starvation:
-- Khi chạy với `num_workers = 0`, tiến trình huấn luyện PyTorch thực hiện nạp dữ liệu tuần tự trên CPU ngay trên luồng chính. Trong cấu hình này, GPU T4 phải nhàn rỗi (idle) chờ đợi CPU hoàn tất việc đọc ảnh và chuyển đổi tensor, kích hoạt luật **RC-03 (GPU Starvation Warning)**.
-- Khi tăng `num_workers = 2`, cơ chế tiền nạp dữ liệu đa tiến trình (pre-fetching) giúp che giấu hoàn toàn độ trễ I/O, thời gian chờ nạp dữ liệu giảm xuống $< 5\%$ tổng chu kỳ bước lặp.
+##### c) Ảnh hưởng của DataLoader và GPU Starvation (Thực nghiệm TN6 DataLoader Mở rộng):
+Để kiểm chứng sâu hơn về điểm nghẽn nạp dữ liệu, TV3 thực hiện đo lường với tập dữ liệu ảnh JPEG thật kèm các phép biến đổi Data Augmentation trên CPU qua script `scripts/run_tn6_dataloader.py` trên Colab T4 (2 vCPU Intel Xeon, Batch Size = 32):
+
+| Mô hình | `num_workers` | Chờ nạp dữ liệu (ms) | Tổng chu kỳ bước (ms) | **Tỷ lệ chờ dữ liệu (%)** | Throughput (Ảnh/giây) |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **MobileNetV3-Large** | 0 | 151.4 | 241.8 | **62.6%** (Nghẽn nặng) | 132 |
+| | 2 | 3.9 | 116.9 | **3.3%** (Tối ưu) | **274** ($2.08\times$) |
+| | 4 | 3.9 | 119.8 | 3.2% | 267 |
+| **ResNet-50** | 0 | 139.2 | 462.5 | **30.1%** | 69 |
+| | 2 | 2.0 | 338.2 | **0.6%** (Tối ưu) | **95** ($1.38\times$) |
+| | 4 | 2.0 | 356.3 | 0.6% | 90 |
+
+**Luận giải khoa học:**
+1. **GPU Starvation trầm trọng khi `num_workers = 0`**: Với mô hình nhẹ như MobileNetV3, GPU mất tới **$62.6\%$ thời gian chỉ để ngồi chờ CPU** giải nén ảnh JPEG và thực hiện transforms. Điều này kích hoạt luật `RC-01` (>20% I/O) và `RC-03` (GPU Starvation).
+2. **2 workers giải phóng hoàn toàn hiệu năng**: Tăng `num_workers = 2` đưa thời gian chờ xuống dưới $4\%$, tăng thông lượng MobileNetV3 gấp đôi (từ 132 lên 274 ảnh/s).
+3. **Nghịch lý 4 workers không nhanh hơn 2 workers**: Do môi trường Google Colab chỉ cung cấp 2 vCPU vật lý, cấu hình `num_workers = 4` tạo ra sự tranh chấp tài nguyên CPU giữa các tiến trình worker và luồng chính PyTorch, khiến chu kỳ bước lặp hơi tăng nhẹ (119.8 ms so với 116.9 ms). Kết quả này khớp hoàn hảo với nghiên cứu Data Stalls (Mohan et al., PVLDB 2021).
 
 ---
 

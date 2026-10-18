@@ -37,46 +37,52 @@
     - MobileNetV3-Large (5.5M tham số) trễ tới **176.3 ms** (5.7 FPS), chậm nhất nhóm Deep Learning.
     - ResNet-50 (25.6M tham số) đạt **22.5 ms** (44.2 FPS) — nhanh hơn MobileNet gần **$8\times$** dù tham số gấp 5 lần!
     - DistilBERT (66.4M tham số) đạt **18.6 ms** (53.3 FPS) — nhanh thứ 3 toàn đoàn (chỉ sau MLP và XGBoost).
-  - **Lý giải khoa học:** Depthwise Separable Conv của MobileNet có cường độ số học thấp, bị nghẽn băng thông bộ nhớ (Memory-Bound) trầm trọng trên CPU. Trong khi đó, Standard Conv (ResNet) và Attention (DistilBERT) tận dụng triệt để bộ đệm L2/L3 cache và thư viện vectorization SIMD.
-  - *Nhánh Colab T4: Đang đồng bộ phiên chạy thực tế theo kịch bản chuẩn hoá.*
+  - **Phát hiện đo thật trên Google Colab T4 (Batch 1, FP32):**
+    - ResNet-50 (8.2 GFLOPs) và MobileNetV3 (0.43 GFLOPs, ít hơn 19 lần) **cùng mất ~6.0 ms**!
+    - MLP trên T4 mất 0.28 ms, chậm hơn trên Mac (0.04 ms) tới **$7\times$** do chi phí PCIe và khởi tạo CUDA.
+  - **Lý giải khoa học:** Ở batch 1 trên GPU, thời gian bị chi phối bởi chi phí gửi lệnh kernel (Kernel Launch Latency) chứ không phải FLOPs. Trên CPU ARM Mac, MobileNetV3 chậm vì thiếu vectorization cho Depthwise Conv (trên x86 chỉ ~12 ms).
 - **Lời thoại gợi ý (Speaker Notes):**
-  > *"Kính thưa thầy cô, qua các phép đo chuẩn xác không gắn hook của VisionProf trên CPU Laptop, chúng em phát hiện một nghịch lý đáng kinh ngạc: MobileNetV3 dù chỉ có 5.5 triệu tham số nhưng lại có độ trễ lên tới 176ms, chậm hơn ResNet-50 với 25 triệu tham số gần 8 lần! Nguyên nhân nằm ở kiến trúc Depthwise Separable Convolutions có cường độ số học thấp, khiến CPU bị nghẽn băng thông bộ nhớ RAM liên tục. Ngược lại, DistilBERT với 66 triệu tham số lại chạy rất nhanh (18.6ms) nhờ các phép nhân ma trận GEMM được tối ưu hóa xuất sắc."*
+  > *"Kính thưa thầy cô, qua các phép đo chuẩn xác không gắn hook của VisionProf, chúng em phát hiện nghịch lý: trên CPU Mac, MobileNetV3 dù chỉ 5.5 triệu tham số nhưng mất tới 176ms do thiếu vectorization trên ARM. Đặc biệt, khi lên GPU Tesla T4 ở batch 1, MobileNetV3 có FLOPs ít hơn ResNet-50 tới 19 lần nhưng cả hai đều cùng mất khoảng 6.0ms! Nguyên nhân là GPU bị nghẽn bởi chi phí gửi kernel tuần tự từ CPU sang GPU. Đồng thời, mô hình siêu nhẹ như MLP chạy trên GPU còn chậm hơn CPU tới 7 lần do chi phí truyền bus PCIe."*
 
 ---
 
 ### Slide 4: Kết Quả CH4 — Mở Rộng Batch Size & Chiều Dài Chuỗi NLP
 - **Tiêu đề:** Kết Quả CH4: Điểm Bão Hòa Throughput & Tác Động Độ Dài Câu (Seq Len)
 - **Nội dung chính:**
-  - **Mở rộng Batch Size trên CPU Laptop (Batch 1, 8, 32):**
-    - Các mô hình bảng (MLP, XGBoost) tăng thông lượng vọt từ **$9\times$ đến $19\times$**.
-    - Transformer (DistilBERT, BERT-base) bão hòa sớm từ batch 8 đến 32 (DistilBERT đạt đỉnh 124 FPS).
-    - CNN lớn (ResNet-50, YOLOv8) sụt giảm thông lượng ở batch 32 do nghẽn RAM hệ thống.
+  - **Mở rộng Batch Size trên Colab Tesla T4 (Batch 1 $\rightarrow$ 32):**
+    - MobileNetV3 tăng throughput vượt bậc **$8.8\times$** (từ 170 lên 1,499 FPS) do batch 1 chưa lấp đầy GPU.
+    - ResNet-50 tăng $2.2\times$ (153 $\rightarrow$ 337 FPS), YOLOv8n tăng $2.0\times$ (118 $\rightarrow$ 235 FPS).
+    - Transformer nặng (ViT-B/16) bão hòa sớm từ batch 8 (75 $\rightarrow$ 96 $\rightarrow$ 94 FPS).
   - **Độ dài câu NLP (Seq 64 / 128 / 256):**
-    - Độ trễ tăng theo hàm bậc hai của độ dài câu do tính toán Self-Attention $O(N^2)$.
-    - Tại batch 32, BERT-base tăng trễ từ 281ms (seq=64) lên 1,858ms (seq=256), thông lượng giảm $6.5\times$.
-  - *Nhánh Colab T4 (Batch lớn & FP16 Tensor Cores): Sẵn sàng đồng bộ từ GPU runtime.*
+    - Tại batch 32 trên T4, BERT-base mất 127ms (seq 64) $\rightarrow$ 228ms (128) $\rightarrow$ 507ms (256): mỗi lần gấp đôi độ dài, trễ tăng $1.8\times$ rồi $2.2\times$ do tính toán Self-Attention $O(N^2)$.
 - **Lời thoại gợi ý (Speaker Notes):**
-  > *"Tiếp theo là câu hỏi CH4 về mở rộng kích thước lô và độ dài chuỗi NLP. Trên CPU, chúng ta thấy rõ điểm bão hòa đến rất sớm ở batch 8. Đối với các mô hình NLP, việc tăng độ dài câu từ 64 lên 256 làm bùng nổ độ trễ do chi phí tính toán Self-Attention tỷ lệ thuận với bình phương độ dài câu N bình phương. Ở batch 32, BERT-base bị giảm thông lượng hơn 6 lần khi độ dài câu tăng từ 64 lên 256 token."*
+  > *"Tiếp theo là câu hỏi CH4 về mở rộng kích thước lô và độ dài chuỗi NLP. Trên GPU T4, mô hình nhẹ hưởng lợi nhiều nhất khi tăng batch: MobileNetV3 tăng thông lượng tới 8.8 lần nhờ lấp đầy 40 SMs của T4; trong khi ViT bão hòa ngay từ batch 8. Đối với mô hình ngôn ngữ BERT, độ trễ tăng theo hàm bậc hai của chiều dài câu N bình phương: tăng từ 64 lên 256 token khiến độ trễ tại batch 32 tăng vọt từ 127ms lên 507ms."*
 
 ---
 
 ### Slide 5: Kết Quả CH4 — Sức Mạnh Tensor Cores FP16
 - **Tiêu đề:** Kết Quả CH4 (Phần 2): Tăng Tốc FP16 Tensor Cores & Tiết Kiệm VRAM
 - **Nội dung chính:**
-  - ⏳ **Chờ số đo TN5 thật trên Colab T4.** Bộ số FP16 cũ (tăng tốc 1.5–2.1×, VRAM giảm 46.0%, cosine 0.9998) là số
-    sinh ra, đã bỏ. Sau khi chạy `notebooks/colab_runner.ipynb` chế độ [2], điền: tăng tốc FP16 so với FP32 (P50),
-    VRAM đỉnh FP32 / FP16, cosine similarity, cho từng mô hình.
-- **Lời thoại gợi ý (Speaker Notes):** viết lại sau khi có số đo TN5 thật.
+  - **Bảng số liệu đo thật trên Colab T4 (Batch 1):**
+    - **ViT-B/16:** Trễ giảm từ 12.99ms $\rightarrow$ 4.62ms (**Tăng tốc $2.81\times$**, VRAM giảm 45%).
+    - **DistilBERT:** 5.34ms $\rightarrow$ 3.44ms (**Tăng tốc $1.55\times$**, VRAM giảm 45%).
+    - **BERT-base:** 8.58ms $\rightarrow$ 6.94ms (**Tăng tốc $1.23\times$**, VRAM giảm 46%).
+    - **CNNs (ResNet-50 0.87×, MobileNetV3 0.85×, YOLOv8n 0.77×):** Chậm hơn khi bật FP16 ở batch 1!
+  - **Luận giải cơ chế:**
+    - FP16 **luôn giảm 38% đến 49% VRAM** cho toàn bộ mô hình có tham số lớn.
+    - FP16 **chỉ tăng tốc Transformer** (tận dụng Tensor Cores tính toán GEMM lớn). Với CNN ở batch 1, tensor quá nhỏ khiến overhead chuyển kiểu và kernel launch làm tăng độ trễ.
+- **Lời thoại gợi ý (Speaker Notes):**
+  > *"Tại phần 2 của CH4, chúng em khảo sát số thực nửa chính xác FP16 trên Turing Tensor Cores của T4. Kết quả đo được: FP16 luôn cắt giảm từ 38% đến 49% VRAM cho mọi mô hình. Tuy nhiên, về tốc độ, FP16 chỉ tăng tốc vượt trội cho các mô hình Transformer — điển hình là ViT-B/16 tăng tốc tới 2.81 lần! Ngược lại, với CNN ở batch 1, FP16 lại chậm hơn từ 13% đến 23% vì khối tính toán quá nhỏ không đủ bù đắp chi phí chuyển kiểu dữ liệu. Muốn tận dụng FP16 cho CNN, bắt buộc phải tăng kích thước lô."*
 
 ---
 
 ### Slide 6: Kết Luận & Khuyến Nghị Kỹ Thuật (Takeaways)
 - **Tiêu đề:** Khuyến Nghị Triển Khai Thực Tế Từ Góc Nhìn Mức Model
 - **Nội dung chính:**
-  - 1. **Đừng chọn mô hình chỉ dựa vào số tham số:** Phải đo đạc thực tế trên phần cứng đích (Hardware-aware Profiling).
-  - 2. **MobileNet cho Edge CPU, Transformer cho Cloud GPU:** Tối ưu hóa lựa chọn kiến trúc theo đặc tính bộ nhớ/tính toán.
-  - 3. **Bắt buộc bật FP16 trên GPU:** Tăng tốc miễn phí gấp 2 lần, tiết kiệm một nửa VRAM mà không lo suy giảm độ chính xác.
-  - 4. **Batching là chìa khóa của Throughput GPU:** Luôn thiết lập batch size $\ge 8-32$ trên các server suy luận để tối ưu chi phí hạ tầng.
+  - 1. **Đừng chọn mô hình chỉ dựa vào số tham số/FLOPs:** Phải đo đạc thực tế trên phần cứng đích (Hardware-aware Profiling).
+  - 2. **MobileNet cho Edge CPU, Transformer cho Cloud GPU:** Tối ưu hóa lựa chọn kiến trúc theo đặc tính bộ nhớ và năng lực tính toán.
+  - 3. **Khai thác FP16 đúng cách:** Luôn bật FP16 để tiết kiệm 50% VRAM; nhưng với CNN cần kết hợp Batch Size $\ge 8$ để Tensor Cores phát huy tác dụng.
+  - 4. **Batching là chìa khóa của Throughput GPU:** Đưa batch size lên 8–32 giúp mô hình nhẹ tăng thông lượng tới gần $9\times$.
 - **Lời thoại gợi ý (Speaker Notes):**
   > *"Tóm lại, thông điệp cốt lõi từ mức Model của VisionProf là: không có mô hình nào nhanh nhất cho mọi nền tảng. Khi triển khai trên Edge CPU, MobileNet là lựa chọn tối ưu; nhưng trên Cloud GPU, các mô hình Transformer lại phát huy sức mạnh vượt trội. Và trên GPU, hãy luôn bật FP16 cùng cơ chế dynamic batching để khai thác tối đa năng lực phần cứng. Em xin cảm ơn thầy cô và các bạn đã lắng nghe!"*
 
