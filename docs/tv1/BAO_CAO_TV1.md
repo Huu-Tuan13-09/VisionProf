@@ -119,16 +119,17 @@ script chạy thực nghiệm gọi `attach(model, device)` → `start(i)` / `st
 | `layers_summary.csv` | 1 dòng / layer: thời gian trung vị, GFLOP/s đạt được, arithmetic intensity, % hiệu suất, compute/memory-bound |
 | `layer_meta.json` | số layer được đo, tổng FLOPs, thông số phần cứng, tổng thời gian mỗi vòng, chất lượng số đo GPU |
 
-Các thành phần chính (`src/`):
+Các thành phần chính (`src/layer/`):
 
 | Thành phần | Vai trò |
 | :--- | :--- |
-| `collector.py` → `LayerProfiler` | Gắn hook, đo thời gian và bộ nhớ từng layer |
-| `collector.py` → `calibrate_overhead_details`, `estimate_timer_bias` | Đo chi phí của chính công cụ đo |
-| `flops.py` | Đếm FLOPs, lưu lượng bộ nhớ, tính hiệu suất Roofline |
+| `plugin.py` → `LayerProfilerPlugin` | Plugin `layer` theo hợp đồng chung: gắn hook, đo thời gian và bộ nhớ từng layer, ghi 3 file kết quả |
+| `events.py` → `DeferredCudaDispatcher` | Ghi CUDA event không chặn CPU, lấp hàng đợi GPU, đồng bộ 1 lần mỗi vòng |
+| `overhead.py` → `calibrate_overhead_details`, `estimate_timer_bias` | Đo chi phí của chính công cụ đo |
+| `memory.py` | Bộ nhớ output của layer (không đếm trùng ReLU inplace / view) |
+| `flops.py`, `roofline.py` | Đếm FLOPs, lưu lượng bộ nhớ, tính hiệu suất Roofline |
 | `hw_specs.py` | Thông số tối đa của CPU laptop và GPU T4 |
-| `layer_plugin.py` | Plugin `layer` theo hợp đồng chung |
-| `layer_analysis.py` | Top-10 layer, tỷ trọng theo loại layer, bảng CPU–GPU |
+| `analysis.py` | Top-10 layer, tỷ trọng theo loại layer, bảng CPU–GPU |
 
 ### 4.x.2. Chọn layer để đo
 
