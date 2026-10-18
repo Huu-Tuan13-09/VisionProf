@@ -94,6 +94,13 @@ def test_metrics_cosine_similarity_and_accuracy():
         t3 = torch.tensor([-1.0, -2.0, -3.0])
         assert calculate_cosine_similarity(t1, t2) == pytest.approx(1.0, rel=1e-3)
         assert calculate_cosine_similarity(t1, t3) == pytest.approx(-1.0, rel=1e-3)
+        # Tuple (YOLO) and dict / HF ModelOutput (BERT) outputs use their primary tensor
+        assert calculate_cosine_similarity((t1, "extra"), (t3, None)) == pytest.approx(-1.0, rel=1e-3)
+        assert calculate_cosine_similarity({"last_hidden_state": t1}, {"last_hidden_state": t2}) == pytest.approx(1.0)
+        # Nothing comparable must not look like a perfect match
+        import math
+        assert math.isnan(calculate_cosine_similarity("a", "b"))
+        assert math.isnan(calculate_cosine_similarity(t1, torch.ones(4)))
     except ImportError:
         pass
 

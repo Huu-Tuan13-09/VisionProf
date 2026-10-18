@@ -12,24 +12,44 @@ except ImportError:
     HAS_TORCH = False
 
 
-def calculate_cosine_similarity(tensor_a: Any, tensor_b: Any) -> float:
-    """Calculate cosine similarity between two PyTorch tensors (e.g., FP32 vs FP16 outputs)."""
+def primary_output_tensor(output: Any) -> Any:
+    """Pick the tensor that represents a model's prediction (Tensor, tuple/list, dict or HF ModelOutput)."""
     if not HAS_TORCH:
-        return 1.0
-    if not isinstance(tensor_a, torch.Tensor) or not isinstance(tensor_b, torch.Tensor):
-        return 1.0
+        return None
+    if isinstance(output, torch.Tensor):
+        return output
+    if isinstance(output, dict) or hasattr(output, "keys"):
+        for key in ("logits", "last_hidden_state"):
+            if key in output and isinstance(output[key], torch.Tensor):
+                return output[key]
+        output = list(output.values())
+    if isinstance(output, (tuple, list)):
+        for item in output:
+            tensor = primary_output_tensor(item)
+            if tensor is not None:
+                return tensor
+    return None
 
-    flat_a = tensor_a.detach().float().flatten()
-    flat_b = tensor_b.detach().float().flatten()
 
+def calculate_cosine_similarity(tensor_a: Any, tensor_b: Any) -> float:
+    """
+    Cosine similarity between two model outputs (e.g. FP32 vs FP16 of the same weights and input).
+
+    Accepts Tensors, tuples/lists, dicts and HuggingFace ModelOutput; returns NaN when no
+    comparable tensor is found, so a failed comparison is never reported as a perfect match.
+    """
+    a, b = primary_output_tensor(tensor_a), primary_output_tensor(tensor_b)
+    if a is None or b is None or a.shape != b.shape:
+        return float("nan")
+
+    flat_a = a.detach().float().flatten()
+    flat_b = b.detach().float().flatten()
     norm_a = torch.norm(flat_a)
     norm_b = torch.norm(flat_b)
-
     if norm_a == 0.0 or norm_b == 0.0:
-        return 1.0
+        return float("nan")
 
-    dot = torch.dot(flat_a, flat_b)
-    sim = dot / (norm_a * norm_b)
+    sim = torch.dot(flat_a, flat_b) / (norm_a * norm_b)
     return round(float(sim.item()), 6)
 
 

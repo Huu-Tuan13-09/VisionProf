@@ -2,6 +2,7 @@
 
 import argparse
 import contextlib
+import copy
 import gc
 import json
 import logging
@@ -37,6 +38,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger("runner")
 
+
+
+def _to_fp32(inputs: Any) -> Any:
+    """Cast floating-point tensors of a model input (Tensor, dict, tuple) to FP32, keep the rest."""
+    if HAS_TORCH and isinstance(inputs, torch.Tensor):
+        return inputs.float() if inputs.is_floating_point() else inputs
+    if isinstance(inputs, dict):
+        return {k: _to_fp32(v) for k, v in inputs.items()}
+    if isinstance(inputs, (tuple, list)):
+        return type(inputs)(_to_fp32(v) for v in inputs)
+    return inputs
 
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
@@ -130,13 +142,16 @@ def main() -> int:
     if args.precision == "fp16" and adapter.is_torch:
         try:
             logger.info("Evaluating FP32 vs FP16 numerical cosine similarity...")
-            fp32_model = adapter.load(device=args.device, precision="fp32")
-            inp_fp32 = adapter.make_input(batch_size=args.batch_size, device=args.device, precision="fp32", seq_len=args.seq_len)
+            # Same weights and same input, only the arithmetic precision differs
+            fp32_model = copy.deepcopy(model).float()
             inp_fp16 = adapter.make_input(batch_size=args.batch_size, device=args.device, precision="fp16", seq_len=args.seq_len)
-            out_fp32 = adapter.forward(fp32_model, inp_fp32)
-            out_fp16 = adapter.forward(model, inp_fp16)
+            inp_fp32 = _to_fp32(inp_fp16)
+            with torch.inference_mode():
+                out_fp32 = adapter.forward(fp32_model, inp_fp32)
+                out_fp16 = adapter.forward(model, inp_fp16)
             cos_sim = calculate_cosine_similarity(out_fp32, out_fp16)
             summary.extra["cosine_similarity"] = cos_sim
+            del fp32_model
         except Exception as exc:
             logger.warning("Could not calculate cosine similarity: %s", exc)
 
