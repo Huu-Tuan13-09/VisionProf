@@ -30,3 +30,6 @@ tasks/
 
 # Paper PDFs downloaded for figure cropping (copyrighted, not versioned)
 docs/research/*.pdf
+
+# Windows download metadata
+*:Zone.Identifier
