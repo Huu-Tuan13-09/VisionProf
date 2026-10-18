@@ -2,72 +2,74 @@
 
 ## Top-10 layer chậm nhất · cpu_laptop
 
-|   rank | layer_name                   | layer_type   |            time_ms |                pct |   activation_mb |   n_calls |
-|-------:|:-----------------------------|:-------------|-------------------:|-------------------:|----------------:|----------:|
-|      1 | transformer.layer.2.ffn.lin2 | Linear       | 0.8334699999999999 | 5.033511651473994  |           0.375 |         1 |
-|      2 | transformer.layer.1.ffn.lin2 | Linear       | 0.81126            | 4.899380496448333  |           0.375 |         1 |
-|      3 | transformer.layer.3.ffn.lin2 | Linear       | 0.7885800000000001 | 4.762410906354593  |           0.375 |         1 |
-|      4 | transformer.layer.0.ffn.lin2 | Linear       | 0.78291            | 4.728168508831157  |           0.375 |         1 |
-|      5 | transformer.layer.4.ffn.lin2 | Linear       | 0.7821400000000001 | 4.723518306698345  |           0.375 |         1 |
-|      6 | transformer.layer.5.ffn.lin2 | Linear       | 0.7754300000000001 | 4.6829951166838395 |           0.375 |         1 |
-|      7 | transformer.layer.1.ffn.lin1 | Linear       | 0.5407             | 3.2654081730020135 |           1.5   |         1 |
-|      8 | transformer.layer.4.ffn.lin1 | Linear       | 0.5396799999999999 | 3.2592481649819245 |           1.5   |         1 |
-|      9 | transformer.layer.5.ffn.lin1 | Linear       | 0.5278050000000001 | 3.187532385336283  |           1.5   |         1 |
-|     10 | transformer.layer.2.ffn.lin1 | Linear       | 0.5223450000000001 | 3.15455822475816   |           1.5   |         1 |
+| rank | layer_name | layer_type | time_ms | pct | activation_mb | n_calls |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | transformer.layer.5.ffn.lin1 | Linear | 1.559 | 5.530 | 1.500 | 1 |
+| 2 | transformer.layer.4.ffn.lin1 | Linear | 1.554 | 5.511 | 1.500 | 1 |
+| 3 | transformer.layer.3.ffn.lin1 | Linear | 1.545 | 5.480 | 1.500 | 1 |
+| 4 | transformer.layer.2.ffn.lin1 | Linear | 1.543 | 5.471 | 1.500 | 1 |
+| 5 | transformer.layer.0.ffn.lin1 | Linear | 1.534 | 5.442 | 1.500 | 1 |
+| 6 | transformer.layer.1.ffn.lin1 | Linear | 1.528 | 5.421 | 1.500 | 1 |
+| 7 | transformer.layer.4.ffn.lin2 | Linear | 1.463 | 5.188 | 0.375 | 1 |
+| 8 | transformer.layer.1.ffn.lin2 | Linear | 1.463 | 5.187 | 0.375 | 1 |
+| 9 | transformer.layer.2.ffn.lin2 | Linear | 1.460 | 5.179 | 0.375 | 1 |
+| 10 | transformer.layer.5.ffn.lin2 | Linear | 1.460 | 5.178 | 0.375 | 1 |
 
 ## Tỷ trọng theo loại layer · cpu_laptop
 
-| layer_type     |   time_ms |   n_layers |                 pct |
-|:---------------|----------:|-----------:|--------------------:|
-| Linear         | 14.774625 |         36 | 89.22726322922114   |
-| GELUActivation |  0.853845 |          6 |  5.156560831287043  |
-| LayerNorm      |  0.792465 |         13 |  4.785873289842871  |
-| Embedding      |  0.137485 |          2 |  0.8303026496489399 |
+| layer_type | time_ms | n_layers | pct |
+| --- | --- | --- | --- |
+| Linear | 26.864 | 36 | 95.276 |
+| GELUActivation | 0.786 | 6 | 2.788 |
+| LayerNorm | 0.465 | 13 | 1.650 |
+| Embedding | 0.081 | 2 | 0.287 |
 
 ## Top-10 layer chậm nhất · colab_t4
 
-|   rank | layer_name                   | layer_type   |             time_ms |                pct |   activation_mb |   n_calls |
-|-------:|:-----------------------------|:-------------|--------------------:|-------------------:|----------------:|----------:|
-|      1 | transformer.layer.4.ffn.lin2 | Linear       | 0.159025            | 4.948638715921221  |           0.375 |         1 |
-|      2 | transformer.layer.5.ffn.lin2 | Linear       | 0.158785            | 4.941170246864021  |           0.375 |         1 |
-|      3 | transformer.layer.2.ffn.lin2 | Linear       | 0.15773             | 4.908340101633417  |           0.375 |         1 |
-|      4 | transformer.layer.1.ffn.lin2 | Linear       | 0.157345            | 4.896359432520827  |           0.375 |         1 |
-|      5 | transformer.layer.0.ffn.lin2 | Linear       | 0.15688             | 4.881889273722503  |           0.375 |         1 |
-|      6 | transformer.layer.3.ffn.lin2 | Linear       | 0.155825            | 4.8490591284918985 |           0.375 |         1 |
-|      7 | transformer.layer.4.ffn.lin1 | Linear       | 0.12894499999999998 | 4.012590594085594  |           1.5   |         1 |
-|      8 | transformer.layer.5.ffn.lin1 | Linear       | 0.12843500000000002 | 3.9967200973390473 |           1.5   |         1 |
-|      9 | transformer.layer.2.ffn.lin1 | Linear       | 0.12710500000000002 | 3.955332331313736  |           1.5   |         1 |
-|     10 | transformer.layer.1.ffn.lin1 | Linear       | 0.12698             | 3.951442503679777  |           1.5   |         1 |
+| rank | layer_name | layer_type | time_ms | pct | activation_mb | n_calls |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | transformer.layer.4.ffn.lin2 | Linear | 0.159 | 4.949 | 0.375 | 1 |
+| 2 | transformer.layer.5.ffn.lin2 | Linear | 0.159 | 4.941 | 0.375 | 1 |
+| 3 | transformer.layer.2.ffn.lin2 | Linear | 0.158 | 4.908 | 0.375 | 1 |
+| 4 | transformer.layer.1.ffn.lin2 | Linear | 0.157 | 4.896 | 0.375 | 1 |
+| 5 | transformer.layer.0.ffn.lin2 | Linear | 0.157 | 4.882 | 0.375 | 1 |
+| 6 | transformer.layer.3.ffn.lin2 | Linear | 0.156 | 4.849 | 0.375 | 1 |
+| 7 | transformer.layer.4.ffn.lin1 | Linear | 0.129 | 4.013 | 1.500 | 1 |
+| 8 | transformer.layer.5.ffn.lin1 | Linear | 0.128 | 3.997 | 1.500 | 1 |
+| 9 | transformer.layer.2.ffn.lin1 | Linear | 0.127 | 3.955 | 1.500 | 1 |
+| 10 | transformer.layer.1.ffn.lin1 | Linear | 0.127 | 3.951 | 1.500 | 1 |
 
 ## Tỷ trọng theo loại layer · colab_t4
 
-| layer_type     |              time_ms |   n_layers |                  pct |
-|:---------------|---------------------:|-----------:|---------------------:|
-| Linear         | 3.05201              |         36 | 94.9743426969264     |
-| LayerNorm      | 0.106565             |         13 |  3.316155854501775   |
-| GELUActivation | 0.0426               |          6 |  1.3256532576528468  |
-| Embedding      | 0.012334999999999999 |          2 |  0.38384819091896394 |
+| layer_type | time_ms | n_layers | pct |
+| --- | --- | --- | --- |
+| Linear | 3.052 | 36 | 94.974 |
+| LayerNorm | 0.107 | 13 | 3.316 |
+| GELUActivation | 0.043 | 6 | 1.326 |
+| Embedding | 0.012 | 2 | 0.384 |
 
 ## CPU (cpu_laptop) và GPU (colab_t4) · top-10
 
-| layer_name                   | layer_type   |        time_ms_cpu |            pct_cpu |   rank_cpu |         time_ms_gpu |            pct_gpu |   rank_gpu |            speedup |   rank_change |
-|:-----------------------------|:-------------|-------------------:|-------------------:|-----------:|--------------------:|-------------------:|-----------:|-------------------:|--------------:|
-| transformer.layer.2.ffn.lin2 | Linear       | 0.8334699999999999 | 5.033511651473994  |          1 | 0.15773             | 4.908340101633417  |          3 | 5.284156469916946  |            -2 |
-| transformer.layer.1.ffn.lin2 | Linear       | 0.81126            | 4.899380496448333  |          2 | 0.157345            | 4.896359432520827  |          4 | 5.155931233912739  |            -2 |
-| transformer.layer.3.ffn.lin2 | Linear       | 0.7885800000000001 | 4.762410906354593  |          3 | 0.155825            | 4.8490591284918985 |          6 | 5.060677041553025  |            -3 |
-| transformer.layer.0.ffn.lin2 | Linear       | 0.78291            | 4.728168508831157  |          4 | 0.15688             | 4.881889273722503  |          5 | 4.990502294747578  |            -1 |
-| transformer.layer.4.ffn.lin2 | Linear       | 0.7821400000000001 | 4.723518306698345  |          5 | 0.159025            | 4.948638715921221  |          1 | 4.9183461719855375 |             4 |
-| transformer.layer.5.ffn.lin2 | Linear       | 0.7754300000000001 | 4.6829951166838395 |          6 | 0.158785            | 4.941170246864021  |          2 | 4.883521743237711  |             4 |
-| transformer.layer.1.ffn.lin1 | Linear       | 0.5407             | 3.2654081730020135 |          7 | 0.12698             | 3.951442503679777  |         10 | 4.258150889903921  |            -3 |
-| transformer.layer.4.ffn.lin1 | Linear       | 0.5396799999999999 | 3.2592481649819245 |          8 | 0.12894499999999998 | 4.012590594085594  |          7 | 4.185350343169569  |             1 |
-| transformer.layer.5.ffn.lin1 | Linear       | 0.5278050000000001 | 3.187532385336283  |          9 | 0.12843500000000002 | 3.9967200973390473 |          8 | 4.109510647409195  |             1 |
-| transformer.layer.2.ffn.lin1 | Linear       | 0.5223450000000001 | 3.15455822475816   |         10 | 0.12710500000000002 | 3.955332331313736  |          9 | 4.109555092246567  |             1 |
+| layer_name | layer_type | time_ms_cpu | pct_cpu | rank_cpu | time_ms_gpu | pct_gpu | rank_gpu | speedup | rank_change |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| transformer.layer.5.ffn.lin1 | Linear | 1.559 | 5.530 | 1 | 0.128 | 3.997 | 8 | 12.140 | -7 |
+| transformer.layer.4.ffn.lin1 | Linear | 1.554 | 5.511 | 2 | 0.129 | 4.013 | 7 | 12.051 | -5 |
+| transformer.layer.3.ffn.lin1 | Linear | 1.545 | 5.480 | 3 | 0.127 | 3.945 | 11 | 12.188 | -8 |
+| transformer.layer.2.ffn.lin1 | Linear | 1.543 | 5.471 | 4 | 0.127 | 3.955 | 9 | 12.136 | -5 |
+| transformer.layer.0.ffn.lin1 | Linear | 1.534 | 5.442 | 5 | 0.126 | 3.927 | 12 | 12.160 | -7 |
+| transformer.layer.1.ffn.lin1 | Linear | 1.528 | 5.421 | 6 | 0.127 | 3.951 | 10 | 12.036 | -4 |
+| transformer.layer.4.ffn.lin2 | Linear | 1.463 | 5.188 | 7 | 0.159 | 4.949 | 1 | 9.198 | 6 |
+| transformer.layer.1.ffn.lin2 | Linear | 1.463 | 5.187 | 8 | 0.157 | 4.896 | 4 | 9.295 | 4 |
+| transformer.layer.2.ffn.lin2 | Linear | 1.460 | 5.179 | 9 | 0.158 | 4.908 | 3 | 9.258 | 6 |
+| transformer.layer.5.ffn.lin2 | Linear | 1.460 | 5.178 | 10 | 0.159 | 4.941 | 2 | 9.194 | 8 |
+| transformer.layer.0.ffn.lin2 | Linear | 1.455 | 5.161 | 11 | 0.157 | 4.882 | 5 | 9.276 | 6 |
+| transformer.layer.3.ffn.lin2 | Linear | 1.450 | 5.143 | 12 | 0.156 | 4.849 | 6 | 9.307 | 6 |
 
 ## CPU và GPU · tỷ trọng theo loại layer
 
-| layer_type     |   time_ms_cpu |   n_layers_cpu |             pct_cpu |          time_ms_gpu |   n_layers_gpu |              pct_gpu |          pct_change |
-|:---------------|--------------:|---------------:|--------------------:|---------------------:|---------------:|---------------------:|--------------------:|
-| Linear         |     14.774625 |             36 | 89.22726322922114   | 3.05201              |             36 | 94.9743426969264     |  5.747079467705262  |
-| GELUActivation |      0.853845 |              6 |  5.156560831287043  | 0.0426               |              6 |  1.3256532576528468  | -3.830907573634196  |
-| LayerNorm      |      0.792465 |             13 |  4.785873289842871  | 0.106565             |             13 |  3.316155854501775   | -1.4697174353410962 |
-| Embedding      |      0.137485 |              2 |  0.8303026496489399 | 0.012334999999999999 |              2 |  0.38384819091896394 | -0.4464544587299759 |
+| layer_type | time_ms_cpu | n_layers | pct_cpu | time_ms_gpu | pct_gpu | pct_change |
+| --- | --- | --- | --- | --- | --- | --- |
+| Linear | 26.864 | 36 | 95.276 | 3.052 | 94.974 | -0.301 |
+| GELUActivation | 0.786 | 6 | 2.788 | 0.043 | 1.326 | -1.462 |
+| LayerNorm | 0.465 | 13 | 1.650 | 0.107 | 3.316 | 1.666 |
+| Embedding | 0.081 | 2 | 0.287 | 0.012 | 0.384 | 0.097 |
