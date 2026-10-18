@@ -1,7 +1,0 @@
-{
-  "model": "mlp",
-  "device": "colab_t4",
-  "batch_size": 8,
-  "precision": "fp32",
-  "experiment": "TN4"
-}

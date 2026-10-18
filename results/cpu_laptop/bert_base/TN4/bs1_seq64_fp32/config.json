@@ -1,0 +1,14 @@
+{
+  "model": "bert_base",
+  "device": "cpu_laptop",
+  "batch_size": 1,
+  "precision": "fp32",
+  "seq_len": 64,
+  "experiment": "TN4",
+  "profilers": "layer",
+  "warmup": 5,
+  "measure": 20,
+  "skip_existing": true,
+  "results_dir": "results",
+  "canonical_model": "bert_base"
+}

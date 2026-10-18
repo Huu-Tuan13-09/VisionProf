@@ -1,7 +1,7 @@
 """Standardized file path and directory generation utilities for VisionProf."""
 
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 
 def sanitize_name(name: str) -> str:
@@ -19,13 +19,17 @@ def build_result_path(
     experiment: str,
     batch_size: int,
     precision: str = "fp32",
+    seq_len: Optional[int] = None,
 ) -> Path:
     """Generate standardized results path: results/{device}/{model}/{experiment}/bs{batch_size}_{precision}/"""
     dev = sanitize_name(device)
     mdl = sanitize_name(model)
     exp = sanitize_name(experiment)
     prec = sanitize_name(precision)
-    config_dir = f"bs{batch_size}_{prec}"
+    if seq_len is not None and seq_len != 128:
+        config_dir = f"bs{batch_size}_seq{seq_len}_{prec}"
+    else:
+        config_dir = f"bs{batch_size}_{prec}"
 
     target_path = Path(base_dir) / dev / mdl / exp / config_dir
     target_path.mkdir(parents=True, exist_ok=True)

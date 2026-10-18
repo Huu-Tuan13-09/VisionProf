@@ -78,13 +78,15 @@ def render(results_dir: Path) -> None:
     tn4_df = df[df["experiment"] == "TN4"].copy()
     if not tn4_df.empty:
         try:
-            # Extract batch number from config (e.g. bs8_fp32 -> 8)
+            # Extract batch number from config (e.g. bs8_fp32 -> 8, bs8_seq256_fp32 -> 8)
             tn4_df["batch_size"] = tn4_df["config"].str.extract(r"bs(\d+)_").astype(float)
+            seq_suffix = tn4_df["config"].str.extract(r"(_seq\d+)_")[0].fillna("")
+            tn4_df["model_label"] = tn4_df["model"] + seq_suffix
             fig_batch = px.line(
                 tn4_df.sort_values(by="batch_size"),
                 x="batch_size",
                 y="throughput_fps",
-                color="model",
+                color="model_label",
                 line_dash="device",
                 markers=True,
                 title="CH4: Thông Lượng (Throughput FPS) theo Batch Size giữa CPU và GPU",

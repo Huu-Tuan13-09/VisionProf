@@ -71,6 +71,7 @@ def main() -> int:
         experiment=args.experiment,
         batch_size=args.batch_size,
         precision=args.precision,
+        seq_len=args.seq_len if adapter.family == "nlp" else None,
     )
 
     summary_file = run_dir / "summary.json"

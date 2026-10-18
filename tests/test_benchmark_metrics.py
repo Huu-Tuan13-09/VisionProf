@@ -130,3 +130,24 @@ def test_env_metadata_save_and_load():
         assert saved.exists()
 
 
+def test_build_result_path_seq_len():
+    """Verify build_result_path handles sequence lengths correctly without collision."""
+    from src.core.paths import build_result_path
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        p_def = build_result_path(tmpdir, "cpu_laptop", "bert_base", "TN4", 8, "fp32", seq_len=128)
+        assert p_def.name == "bs8_fp32"
+
+        p_none = build_result_path(tmpdir, "cpu_laptop", "resnet50", "TN4", 8, "fp32")
+        assert p_none.name == "bs8_fp32"
+
+        p_64 = build_result_path(tmpdir, "cpu_laptop", "bert_base", "TN4", 8, "fp32", seq_len=64)
+        assert p_64.name == "bs8_seq64_fp32"
+
+        p_256 = build_result_path(tmpdir, "cpu_laptop", "bert_base", "TN4", 8, "fp32", seq_len=256)
+        assert p_256.name == "bs8_seq256_fp32"
+
+        assert p_64 != p_def
+        assert p_256 != p_def
+
+

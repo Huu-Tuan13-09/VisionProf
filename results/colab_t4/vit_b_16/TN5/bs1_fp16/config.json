@@ -1,7 +1,0 @@
-{
-  "model": "vit_b_16",
-  "device": "colab_t4",
-  "batch_size": 1,
-  "precision": "fp16",
-  "experiment": "TN5"
-}

@@ -58,6 +58,9 @@ def load_summary(device: str, model: str, experiment: str, config: str) -> Dict[
 def plot_ch3_speedup(cpu_data: Dict[str, float], gpu_data: Dict[str, float], out_path: Path) -> None:
     """Generate CH3 Speedup comparison bar chart."""
     models = [m for m in MODELS_ORDER if m in cpu_data and m in gpu_data]
+    if not models:
+        logger.warning("No overlapping models for CH3 speedup plot (GPU data pending measurement).")
+        return
     speedups = [cpu_data[m] / gpu_data[m] for m in models]
 
     plt.figure(figsize=(10, 5))
@@ -82,6 +85,9 @@ def plot_ch3_speedup(cpu_data: Dict[str, float], gpu_data: Dict[str, float], out
 def plot_ch3_rank_shift(cpu_data: Dict[str, float], gpu_data: Dict[str, float], out_path: Path) -> None:
     """Generate CH3 slope graph showing rank inversion between CPU and GPU."""
     models = [m for m in MODELS_ORDER if m in cpu_data and m in gpu_data]
+    if not models:
+        logger.warning("No overlapping models for CH3 rank shift plot (GPU data pending measurement).")
+        return
     cpu_sorted = sorted(models, key=lambda m: cpu_data[m])
     gpu_sorted = sorted(models, key=lambda m: gpu_data[m])
 
@@ -128,8 +134,10 @@ def plot_ch4_batch_scaling(out_path: Path) -> None:
             t4_fps.append(s_t4.get("throughput_fps", 0.0))
             cpu_fps.append(s_cpu.get("throughput_fps", 0.0))
 
-        plt.plot(batches, t4_fps, marker=markers[i], linewidth=2.2, label=f"{m} (Colab T4)")
-        plt.plot(batches, cpu_fps, marker=markers[i], linestyle="--", linewidth=1.5, alpha=0.7, label=f"{m} (CPU Laptop)")
+        if any(fps > 0 for fps in t4_fps):
+            plt.plot(batches, t4_fps, marker=markers[i], linewidth=2.2, label=f"{m} (Colab T4)")
+        if any(fps > 0 for fps in cpu_fps):
+            plt.plot(batches, cpu_fps, marker=markers[i], linestyle="--", linewidth=1.5, alpha=0.7, label=f"{m} (CPU Laptop)")
 
     plt.title("CH4: Throughput Scaling vs Batch Size (Finding Hardware Saturation Points)", fontsize=12, fontweight="bold")
     plt.xlabel("Batch Size", fontsize=11)
@@ -147,10 +155,14 @@ def plot_ch4_fp16(out_path: Path) -> None:
     models = ["mobilenet_v3_large", "resnet50", "vit_b_16", "yolov8n", "distilbert", "bert_base"]
     speedups = []
     vram_savings = []
+    valid_models = []
 
     for m in models:
         s32 = load_summary("colab_t4", m, "TN3", "bs1_fp32")
         s16 = load_summary("colab_t4", m, "TN5", "bs1_fp16")
+        if not s32 or not s16:
+            continue
+        valid_models.append(m)
         p32 = s32.get("p50_ms", 1.0)
         p16 = s16.get("p50_ms", 1.0)
         v32 = s32.get("peak_vram_mb", 1.0)
@@ -158,14 +170,18 @@ def plot_ch4_fp16(out_path: Path) -> None:
         speedups.append(round(p32 / p16, 2) if p16 > 0 else 1.0)
         vram_savings.append(round((1.0 - v16 / v32) * 100.0, 1) if v32 > 0 else 0.0)
 
-    x = np.arange(len(models))
+    if not valid_models:
+        logger.warning("No valid FP16 measurement data available for CH4 (T4 data pending).")
+        return
+
+    x = np.arange(len(valid_models))
     width = 0.38
 
     fig, ax1 = plt.subplots(figsize=(10, 5))
     bars1 = ax1.bar(x - width / 2, speedups, width, label="Speedup Factor (x)", color="#3182ce")
     ax1.set_ylabel("Speedup Multiplier (x)", color="#3182ce", fontsize=11, fontweight="bold")
     ax1.set_xticks(x)
-    ax1.set_xticklabels(models, rotation=20, ha="right", fontsize=10)
+    ax1.set_xticklabels(valid_models, rotation=20, ha="right", fontsize=10)
     ax1.set_ylim(0, max(speedups) * 1.25)
 
     for bar, val in zip(bars1, speedups):
