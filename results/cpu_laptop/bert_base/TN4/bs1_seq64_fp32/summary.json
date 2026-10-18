@@ -1,0 +1,18 @@
+{
+  "mean_ms": 24.147,
+  "p50_ms": 23.7174,
+  "p90_ms": 24.675,
+  "p95_ms": 25.3972,
+  "p99_ms": 30.2926,
+  "tail_ratio": 1.277,
+  "throughput_fps": 41.41,
+  "peak_vram_mb": 0.0,
+  "rss_mb": 881.73,
+  "reserved_vram_mb": 0.0,
+  "std_ms": 1.7862,
+  "params_m": 109.482,
+  "cold_start_ms": 30.0987,
+  "extra": {
+    "cold_start_ms": 30.0987
+  }
+}

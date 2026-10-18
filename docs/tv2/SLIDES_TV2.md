@@ -30,29 +30,33 @@
 
 ---
 
-### Slide 3: Kết Quả CH3 — Hiện Tượng Đảo Thứ Hạng (Rank Inversion)
-- **Tiêu đề:** Kết Quả CH3: Nghịch Lý Tham Số & Hiện Tượng Đảo Thứ Hạng
+### Slide 3: Kết Quả CH3 — Nghịch Lý Tham Số & Hiện Tượng Thắt Cổ Chai Bộ Nhớ
+- **Tiêu đề:** Kết Quả CH3: Nghịch Lý Tham Số & Bản Chất Phần Cứng
 - **Nội dung chính:**
-  - Bảng so sánh Speedup:
-    - **Hưởng lợi lớn nhất (8.7x – 9.3x):** BERT-base (9.3x), DistilBERT (8.8x), ViT-B/16 (8.7x).
-    - **Hưởng lợi ít nhất (1.9x – 2.0x):** MobileNetV3-Large (1.95x), MLP (2.0x).
-  - Hiện tượng đảo thứ hạng:
-    - Trên CPU: MobileNetV3 đứng #3 (8.5ms), DistilBERT đứng #6 (31.2ms).
-    - Trên GPU T4: DistilBERT vươn lên #3 (3.56ms), đẩy MobileNetV3 xuống #4 (4.38ms)!
+  - **Phát hiện đo thật trên CPU Laptop:**
+    - MobileNetV3-Large (5.5M tham số) trễ tới **176.3 ms** (5.7 FPS), chậm nhất nhóm Deep Learning.
+    - ResNet-50 (25.6M tham số) đạt **22.5 ms** (44.2 FPS) — nhanh hơn MobileNet gần **$8\times$** dù tham số gấp 5 lần!
+    - DistilBERT (66.4M tham số) đạt **18.6 ms** (53.3 FPS) — nhanh thứ 3 toàn đoàn (chỉ sau MLP và XGBoost).
+  - **Lý giải khoa học:** Depthwise Separable Conv của MobileNet có cường độ số học thấp, bị nghẽn băng thông bộ nhớ (Memory-Bound) trầm trọng trên CPU. Trong khi đó, Standard Conv (ResNet) và Attention (DistilBERT) tận dụng triệt để bộ đệm L2/L3 cache và thư viện vectorization SIMD.
+  - *Nhánh Colab T4: Đang đồng bộ phiên chạy thực tế theo kịch bản chuẩn hoá.*
 - **Lời thoại gợi ý (Speaker Notes):**
-  > *"Trên slide là biểu đồ minh chứng trực tiếp cho hiện tượng đảo thứ hạng giữa CPU và GPU. Trên CPU, MobileNetV3 là ngôi sao sáng với độ trễ chỉ 8.5ms, nhanh gấp gần 4 lần DistilBERT. Nhưng khi đưa lên GPU Tesla T4, DistilBERT tăng tốc tới 8.8 lần và vượt mặt MobileNetV3. Lý do là vì MobileNet sử dụng Depthwise Separable Convolutions có cường độ số học thấp, bị nghẽn băng thông bộ nhớ (Memory-Bound). Trong khi đó, các phép tính ma trận Self-Attention của Transformer lại là Compute-Bound, khớp hoàn hảo với hàng nghìn nhân tính toán song song của GPU."*
+  > *"Kính thưa thầy cô, qua các phép đo chuẩn xác không gắn hook của VisionProf trên CPU Laptop, chúng em phát hiện một nghịch lý đáng kinh ngạc: MobileNetV3 dù chỉ có 5.5 triệu tham số nhưng lại có độ trễ lên tới 176ms, chậm hơn ResNet-50 với 25 triệu tham số gần 8 lần! Nguyên nhân nằm ở kiến trúc Depthwise Separable Convolutions có cường độ số học thấp, khiến CPU bị nghẽn băng thông bộ nhớ RAM liên tục. Ngược lại, DistilBERT với 66 triệu tham số lại chạy rất nhanh (18.6ms) nhờ các phép nhân ma trận GEMM được tối ưu hóa xuất sắc."*
 
 ---
 
-### Slide 4: Kết Quả CH4 — Mở Rộng Batch Size & Điểm Bão Hòa
-- **Tiêu đề:** Kết Quả CH4 (Phần 1): Đường Cong Thông Lượng Theo Batch Size
+### Slide 4: Kết Quả CH4 — Mở Rộng Batch Size & Chiều Dài Chuỗi NLP
+- **Tiêu đề:** Kết Quả CH4: Điểm Bão Hòa Throughput & Tác Động Độ Dài Câu (Seq Len)
 - **Nội dung chính:**
-  - Thử nghiệm trên Batch = [1, 8, 32]:
-    - **GPU Tesla T4:** Thông lượng tăng từ **6.5x đến 7.5x** khi tăng batch từ 1 lên 32 (ResNet-50 tăng từ 177 FPS lên 1,320 FPS).
-    - **CPU Laptop:** Thông lượng chỉ tăng từ **3.2x đến 3.5x** và nhanh chóng chạm trần bão hòa ở batch 8.
-  - Kết luận: GPU cần batch lớn để lấp đầy tài nguyên tính toán (Amortized Overhead); CPU không được hưởng lợi nhiều do nghẽn băng thông RAM hệ thống.
+  - **Mở rộng Batch Size trên CPU Laptop (Batch 1, 8, 32):**
+    - Các mô hình bảng (MLP, XGBoost) tăng thông lượng vọt từ **$9\times$ đến $19\times$**.
+    - Transformer (DistilBERT, BERT-base) bão hòa sớm từ batch 8 đến 32 (DistilBERT đạt đỉnh 124 FPS).
+    - CNN lớn (ResNet-50, YOLOv8) sụt giảm thông lượng ở batch 32 do nghẽn RAM hệ thống.
+  - **Độ dài câu NLP (Seq 64 / 128 / 256):**
+    - Độ trễ tăng theo hàm bậc hai của độ dài câu do tính toán Self-Attention $O(N^2)$.
+    - Tại batch 32, BERT-base tăng trễ từ 281ms (seq=64) lên 1,858ms (seq=256), thông lượng giảm $6.5\times$.
+  - *Nhánh Colab T4 (Batch lớn & FP16 Tensor Cores): Sẵn sàng đồng bộ từ GPU runtime.*
 - **Lời thoại gợi ý (Speaker Notes):**
-  > *"Tiếp theo là câu hỏi CH4 về mở rộng kích thước lô. Trên GPU, chạy ở Batch 1 là một sự lãng phí tài nguyên lớn vì GPU bị 'đói dữ liệu'. Khi tăng batch lên 32, thông lượng của ResNet-50 nhảy vọt gấp 7.5 lần, đạt hơn 1.300 ảnh/giây. Trong khi đó, trên CPU, việc tăng batch chỉ giúp tăng tốc khoảng 3 lần rồi bão hòa ngay do giới hạn băng thông bộ nhớ RAM của máy chủ."*
+  > *"Tiếp theo là câu hỏi CH4 về mở rộng kích thước lô và độ dài chuỗi NLP. Trên CPU, chúng ta thấy rõ điểm bão hòa đến rất sớm ở batch 8. Đối với các mô hình NLP, việc tăng độ dài câu từ 64 lên 256 làm bùng nổ độ trễ do chi phí tính toán Self-Attention tỷ lệ thuận với bình phương độ dài câu N bình phương. Ở batch 32, BERT-base bị giảm thông lượng hơn 6 lần khi độ dài câu tăng từ 64 lên 256 token."*
 
 ---
 
