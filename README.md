@@ -67,9 +67,9 @@ VisionProf/
 │   └── dashboard/         # [CẢ NHÓM] app.py router + tabs/ 8 tabs riêng biệt
 ├── configs/               # Cấu hình YAML cho các thực nghiệm
 ├── docs/                  # Tài liệu báo cáo hoàn chỉnh của 3 thành viên
-│   ├── tv1/               # BAO_CAO_TV1.md, README_TV1.md, SLIDES_TV1.md, figures/
-│   ├── tv2/               # BAO_CAO_TV2.md, README_TV2.md, SLIDES_TV2.md, figures/
-│   └── tv3/               # BAO_CAO_TV3.md, README_TV3.md, SLIDES_TV3.md, figures/
+│   ├── tv1/               # BAO_CAO_TV1.md, README_TV1.md, figures/
+│   ├── tv2/               # BAO_CAO_TV2.md, README_TV2.md, figures/
+│   └── tv3/               # BAO_CAO_TV3.md, README_TV3.md, figures/
 ├── experiments/           # Script thực nghiệm & vẽ hình của từng TV (tn1_*, tn2_*, tv1_*, tv2_*, tv3_*)
 ├── notebooks/             # colab_runner.ipynb (Tự động hóa chạy trên Google Colab)
 ├── scripts/               # CLI Runners (run_experiment.py, run_tn6_training.py, ...)
@@ -110,7 +110,7 @@ Mỗi lần chạy tự lưu thông tin máy và phiên bản thư viện vào `
 | **2** | **TV1** | **CH2.** Công cụ đo có chính xác không và làm chậm mô hình bao nhiêu? | **TN2** | Sai lệch tổng so với `torch.profiler` $< 1\%$ trên CPU, $< 8\%$ trên GPU T4. Overhead CPU 5–11%; GPU ở batch 1 là 109–166% $\rightarrow$ mức Layer dùng để phân rã thời gian, không dùng để đo tổng thời gian. |
 | **3** | **TV2** | **CH3.** Mô hình ít tham số có chắc chạy nhanh hơn? Thứ hạng có bị đảo khi lên GPU? | **TN3** | Đã đo sạch 100% trên cả CPU Mac và Colab T4 (8 mô hình). Ở batch 1 trên T4, ResNet-50 (8.2 GFLOPs) và MobileNetV3 (0.43 GFLOPs) cùng mất ~6.0ms (nghẽn chi phí gửi kernel). Mô hình nhỏ (MLP) trên GPU chậm hơn CPU (0.28ms vs 0.04ms). MobileNetV3 trễ 176.3ms trên CPU ARM Mac nhưng ~12ms trên x86. |
 | **4** | **TV2** | **CH4.** Tăng Batch size và dùng FP16 Tensor Cores thì tốc độ tăng bao nhiêu? | **TN4, TN5** | Đã đo đủ 36 cấu hình batch/seq trên T4 và 7 mô hình FP16. Batch 1 $\rightarrow$ 32 tăng throughput 1.3–8.8× (MobileNetV3 tăng 8.8× từ 170 $\rightarrow$ 1,499 FPS; ViT bão hòa sớm). FP16 giảm VRAM 38–49%, nhưng chỉ tăng tốc Transformer (ViT tăng 2.81×); CNN ở batch 1 bị chậm đi do chi phối bởi kernel launch. |
-| **5** | **TV3** | **CH5.** Khi Training, Backward tốn gấp mấy lần Forward? VRAM bùng nổ bao nhiêu? | **TN6** | Tỷ số Backward/Forward đạt **$1.82\times - 2.21\times$** (khớp lý thuyết $2\times$). Đỉnh VRAM khi training **tăng $2.7\times - 3.3\times$** so với suy luận do lưu trữ activations. |
+| **5** | **TV3** | **CH5.** Khi Training, Backward tốn gấp mấy lần Forward? VRAM bùng nổ bao nhiêu? | **TN6** | Tỷ số Backward/Forward đạt **$1.39\times - 2.21\times$** (khớp lý thuyết $2\times$). Đỉnh VRAM khi training **tăng $2.7\times - 3.3\times$** so với suy luận do lưu trữ activations. |
 | **6** | **TV3** | **CH6.** Trong ứng dụng thật, chi phí ngoài mô hình (Pre/Post/NMS) chiếm bao nhiêu %? | **TN7** | Với YOLOv8n trên GPU T4, tiền xử lý và NMS chiếm tới **$41.0\%$ ($> 30\%$)**, minh chứng thực nghiệm cho **Định luật Amdahl**. |
 
 ---
@@ -266,19 +266,20 @@ for r in results:
 Để tìm hiểu chi tiết các kết quả chuyên sâu, vui lòng tra cứu các báo cáo độc lập:
 - 🟧 **Tài liệu Thành viên 1 (Mức Layer)**:
   - Báo cáo chi tiết: [`docs/tv1/BAO_CAO_TV1.md`](./docs/tv1/BAO_CAO_TV1.md)
-  - Slide & Kịch bản: [`docs/tv1/SLIDES_TV1.md`](./docs/tv1/SLIDES_TV1.md)
   - Hướng dẫn kỹ thuật: [`docs/tv1/README_TV1.md`](./docs/tv1/README_TV1.md)
   - Biểu đồ minh họa: [`docs/tv1/figures/`](./docs/tv1/figures/)
 - 🟦 **Tài liệu Thành viên 2 (Mức Model)**:
   - Báo cáo chi tiết: [`docs/tv2/BAO_CAO_TV2.md`](./docs/tv2/BAO_CAO_TV2.md)
-  - Slide & Kịch bản: [`docs/tv2/SLIDES_TV2.md`](./docs/tv2/SLIDES_TV2.md)
   - Hướng dẫn kỹ thuật: [`docs/tv2/README_TV2.md`](./docs/tv2/README_TV2.md)
   - Biểu đồ minh họa: [`docs/tv2/figures/`](./docs/tv2/figures/)
 - 🟩 **Tài liệu Thành viên 3 (Mức Giai đoạn & Tổng kết)**:
   - Báo cáo chi tiết: [`docs/tv3/BAO_CAO_TV3.md`](./docs/tv3/BAO_CAO_TV3.md)
-  - Slide & Kịch bản: [`docs/tv3/SLIDES_TV3.md`](./docs/tv3/SLIDES_TV3.md)
   - Hướng dẫn kỹ thuật: [`docs/tv3/README_TV3.md`](./docs/tv3/README_TV3.md)
   - Biểu đồ minh họa: [`docs/tv3/figures/`](./docs/tv3/figures/)
+- 🎤 **Trình bày giữa kỳ**:
+  - [`docs/DAN_Y_SLIDE.md`](./docs/DAN_Y_SLIDE.md) — Dàn ý 23 slide, phân vai, câu hỏi phản biện.
+  - [`docs/KICH_BAN_TRINH_BAY.md`](./docs/KICH_BAN_TRINH_BAY.md) — Lời thoại từng slide (đã đối chiếu số đo).
+  - [`docs/KET_QUA_COLAB_GIUA_KY.md`](./docs/KET_QUA_COLAB_GIUA_KY.md) — Bảng số đo Colab T4 dùng cho slide.
 - 📖 **Quy định Kỹ thuật & Kế hoạch Nhóm**:
   - [`PROJECT_PLAN.md`](./PROJECT_PLAN.md) — Kế hoạch tổng thể và ma trận phân công.
   - [`AGENTS.md`](./AGENTS.md) — Bộ 5 nguyên tắc kỹ thuật bắt buộc của dự án.

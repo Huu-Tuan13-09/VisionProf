@@ -1,7 +1,7 @@
 # Dàn ý slide trình bày hoàn chỉnh (24 phút · 23 slide · 3 thành viên)
 
 > Khung 22 slide của TV2, thêm phần **Nghiên cứu liên quan** (paper) theo nhận xét của thầy, và điền **số đo thật**.
-> 📖 **Bản nội dung chi tiết & Kịch bản thuyết trình đầy đủ:** [`docs/NOI_DUNG_SLIDE_CHI_TIET.md`](./NOI_DUNG_SLIDE_CHI_TIET.md).
+> 📖 **Lời thoại từng slide (đã đối chiếu số đo):** [`docs/KICH_BAN_TRINH_BAY.md`](./KICH_BAN_TRINH_BAY.md). Bộ slide HTML 24 trang (23 slide + phụ lục tài liệu tham khảo) dựng theo đúng dàn ý này.
 > Nguồn số liệu: `docs/KET_QUA_COLAB_GIUA_KY.md` (Colab T4, 18/10), báo cáo từng thành viên, `results/`.
 > Paper và hình: `docs/research/TONG_HOP_NGHIEN_CUU.md`, `docs/research/figures/`. Hình lấy từ paper phải **ghi nguồn ngay dưới hình**.
 > Quy tắc mỗi câu hỏi nghiên cứu: **1 bảng + 1 hình + 3 câu kết luận**.
@@ -81,14 +81,14 @@
   | ResNet-50: Conv | 85% | 83% |
   | MobileNetV3: Conv / BatchNorm | 73% / 14% | 47% / 25% |
   | BERT-base: Linear | 95% | 95% |
-  | ViT-B/16: Linear + Attention | 96% | 96% |
+  | ViT-B/16: Linear + Attention | 96% | 94% |
 
 - **Thông điệp chốt:** CPU dồn vào Conv (CNN 73–85%) và Linear + Attention (Transformer 95–96%). Lên GPU, phép tính lớn được tăng tốc nên layer nhỏ (BatchNorm, activation) chiếm tỷ trọng lớn hơn, rõ nhất ở mô hình nhẹ.
 
 ### Slide 9. CH1: GPU giúp được bao nhiêu, và vì sao?
 - **Bố cục:** `fig2_gpu_speedup.png` + `fig3_roofline.png`.
 - **Nội dung:**
-  - Tăng tốc T4 so với CPU (tổng thời gian các layer): BERT-base 9.6×, ViT 9.3×, DistilBERT 9.3× · ResNet-50 6.2×, YOLOv8n 5.6×, MobileNetV3 2.8×.
+  - Tăng tốc T4 so với CPU (tổng thời gian các layer): ViT 9.5×, BERT-base 9.0×, DistilBERT 8.8× · ResNet-50 5.8×, YOLOv8n 5.5×, MobileNetV3 3.0× · MLP 1.0×.
   - Layer lớn ở batch 1 chỉ đạt khoảng 30–55% sức tối đa của máy (Roofline).
   - Phép toán element-wise ít FLOPs nhưng vẫn tốn thời gian trên GPU (ShuffleNet V2, Ma et al., ECCV 2018, nguyên tắc G4).
 - **Thông điệp chốt:** Transformer (nhân ma trận lớn) tận dụng GPU tốt hơn CNN, nhất là CNN nhẹ.
@@ -173,7 +173,7 @@
 ## 🟩 TV3: Phần 5. Mức Giai đoạn, Chẩn đoán & Tổng kết (Slide 17–23 · 7.0')
 
 ### Slide 17. CH5 (1/2): Training tốn thời gian và bộ nhớ ở đâu?
-- **Bố cục:** Code mẫu `with timer.phase("backward"):` + `fig_ch5_backward_forward_ratio.png` + `fig_ch5_memory_train_vs_infer.png`.
+- **Bố cục:** Code mẫu `with timer.measure("backward"):` + `fig_ch5_backward_forward_ratio.png` + `fig_ch5_memory_train_vs_infer.png`.
 - **Nội dung:**
   - `PhaseTimer` đồng bộ GPU ở biên mỗi giai đoạn; không sửa mô hình.
   - Backward / forward trên T4: DistilBERT 2.21× · ResNet-50 1.82× · MobileNetV3 1.65× · MLP 1.39×.
@@ -182,7 +182,7 @@
 - **Thông điệp chốt:** Backward khoảng 1.4–2.2× forward (gần mức lý thuyết 2×); training tốn bộ nhớ gấp 3 lần vì phải giữ activation.
 
 ### Slide 18. CH5 (2/2): Nạp dữ liệu có làm GPU phải chờ?
-- **Bố cục:** Biểu đồ cột chồng data_load / forward / backward / optimizer theo `num_workers` (vẽ từ `results/colab_t4/*/TN6/bs32_fp32_w*/dataloader_summary.json`).
+- **Bố cục:** `docs/tv3/figures/fig_ch5_dataloader_workers.png` (cột chồng chờ dữ liệu / forward / backward / optimizer theo `num_workers`, vẽ bằng `experiments/tv3_dataloader_figure.py`).
 - **Nội dung:** DataLoader thật (ảnh JPEG giải mã + augmentation trên CPU), batch 32, Colab 2 vCPU:
 
   | | `num_workers=0` | `num_workers=2` | `num_workers=4` |
@@ -202,7 +202,7 @@
 
 ### Slide 20. Chẩn đoán tự động (19 luật) & so sánh A/B
 - **Bố cục:** Trái: danh mục luật với trạng thái **PASS / WARN / FAIL / SKIPPED**; phải: kiểm định A/B.
-- **Nội dung:** 4 nhóm luật (bộ nhớ RA, tính toán RB, nạp dữ liệu RC, kiến trúc RD); RB-04 dùng ms/GFLOP; A/B bằng Mann-Whitney U và Cliff's delta, speedup tính trên tổng thời gian mỗi vòng.
+- **Nội dung:** 4 nhóm luật: bộ nhớ RA (5), tính toán RB (5), nạp dữ liệu RC (4), kiến trúc RD (5); RB-04 dùng ms/GFLOP (ngưỡng 2.0); mỗi luật kèm gợi ý sửa code trên tab Chẩn đoán (ví dụ RC-01: chờ dữ liệu > 20% → `DataLoader(num_workers=2, pin_memory=True)`). A/B bằng Mann-Whitney U (p < 0.05) và Cliff's delta, speedup tính trên tổng thời gian mỗi vòng.
 
 ### Slide 21. Video demo dashboard (90 giây)
 - **Bố cục:** Video 16:9 nhúng giữa slide.
@@ -221,7 +221,7 @@
 ### Slide 23. Hạn chế, hướng phát triển & Q&A
 - **Nội dung:**
   - *Hạn chế:* không đo kernel GPU / hardware counter; khoảng 4–10% thời gian không thuộc layer nào (phép toán dạng hàm); 1 GPU; PyTorch eager; mô hình dùng trọng số khởi tạo ngẫu nhiên (đủ cho đo tốc độ, không dùng cho độ chính xác).
-  - *Hướng phát triển (cuối kỳ):* `torch.compile`, bắt toán tử bằng `TorchDispatchMode`, gợi ý sửa code trong chẩn đoán, thí nghiệm ablation.
+  - *Hướng phát triển (cuối kỳ):* `torch.compile`, bắt toán tử bằng `TorchDispatchMode`, thí nghiệm ablation, đo VRAM training của DistilBERT. (Gợi ý sửa code cho 19 luật đã xong 18/10.)
   - Tài liệu tham khảo (IEEE) ở slide phụ lục; mã QR tới repo.
 
 ---
@@ -243,6 +243,6 @@
 ## ✅ Checklist trước buổi trình bày
 
 - [ ] **TV1:** Slide 4–10.
-- [ ] **TV2:** Slide 11–16; đổi nhãn "CPU Laptop" thành "CPU MacBook (TV2)" trong `docs/tv2/figures/`; viết lại CH3, CH4 trong `docs/tv2/BAO_CAO_TV2.md` theo `docs/KET_QUA_COLAB_GIUA_KY.md`.
-- [ ] **TV3:** Slide 1–3, 17–23; vẽ hình cho Slide 18 từ `dataloader_summary.json`; quay video 90 giây cho Slide 21.
+- [ ] **TV2:** Slide 11–16. ✅ Đã đổi nhãn hình thành "CPU MacBook"; ✅ đã viết lại CH3, CH4 trong báo cáo.
+- [ ] **TV3:** Slide 1–3, 17–23; ✅ hình Slide 18 đã có; còn quay video 90 giây cho Slide 21.
 - [ ] **Cả nhóm:** Mẫu slide chung theo màu (🟩 TV3 · 🟧 TV1 · 🟦 TV2); tổng duyệt đúng 24 phút.

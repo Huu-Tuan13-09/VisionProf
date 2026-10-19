@@ -94,5 +94,5 @@ DataLoader thật: ảnh JPEG giải mã + augmentation trên CPU, batch 32, Col
 ## Còn lại để TV2 / TV3 tự sửa
 
 - Nhãn "CPU Laptop" trong `docs/tv2/figures/*.png` thực chất là MacBook của TV2: đổi nhãn (hoặc tên thư mục máy).
-- `docs/tv2/BAO_CAO_TV2.md`, `SLIDES_TV2.md`, dòng CH3, CH4 trong `README.md`: viết lại theo các bảng trên.
+- `docs/tv2/BAO_CAO_TV2.md`, dòng CH3, CH4 trong `README.md`: viết lại theo các bảng trên (✅ đã làm 18/10).
 - `docs/tv3/`: thêm kết quả nạp dữ liệu vào phần CH5.

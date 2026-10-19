@@ -70,7 +70,7 @@ Dưới đây là phân tích và phản biện kỹ lưỡng 10 vấn đề k�
 ---
 
 ### Vấn đề 1: Tử huyệt dữ liệu TN3, TN4, TN5 trên Colab T4 của TV2
-* **Hiện trạng thực tế**: Thư mục `results/colab_t4/` hiện tại **HOÀN TOÀN TRỐNG** cho các thực nghiệm TN3, TN4, TN5 (toàn bộ 39 thư mục dữ liệu giả lập sinh từ script cũ đã bị xoá theo yêu cầu tại [`YEU_CAU_DO_LAI_TN3_TN5.md`](tv2/YEU_CAU_DO_LAI_TN3_TN5.md)). Trong khi đó, `results/cpu_laptop/` đã có đầy đủ số đo thật.
+* **Hiện trạng thực tế**: Thư mục `results/colab_t4/` hiện tại **HOÀN TOÀN TRỐNG** cho các thực nghiệm TN3, TN4, TN5 (toàn bộ 39 thư mục dữ liệu giả lập sinh từ script cũ đã bị xoá; yêu cầu đo lại đã hoàn thành 18/10 nên file yêu cầu cũng đã gỡ). Trong khi đó, `results/cpu_laptop/` đã có đầy đủ số đo thật.
 * **Phản biện kỹ thuật**: 
   - Nếu mang báo cáo đi nộp hoặc trình bày slide mà chưa chạy đo thật trên Colab T4, các câu hỏi nghiên cứu **CH3** (Đảo thứ hạng CPU vs GPU) và **CH4** (Mở rộng Batch size, Tensor Cores FP16) sẽ không có bất kỳ bằng chứng thực nghiệm GPU nào hỗ trợ.
   - Hội đồng chuyên môn chỉ cần kiểm tra file `summary.json` và `benchmark.csv` là phát hiện ngay việc thiếu hụt số liệu GPU.

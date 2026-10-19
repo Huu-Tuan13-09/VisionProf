@@ -36,7 +36,7 @@ Do repository là **Private** và thuộc tài khoản cá nhân (`Huu-Tuan13-09
 ## ⚙️ Bước 2: Cấu Hình Token Vào Google Colab Secrets
 
 1. Mở trình duyệt: [colab.research.google.com](https://colab.research.google.com).
-2. Mở file [`notebooks/colab_runner.ipynb`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/notebooks/colab_runner.ipynb):
+2. Mở file [`notebooks/colab_runner.ipynb`](../notebooks/colab_runner.ipynb):
    - Chọn tab **Upload** $\rightarrow$ chọn file `colab_runner.ipynb` từ máy tính của bạn.
    - Hoặc chọn tab **GitHub** $\rightarrow$ nhập URL repo `VisionProf` $\rightarrow$ chọn nhánh bạn muốn chạy.
 3. Ở **thanh công cụ bên trái của Colab**, bấm vào biểu tượng **chìa khóa (Secrets) 🔑**:
@@ -64,7 +64,7 @@ Trên menu Colab:
 - Mục **Hardware accelerator**: Chọn **T4 GPU** $\rightarrow$ bấm **Save**.
 
 ### 3.2. Chạy Thực Nghiệm & Nhập Tên Nhánh Tương Tác (Interactive Input)
-Trong notebook [`colab_runner.ipynb`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/notebooks/colab_runner.ipynb):
+Trong notebook [`colab_runner.ipynb`](../notebooks/colab_runner.ipynb):
 
 1. **Chọn nhánh làm việc (Cell 2)**:
    Khi chạy Cell 2, hộp thoại nhập liệu tương tác sẽ xuất hiện ngay dưới cell:

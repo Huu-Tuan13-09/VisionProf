@@ -1,6 +1,6 @@
 # AI Agent Instructions for VisionProf
 
-> **QUAN TRỌNG**: Dự án này có bộ quy tắc kỹ thuật chuyên sâu đặt tại thư mục [`agent-rules/`](file:///Users/congtri/IT/Dai_Hoc/Xu_ly_du_lieu/VisionProf/agent-rules).  
+> **QUAN TRỌNG**: Dự án này có bộ quy tắc kỹ thuật chuyên sâu đặt tại thư mục [`agent-rules/`](./agent-rules).  
 > Mọi AI Agent tham gia đọc hiểu, viết code, sửa lỗi hoặc tái cấu trúc trong kho lưu trữ này **BẮT BUỘC** phải tuân thủ nghiêm ngặt các quy định dưới đây.
 
 ---
