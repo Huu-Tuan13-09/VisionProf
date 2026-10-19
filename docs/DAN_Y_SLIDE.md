@@ -1,6 +1,7 @@
 # Dàn ý slide trình bày hoàn chỉnh (24 phút · 23 slide · 3 thành viên)
 
 > Khung 22 slide của TV2, thêm phần **Nghiên cứu liên quan** (paper) theo nhận xét của thầy, và điền **số đo thật**.
+> 📖 **Bản nội dung chi tiết & Kịch bản thuyết trình đầy đủ:** [`docs/NOI_DUNG_SLIDE_CHI_TIET.md`](./NOI_DUNG_SLIDE_CHI_TIET.md).
 > Nguồn số liệu: `docs/KET_QUA_COLAB_GIUA_KY.md` (Colab T4, 18/10), báo cáo từng thành viên, `results/`.
 > Paper và hình: `docs/research/TONG_HOP_NGHIEN_CUU.md`, `docs/research/figures/`. Hình lấy từ paper phải **ghi nguồn ngay dưới hình**.
 > Quy tắc mỗi câu hỏi nghiên cứu: **1 bảng + 1 hình + 3 câu kết luận**.
