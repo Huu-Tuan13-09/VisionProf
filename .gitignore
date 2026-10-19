@@ -33,3 +33,6 @@ docs/research/*.pdf
 
 # Windows download metadata
 *:Zone.Identifier
+
+# Tài liệu tham khảo của nhóm khác: chỉ giữ trên máy, không đưa lên repo
+Blue Modern Robotics Automation Engineering Group Project Presentation.pdf
