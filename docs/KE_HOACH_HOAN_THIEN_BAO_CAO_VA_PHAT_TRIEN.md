@@ -2,7 +2,7 @@
 
 > **Tài liệu quy chuẩn hành động (Actionable Roadmap & Defense Strategy)**  
 > **Dự án**: [VisionProf](../README.md) — Cross-Platform AI Profiling & Automated Heuristic Diagnostic Framework  
-> **Cơ sở đối chiếu**: [`NGHIEN_CUU_KHOA_HOC_VA_CO_SO_PHAT_TRIEN.md`](NGHIEN_CUU_KHOA_HOC_VA_CO_SO_PHAT_TRIEN.md), [`NGHIEN_CUU_SO_SANH_PAPER_VA_VISIONPROF.md`](NGHIEN_CUU_SO_SANH_PAPER_VA_VISIONPROF.md), [`PROJECT_PLAN.md`](../PROJECT_PLAN.md), [`DAN_Y_SLIDE.md`](DAN_Y_SLIDE.md) và toàn bộ mã nguồn thực tế tại [`src/`](../src).  
+> **Cơ sở đối chiếu**: [`NGHIEN_CUU_KHOA_HOC_VA_CO_SO_PHAT_TRIEN.md`](NGHIEN_CUU_KHOA_HOC_VA_CO_SO_PHAT_TRIEN.md), [`research/TONG_HOP_NGHIEN_CUU.md`](research/TONG_HOP_NGHIEN_CUU.md), [`PROJECT_PLAN.md`](../PROJECT_PLAN.md), [`DAN_Y_SLIDE.md`](DAN_Y_SLIDE.md) và toàn bộ mã nguồn thực tế tại [`src/`](../src).  
 > **Mục tiêu cốt lõi**: **Rà soát thực tế mã nguồn**, **phân tích phản biện kỹ thuật sâu sắc**, phân định rạch ròi giữa **những việc BẮT BUỘC hoàn thiện để báo cáo bảo vệ** và **những bài toán ĐẶT VÀO PHƯƠNG HƯỚNG PHÁT TRIỂN TIẾP THEO (Future Work)**.
 
 > **Cập nhật 18/10/2026 (sau lượt đo Colab T4):** Vấn đề 1 đã xong: TN3, TN4, TN5 đo thật trên T4, đã có số
