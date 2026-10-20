@@ -278,7 +278,8 @@ for r in results:
   - Biểu đồ minh họa: [`docs/tv3/figures/`](./docs/tv3/figures/)
 - 🎤 **Trình bày giữa kỳ**:
   - [`docs/DAN_Y_SLIDE.md`](./docs/DAN_Y_SLIDE.md) — Dàn ý 23 slide, phân vai, câu hỏi phản biện.
-  - [`docs/KICH_BAN_TRINH_BAY.md`](./docs/KICH_BAN_TRINH_BAY.md) — Lời thoại từng slide (đã đối chiếu số đo).
+  - Hướng dẫn trình bày từng người (lời thoại, số cần nhớ, câu hỏi phản biện): [`docs/tv1/TRINH_BAY_QUAN.md`](./docs/tv1/TRINH_BAY_QUAN.md) · [`docs/tv2/TRINH_BAY_TRI.md`](./docs/tv2/TRINH_BAY_TRI.md) · [`docs/tv3/TRINH_BAY_TUAN.md`](./docs/tv3/TRINH_BAY_TUAN.md).
+  - [`docs/HUONG_DAN_CHAY_DASHBOARD.md`](./docs/HUONG_DAN_CHAY_DASHBOARD.md) — Chạy dashboard khi được hỏi.
   - [`docs/KET_QUA_COLAB_GIUA_KY.md`](./docs/KET_QUA_COLAB_GIUA_KY.md) — Bảng số đo Colab T4 dùng cho slide.
 - 📖 **Quy định Kỹ thuật & Kế hoạch Nhóm**:
   - [`PROJECT_PLAN.md`](./PROJECT_PLAN.md) — Kế hoạch tổng thể và ma trận phân công.

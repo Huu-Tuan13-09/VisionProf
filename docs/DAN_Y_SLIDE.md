@@ -1,17 +1,27 @@
 # Dàn ý slide trình bày hoàn chỉnh (24 phút · 23 slide · 3 thành viên)
 
 > Khung 22 slide của TV2, thêm phần **Nghiên cứu liên quan** (paper) theo nhận xét của thầy, và điền **số đo thật**.
-> 📖 **Lời thoại từng slide (đã đối chiếu số đo):** [`docs/KICH_BAN_TRINH_BAY.md`](./KICH_BAN_TRINH_BAY.md). Bộ slide HTML 24 trang (23 slide + phụ lục tài liệu tham khảo) dựng theo đúng dàn ý này.
+> 📖 **Hướng dẫn trình bày từng người:** [`tv1/TRINH_BAY_QUAN.md`](tv1/TRINH_BAY_QUAN.md) · [`tv2/TRINH_BAY_TRI.md`](tv2/TRINH_BAY_TRI.md) · [`tv3/TRINH_BAY_TUAN.md`](tv3/TRINH_BAY_TUAN.md).
 > Nguồn số liệu: `docs/KET_QUA_COLAB_GIUA_KY.md` (Colab T4, 18/10), báo cáo từng thành viên, `results/`.
 > Paper và hình: `docs/research/TONG_HOP_NGHIEN_CUU.md`, `docs/research/figures/`. Hình lấy từ paper phải **ghi nguồn ngay dưới hình**.
 > Quy tắc mỗi câu hỏi nghiên cứu: **1 bảng + 1 hình + 3 câu kết luận**.
 
 ---
 
-## ⏱️ Tổng quan phân bổ thời gian & Phân vai
+## ⏱️ Tổng quan phân bổ thời gian & Phân vai (cập nhật 20/10)
 
-| Phần | Người phụ trách | Slide | Thời lượng | Trọng tâm |
+> Bộ slide HTML 31 trang: mỗi người 10 slide; thời gian Trí > Quân > Tuân, chênh khoảng 1 phút. Mỗi người tự trình bày ảnh chụp dashboard của phần mình. Số slide dưới đây theo bộ HTML; các mục chi tiết bên dưới vẫn giữ đánh số dàn ý cũ.
+
+| Phần | Người trình bày | Slide (HTML) | Thời lượng | Trọng tâm |
 | :--- | :---: | :---: | :---: | :--- |
+| **Mở đầu & Khung bài toán** | 🟦 **Trương Công Trí** | **1–3** | 2.5' | Định vị Profiling, 3 mức đo, sợi chỉ đỏ |
+| **Nghiên cứu liên quan** | 🟧 **Võ Trần Anh Quân** | **4–7** | 3.0' | MLModelScope, Roofline, XSP, bảng so sánh |
+| **Mức Layer + dashboard** | 🟧 **Võ Trần Anh Quân** | **8–13** | 5.2' | Đo GPU, CH1, CH2, tab Layer |
+| **Mức Model + dashboard** | 🟦 **Trương Công Trí** | **14–20** | 6.7' | Đo sạch 2 pha, P50–P99, CH3, CH4, tab FP16 |
+| **Giai đoạn, chẩn đoán, tổng kết + dashboard** | 🟩 **Phạm Hữu Tuân** | **21–30** | 7.3' | CH5, CH6, 19 luật, A/B, 4 tab dashboard, kết luận |
+| **Tổng cộng** | Trí 9.2' · Quân 8.2' · Tuân 7.3' | **30 + phụ lục** | **~25'** | Q&A: mở dashboard thật (`docs/HUONG_DAN_CHAY_DASHBOARD.md`) |
+
+--- | :---: | :---: | :---: | :--- |
 | **Phần 1: Mở đầu & Khung bài toán** | 🟩 **TV3** | **1–3** | **2.5'** | Định vị Profiling, 3 mức đo, 2 mô hình xuyên suốt |
 | **Phần 2: Nghiên cứu liên quan** | 🟧 **TV1** | **4–6** | **3.0'** | Các mức profiling, Roofline & overhead, so sánh & khoảng trống |
 | **Phần 3: Mức Layer** | 🟧 **TV1** | **7–10** | **5.0'** | Đo GPU, CH1, CH2 (tự kiểm chứng TN2) |
@@ -204,9 +214,9 @@
 - **Bố cục:** Trái: danh mục luật với trạng thái **PASS / WARN / FAIL / SKIPPED**; phải: kiểm định A/B.
 - **Nội dung:** 4 nhóm luật: bộ nhớ RA (5), tính toán RB (5), nạp dữ liệu RC (4), kiến trúc RD (5); RB-04 dùng ms/GFLOP (ngưỡng 2.0); mỗi luật kèm gợi ý sửa code trên tab Chẩn đoán (ví dụ RC-01: chờ dữ liệu > 20% → `DataLoader(num_workers=2, pin_memory=True)`). A/B bằng Mann-Whitney U (p < 0.05) và Cliff's delta, speedup tính trên tổng thời gian mỗi vòng.
 
-### Slide 21. Video demo dashboard (90 giây)
-- **Bố cục:** Video 16:9 nhúng giữa slide.
-- **Nội dung:** Tab Layer (tỷ trọng + Roofline) → Tab Model (CPU / GPU, batch) → Tab Training & Pipeline → Tab Chẩn đoán & A/B. Dashboard `streamlit run src/dashboard/app.py` chạy sẵn để demo trực tiếp khi hỏi đáp.
+### Slide 21. Demo dashboard (6 slide ảnh chụp, khoảng 90 giây)
+- **Bố cục:** Mỗi slide 1 ảnh chụp dashboard to + 3 ý cần chỉ vào: tab Layer, FP16 (CPU và T4), DataLoader, Pipeline, Chẩn đoán (mở RB-04), A/B (ViT FP32 so với FP16). Trong bộ slide HTML là trang 23–28.
+- **Nội dung:** Dashboard `streamlit run src/dashboard/app.py` chạy sẵn để mở trực tiếp khi thầy hỏi; cách chạy và tab ứng với từng slide: `docs/HUONG_DAN_CHAY_DASHBOARD.md`.
 
 ### Slide 22. Tổng kết 6 câu hỏi nghiên cứu
 - **Bố cục:** Bảng 6 dòng: câu hỏi · câu trả lời · bằng chứng.
@@ -244,5 +254,5 @@
 
 - [ ] **TV1:** Slide 4–10.
 - [ ] **TV2:** Slide 11–16. ✅ Đã đổi nhãn hình thành "CPU MacBook"; ✅ đã viết lại CH3, CH4 trong báo cáo.
-- [ ] **TV3:** Slide 1–3, 17–23; ✅ hình Slide 18 đã có; còn quay video 90 giây cho Slide 21.
+- [ ] **TV3:** Slide 1–3, 17–23; ✅ hình Slide 18 đã có; ✅ ảnh chụp dashboard cho phần demo đã có; chạy thử dashboard trên máy trình chiếu.
 - [ ] **Cả nhóm:** Mẫu slide chung theo màu (🟩 TV3 · 🟧 TV1 · 🟦 TV2); tổng duyệt đúng 24 phút.
