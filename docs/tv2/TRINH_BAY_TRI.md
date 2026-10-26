@@ -1,14 +1,14 @@
 # Hướng dẫn trình bày · Trương Công Trí
 
-> **Phần:** Mở đầu và mức Model (CH3, CH4) · **Màu slide:** 🟦 xanh dương · **Slide:** 1–3, 14–20 (10 slide) · **Thời lượng:** khoảng 9.2 phút
+> **Phần:** Mở đầu và mức Model (CH3, CH4) · **Màu slide:** 🟦 xanh dương · **Slide:** 1–4, 15–21 (11 slide) · **Thời lượng:** khoảng 9.8 phút
 > Lời thoại lấy từ ghi chú người nói trong bộ slide; số liệu đã đối chiếu `results/`. Không cần đọc thuộc: nhìn cột "Ý chính" là đủ nhắc.
 
 ## Vị trí trong buổi trình bày
 
-- Bạn mở đầu buổi trình bày (slide 1–3) rồi chuyển cho Quân.
-- Quân chuyển lại cho bạn ở cuối slide 13: *"Đo tổng thời gian sạch của cả mô hình là phần của bạn Trí."*
-- Bạn kết thúc ở slide 20 bằng câu chuyển cho Tuân.
-- Thứ tự cả nhóm: Trí (1–3) → Quân (4–13) → Trí (14–20) → Tuân (21–30); slide 31 là phụ lục tài liệu tham khảo.
+- Bạn mở đầu buổi trình bày (slide 1–4, gồm slide 6 câu hỏi nghiên cứu) rồi chuyển cho Quân.
+- Quân chuyển lại cho bạn ở cuối slide 14: *"Đo tổng thời gian sạch của cả mô hình là phần của bạn Trí."*
+- Bạn kết thúc ở slide 21 bằng câu chuyển cho Tuân.
+- Thứ tự cả nhóm: Trí (1–4) → Quân (5–14) → Trí (15–21) → Tuân (22–31); slide 32 là phụ lục tài liệu tham khảo.
 
 ## Tóm tắt các slide
 
@@ -17,13 +17,14 @@
 | 1 | VisionProf | 40 giây | Chào, giới thiệu đề tài, nói thứ tự trình bày. |
 | 2 | Evaluation, Benchmarking hay Profiling? | 50 giây | Evaluation ngoài phạm vi · Benchmarking là mức Model · Profiling là trọng tâm. |
 | 3 | 3 mức đo, 6 câu hỏi nghiên cứu | 60 giây | 3 mức ↔ 3 người ↔ CH1–CH6; 8 mô hình; GPU T4 trên Colab; sợi chỉ đỏ ResNet-50 so với ViT, BERT. |
-| 14 | 8 mô hình, một cách đo chung, tách 2 pha | 60 giây | ModelAdapter 3 hàm; pha 1 đo sạch không hook (15 vòng khởi động + 50 vòng đo); pha 2 mới gắn hook. |
-| 15 | Báo cáo phân vị, không dùng trung bình | 60 giây | Báo P50–P99 theo MLPerf; ResNet-50 P99 = 1.76 × P50; ViT ổn định; 2 máy CPU khác nhau. |
-| 16 | Ít tham số có chắc nhanh hơn? | 75 giây | T4: ResNet-50 ≈ MobileNetV3 ≈ 6 ms dù FLOPs chênh 19×; MLP GPU 0.28 ms, CPU 0.04 ms; MobileNetV3 176 ms trên chip Apple. |
-| 17 | Thứ hạng tốc độ thay đổi theo phần cứng | 60 giây | MobileNetV3 8→5, YOLOv8n 7→6, BERT 5→7, ViT 6→8; không có mô hình nhanh nhất mọi nơi. |
-| 18 | Tăng batch và độ dài câu | 65 giây | MobileNetV3 ×8.8 (170 → 1 499 ảnh/s); ViT bão hoà từ batch 8; BERT 127 → 228 → 507 ms theo độ dài câu. |
-| 19 | FP16 trên T4: luôn giảm bộ nhớ, không phải lúc nào cũng nhanh hơn | 65 giây | ViT 2.81×, DistilBERT 1.55×, BERT 1.23×; CNN chậm hơn (0.77–0.87×); VRAM giảm 38–49%. |
-| 20 | Tab CPU và T4: FP16 có nhanh hơn không | 15 giây | Bảng FP16 trên dashboard. Kết thúc bằng câu chuyển cho Tuân. |
+| 4 | 6 câu hỏi nghiên cứu và thí nghiệm trả lời | 40 giây | CH1–CH2 mức Layer (TN1, TN2) · CH3–CH4 mức Model (TN3–TN5) · CH5–CH6 mức Giai đoạn (TN6, TN7). |
+| 15 | 8 mô hình, một cách đo chung, tách 2 pha | 60 giây | ModelAdapter 3 hàm; pha 1 đo sạch không hook (15 vòng khởi động + 50 vòng đo); pha 2 mới gắn hook. |
+| 16 | Báo cáo phân vị, không dùng trung bình | 60 giây | Báo P50–P99 theo MLPerf; ResNet-50 P99 = 1.76 × P50; ViT ổn định; 2 máy CPU khác nhau. |
+| 17 | Ít tham số có chắc nhanh hơn? | 75 giây | T4: ResNet-50 ≈ MobileNetV3 ≈ 6 ms dù FLOPs chênh 19×; MLP GPU 0.28 ms, CPU 0.04 ms; MobileNetV3 176 ms trên chip Apple. |
+| 18 | Thứ hạng tốc độ thay đổi theo phần cứng | 60 giây | MobileNetV3 8→5, YOLOv8n 7→6, BERT 5→7, ViT 6→8; không có mô hình nhanh nhất mọi nơi. |
+| 19 | Tăng batch và độ dài câu | 65 giây | MobileNetV3 ×8.8 (170 → 1 499 ảnh/s); ViT bão hoà từ batch 8; BERT 127 → 228 → 507 ms theo độ dài câu. |
+| 20 | FP16 trên T4: luôn giảm bộ nhớ, không phải lúc nào cũng nhanh hơn | 65 giây | ViT 2.81×, DistilBERT 1.55×, BERT 1.23×; CNN chậm hơn (0.77–0.87×); VRAM giảm 38–49%. |
+| 21 | Tab CPU và T4: FP16 có nhanh hơn không | 15 giây | Bảng FP16 trên dashboard. Kết thúc bằng câu chuyển cho Tuân. |
 
 ## Lời thoại từng slide
 
@@ -64,9 +65,18 @@ Nhóm đo 8 mô hình thuộc 3 loại dữ liệu. GPU là Tesla T4 trên Googl
 
 Sợi chỉ đỏ xuyên suốt là so sánh CNN, đại diện là ResNet-50, với Transformer là ViT và BERT.
 
+> ➡️ **Chuyển: Cụ thể 6 câu hỏi như sau.**
+
+### Slide 4. 6 câu hỏi nghiên cứu và thí nghiệm trả lời
+*khoảng 40 giây · Ý chính: CH1–CH2 mức Layer (TN1, TN2) · CH3–CH4 mức Model (TN3–TN5) · CH5–CH6 mức Giai đoạn (TN6, TN7).*
+
+Cụ thể, 6 câu hỏi nghiên cứu là thế này. Mức Layer trả lời CH1: thời gian tập trung ở loại layer nào, và CH2: công cụ đo có đúng không. Mức Model trả lời CH3: ít tham số có chắc nhanh hơn, và CH4: tăng batch, độ dài câu, FP16 thì thay đổi ra sao. Mức Giai đoạn trả lời CH5: training tốn ở đâu, GPU có phải chờ dữ liệu không, và CH6: trong ứng dụng thật, phần ngoài mô hình chiếm bao nhiêu.
+
+Mỗi câu hỏi có một thí nghiệm riêng, đánh số TN1 đến TN7; các slide sau sẽ gọi tắt như vậy.
+
 > ➡️ **Chuyển: Trước khi vào thiết kế, bạn Quân sẽ trình bày các nghiên cứu đi trước và khoảng trống nhóm muốn lấp.**
 
-### Slide 14. 8 mô hình, một cách đo chung, tách 2 pha
+### Slide 15. 8 mô hình, một cách đo chung, tách 2 pha
 *khoảng 60 giây · Ý chính: ModelAdapter 3 hàm; pha 1 đo sạch không hook (15 vòng khởi động + 50 vòng đo); pha 2 mới gắn hook.*
 
 Cảm ơn bạn Quân. Em trình bày mức Model: đo cả mô hình chạy nhanh bao nhiêu, tốn bao nhiêu bộ nhớ.
@@ -79,7 +89,7 @@ Pha 2 mới gắn bộ đo Layer của bạn Quân và bộ đo Giai đoạn c�
 
 Nhờ tách 2 pha, overhead 110 đến 210% của hook mà bạn Quân vừa nói không lọt vào độ trễ nhóm báo cáo.
 
-### Slide 15. Báo cáo phân vị, không dùng trung bình
+### Slide 16. Báo cáo phân vị, không dùng trung bình
 *khoảng 60 giây · Ý chính: Báo P50–P99 theo MLPerf; ResNet-50 P99 = 1.76 × P50; ViT ổn định; 2 máy CPU khác nhau.*
 
 Nhóm không báo cáo độ trễ trung bình mà báo cáo theo phân vị: P50 là trung vị, P90, P95, P99 là phần đuôi. Lý do theo chuẩn MLPerf Inference của Reddi và cộng sự, ISCA 2020: người dùng cảm nhận những lần chậm, nên chuẩn công nghiệp lấy phân vị 90 hoặc 99.
@@ -90,7 +100,7 @@ Mỗi lần chạy, công cụ tự lưu thông tin máy và phiên bản thư v
 
 Một lưu ý quan trọng: "CPU laptop" trong đề tài là 2 máy khác nhau. Thí nghiệm mức Layer chạy trên laptop x86 của bạn Quân; thí nghiệm mức Model chạy trên MacBook chip Apple của em. Nhóm không so số CPU giữa 2 máy này.
 
-### Slide 16. Ít tham số có chắc nhanh hơn?
+### Slide 17. Ít tham số có chắc nhanh hơn?
 *khoảng 75 giây · Ý chính: T4: ResNet-50 ≈ MobileNetV3 ≈ 6 ms dù FLOPs chênh 19×; MLP GPU 0.28 ms, CPU 0.04 ms; MobileNetV3 176 ms trên chip Apple.*
 
 Câu hỏi CH3: mô hình ít tham số có chắc chạy nhanh hơn không. Bảng bên trái là độ trễ trung vị ở batch 1, FP32, sắp theo T4.
@@ -99,9 +109,9 @@ Phát hiện thứ nhất, ở 2 dòng tô màu: trên T4, MobileNetV3 có số 
 
 Phát hiện thứ hai: mô hình rất nhỏ chạy trên GPU còn chậm hơn CPU. MLP mất 0.28 mili giây trên T4 nhưng chỉ 0.04 trên CPU, vì chi phí gửi lệnh và chép dữ liệu sang GPU lớn hơn chính phép tính.
 
-Phát hiện thứ ba, phải nói cho đúng: MobileNetV3 trên MacBook chip Apple chậm bất thường, 176 mili giây, trong khi trên laptop x86 của Quân chỉ khoảng 12. Nghĩa là tốc độ phụ thuộc cả mức tối ưu của thư viện cho từng phần cứng, không chỉ ở kiến trúc mô hình.
+Phát hiện thứ ba, phải nói cho đúng: MobileNetV3 trên MacBook chip Apple chậm bất thường, 176 mili giây, trong khi trên laptop x86 chỉ khoảng 12. Nghĩa là tốc độ phụ thuộc cả mức tối ưu của thư viện cho từng phần cứng, không chỉ ở kiến trúc mô hình.
 
-### Slide 17. Thứ hạng tốc độ thay đổi theo phần cứng
+### Slide 18. Thứ hạng tốc độ thay đổi theo phần cứng
 *khoảng 60 giây · Ý chính: MobileNetV3 8→5, YOLOv8n 7→6, BERT 5→7, ViT 6→8; không có mô hình nhanh nhất mọi nơi.*
 
 Hình này xếp hạng 8 mô hình theo độ trễ, bên trái trên MacBook, bên phải trên T4. Hạng 1 là nhanh nhất.
@@ -110,7 +120,7 @@ Thứ hạng có thay đổi: MobileNetV3 từ hạng 8 lên hạng 5, YOLOv8n t
 
 Nhưng em nói rõ: phần lớn sự thay đổi đến từ việc MobileNetV3 chạy chậm bất thường trên chip Apple như slide trước. Vì vậy nhóm không gọi đây là "GPU đảo ngược thứ hạng", mà rút ra bài học thực tế hơn: không có mô hình nhanh nhất ở mọi nơi. Chọn mô hình phải đo trên đúng phần cứng sẽ triển khai.
 
-### Slide 18. Tăng batch và độ dài câu
+### Slide 19. Tăng batch và độ dài câu
 *khoảng 65 giây · Ý chính: MobileNetV3 ×8.8 (170 → 1 499 ảnh/s); ViT bão hoà từ batch 8; BERT 127 → 228 → 507 ms theo độ dài câu.*
 
 Câu hỏi CH4, phần thứ nhất: tăng batch thì thông lượng tăng bao nhiêu. Bảng bên trái là số mẫu xử lý mỗi giây trên T4.
@@ -121,7 +131,7 @@ Phần thứ hai, với mô hình văn bản: BERT-base ở batch 32 mất 127 m
 
 Kết luận: mô hình nhẹ cần batch lớn mới tận dụng GPU, mô hình nặng bão hoà sớm, và với NLP cần giới hạn độ dài câu.
 
-### Slide 19. FP16 trên T4: luôn giảm bộ nhớ, không phải lúc nào cũng nhanh hơn
+### Slide 20. FP16 trên T4: luôn giảm bộ nhớ, không phải lúc nào cũng nhanh hơn
 *khoảng 65 giây · Ý chính: ViT 2.81×, DistilBERT 1.55×, BERT 1.23×; CNN chậm hơn (0.77–0.87×); VRAM giảm 38–49%.*
 
 Phần thứ hai của CH4: chuyển sang FP16 trên T4, batch 1.
@@ -134,10 +144,10 @@ Về độ chính xác số học: nhóm so output FP16 với FP32 cùng trọng
 
 Bảng này cũng xem được trực tiếp trên dashboard.
 
-### Slide 20. Tab CPU và T4: FP16 có nhanh hơn không
+### Slide 21. Tab CPU và T4: FP16 có nhanh hơn không
 *khoảng 15 giây · Ý chính: Bảng FP16 trên dashboard. Kết thúc bằng câu chuyển cho Tuân.*
 
-Trên dashboard, tab CPU và T4 có mục FP16: mỗi dòng là một mô hình với độ trễ FP32, FP16, mức tăng tốc và VRAM tiết kiệm. Ta thấy ngay ViT nhanh hơn 2.81 lần, còn ResNet-50 và YOLOv8n chậm hơn ở batch 1. Khung xanh bên dưới tự tóm tắt kết luận.
+Trên dashboard, tab CPU và T4 có mục FP16: mỗi dòng là một mô hình với độ trễ FP32, FP16, mức tăng tốc và VRAM tiết kiệm. Ta thấy ngay ViT nhanh hơn 2.81 lần, còn ResNet-50 và YOLOv8n chậm hơn ở batch 1.
 
 > ➡️ **Chuyển: Mô hình chỉ là một mắt xích. Bạn Tuân sẽ đưa chúng ta đến training và pipeline thật.**
 
@@ -169,7 +179,7 @@ Trên dashboard, tab CPU và T4 có mục FP16: mỗi dòng là một mô hình 
 
 **H: Đo 2 pha để làm gì?**
 
-Đ: Pha 1 đo độ trễ không gắn hook nên số sạch; pha 2 mới gắn bộ đo Layer và Giai đoạn để phân rã. Overhead của hook (slide 12) không lọt vào độ trễ báo cáo.
+Đ: Pha 1 đo độ trễ không gắn hook nên số sạch; pha 2 mới gắn bộ đo Layer và Giai đoạn để phân rã. Overhead của hook (slide 13) không lọt vào độ trễ báo cáo.
 
 ## Trước giờ trình bày
 

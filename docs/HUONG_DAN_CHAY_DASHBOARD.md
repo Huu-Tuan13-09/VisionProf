@@ -1,6 +1,6 @@
 # Chạy dashboard khi trình bày
 
-Slide 13, 20, 23, 25, 27, 28 là ảnh chụp dashboard. Khi thầy muốn xem trực tiếp, mở dashboard trên máy đang trình chiếu.
+Slide 14, 21, 24, 26, 28, 29 là ảnh chụp dashboard. Khi thầy muốn xem trực tiếp, mở dashboard trên máy đang trình chiếu.
 Dashboard chỉ đọc số liệu có sẵn trong `results/`, không chạy mô hình, nên không cần GPU hay torch.
 
 ## 1. Cài một lần
@@ -27,12 +27,12 @@ Trên WSL, mở link này bằng trình duyệt của Windows như bình thườ
 
 | Slide | Tab trên thanh bên trái | Thao tác để giống ảnh trên slide |
 | :-: | :--- | :--- |
-| 13 | 3. Leaf Layer Breakdown | Mô hình mặc định MobileNetV3-Large |
-| 20 | 2. Colab CPU vs T4 GPU | Kéo xuống mục 3 (FP16) |
-| 23 | 5. TN6 — Training Phases | Tab con "DataLoader & Workers" |
-| 25 | 6. TN7 — Pipeline Breakdown | Tab con "Overhead % Bar" |
-| 27 | 7. Diagnostic Engine | Chọn `colab_t4/mobilenet_v3_large/TN3/bs1_fp32`, mở luật RB-04 |
-| 28 | 8. A/B Testing & Speedup | A = `colab_t4/vit_b_16/TN3/bs1_fp32`, B = `colab_t4/vit_b_16/TN5/bs1_fp16` |
+| 14 | 3. Leaf Layer Breakdown | Mô hình mặc định MobileNetV3-Large |
+| 21 | 2. Colab CPU vs T4 GPU | Kéo xuống mục 3 (FP16) |
+| 24 | 5. TN6 — Training Phases | Tab con "DataLoader & Workers" |
+| 26 | 6. TN7 — Pipeline Breakdown | Tab con "Overhead % Bar" |
+| 28 | 7. Diagnostic Engine | Chọn `colab_t4/mobilenet_v3_large/TN3/bs1_fp32`, mở luật RB-04 |
+| 29 | 8. A/B Testing & Speedup | A = `colab_t4/vit_b_16/TN3/bs1_fp32`, B = `colab_t4/vit_b_16/TN5/bs1_fp16` |
 
 Ô chọn có tìm kiếm: bấm vào rồi gõ một phần tên, ví dụ `mobilenet_v3_large/TN3`.
 

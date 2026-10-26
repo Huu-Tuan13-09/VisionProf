@@ -1,177 +1,323 @@
-# Hướng dẫn trình bày · Võ Trần Anh Quân
+# Phần trình bày của Võ Trần Anh Quân · slide 5–14
+
+> **Phần:** Nghiên cứu liên quan và mức Layer (CH1, CH2) · **Màu slide:** 🟧 cam · **10 slide, khoảng 9 phút**
+> Đọc phần A trước để nắm cả mạch, rồi mới đọc phần B cho từng slide. Lời thoại đầy đủ nằm trong ghi chú người nói của bộ slide; chữ trên slide đã đủ để nhìn vào mà nói.
+
+---
+
+## A. Hiểu tổng thể trước
+
+### A1. VisionProf là gì, phần của bạn nằm ở đâu
+
+VisionProf là công cụ nhẹ cho PyTorch: gắn vào mô hình có sẵn, **không sửa mã mô hình**, đo được thời gian và bộ nhớ đi vào đâu. Nhóm đo ở 3 mức, mỗi người một mức:
+
+| Mức | Người | Hỏi gì | Câu hỏi | Thí nghiệm |
+| :-- | :-- | :-- | :-: | :-: |
+| **Layer** | **Quân** | Bên trong mô hình, layer nào tốn thời gian, vì sao | **CH1, CH2** | **TN1, TN2** |
+| Model | Trí | Cả mô hình chạy nhanh bao nhiêu, tốn bao nhiêu bộ nhớ | CH3, CH4 | TN3–TN5 |
+| Giai đoạn | Tuân | Training và pipeline thật tốn ở bước nào | CH5, CH6 | TN6, TN7 |
+
+- **CH1:** Thời gian tập trung ở loại layer nào? CPU và GPU khác nhau ra sao? → trả lời bằng **TN1**.
+- **CH2:** Công cụ đo có chính xác không, làm mô hình chậm đi bao nhiêu? → trả lời bằng **TN2**.
+- **Máy đo phần của bạn:** CPU là **laptop x86 của bạn**, GPU là **Tesla T4 trên Colab**. Mọi số đo đều ở **batch 1, FP32**.
+- **Mô hình:** 7 mô hình PyTorch (ResNet-50, MobileNetV3-Large, ViT-B/16, YOLOv8n, BERT-base, DistilBERT, MLP). XGBoost không có layer PyTorch nên không đo ở mức Layer.
+
+### A2. Mạch câu chuyện của 10 slide
+
+```
+Người đi trước làm gì?          Nhóm làm gì khác?         Mức Layer của nhóm
+┌──────────────────────┐       ┌────────────────┐       ┌───────────────────────────────────────────┐
+│ 5 MLModelScope       │       │ 8 Bảng so sánh │       │ 9  Đo trên GPU thế nào (kỹ thuật)          │
+│   "có 5 tầng"        │──────▶│   khoảng trống │──────▶│ 10 CH1: thời gian dồn vào layer nào        │
+│ 6 Roofline           │       │   + hạn chế    │       │ 11 CH1: GPU nhanh hơn CPU bao nhiêu        │
+│   "nghẽn ở đâu"      │       └────────────────┘       │ 12 CH1: vì sao chưa nhanh hơn (Roofline)   │
+│ 7 XSP                │                                │ 13 CH2: công cụ đo có đúng không           │
+│   "đo sâu thì chậm"  │                                │ 14 Dashboard → chuyển cho Trí              │
+└──────────────────────┘                                └───────────────────────────────────────────┘
+```
+
+Mỗi bài báo ở slide 5–7 đều có một "móc" nối sang phần sau:
+
+| Bài báo | Bài học | Nhóm dùng ở đâu |
+| :-- | :-- | :-- |
+| MLModelScope | Nhìn một tầng thì đoán sai chỗ chậm | Lý do có 3 mức đo |
+| Roofline | Biết layer nghẽn do tính hay do bộ nhớ | **Slide 12** |
+| XSP | Đo càng sâu thì công cụ đo càng làm chậm | **Slide 13** (overhead) và cách Trí đo tổng thời gian không gắn hook |
+
+### A3. Từ khoá cần hiểu (giải thích dễ)
 
-> **Phần:** Nghiên cứu liên quan và mức Layer (CH1, CH2) · **Màu slide:** 🟧 cam · **Slide:** 4–13 (10 slide) · **Thời lượng:** khoảng 8.2 phút
-> Lời thoại lấy từ ghi chú người nói trong bộ slide; số liệu đã đối chiếu `results/`. Không cần đọc thuộc: nhìn cột "Ý chính" là đủ nhắc.
+| Từ | Nghĩa |
+| :-- | :-- |
+| **Layer** (leaf layer) | Khối nhỏ nhất trong mô hình PyTorch: Conv2d, BatchNorm, ReLU, Linear, Attention… |
+| **Forward hook** | Hàm PyTorch tự gọi ngay trước và sau khi một layer chạy. Nhóm gắn bộ đo vào đây nên không phải sửa mô hình. |
+| **Chạy bất đồng bộ** | CPU chỉ "gửi lệnh" cho GPU rồi làm tiếp, không đợi GPU tính xong. Như gửi đơn hàng: gửi xong không có nghĩa là hàng đã giao. |
+| **CUDA Event** | Mốc thời gian do **chính GPU** ghi khi chạy tới điểm đó. Hai mốc trừ nhau ra thời gian GPU thật sự tính. |
+| **Đồng bộ** (synchronize) | Bắt CPU dừng chờ GPU làm xong. Cần để đọc kết quả, nhưng làm nhiều thì GPU bị ngắt quãng. |
+| **Overhead** | Phần chậm thêm do chính công cụ đo gây ra. |
+| **FLOPs** | Số phép tính (nhân, cộng số thực) một layer phải làm. |
+| **FLOP/byte** | Số phép tính làm được trên mỗi byte đọc từ bộ nhớ. Cao: "tính nhiều, đọc ít". Thấp: "đọc nhiều, tính ít". |
+| **Nghẽn bộ nhớ / nghẽn tính toán** | Chậm vì chờ đọc dữ liệu (memory-bound), hoặc chậm vì máy tính hết sức (compute-bound). |
+| **% sức máy** | Tốc độ tính layer đạt được ÷ đỉnh sức tính của máy. |
+| **Speedup** | Thời gian trên CPU ÷ thời gian trên GPU. Ví dụ ×3.0 là GPU nhanh gấp 3. |
+| **Batch 1** | Mỗi lần chạy chỉ đưa 1 ảnh hoặc 1 câu vào. Giống lúc dùng thật, nhưng GPU không được dùng hết sức. |
+| **torch.profiler** | Công cụ đo chính thức của PyTorch. Nhóm dùng làm "thước chuẩn" để kiểm tra công cụ của mình. |
+| **Kernel GPU, cuDNN** | Kernel là đoạn chương trình chạy thật trên GPU. cuDNN là thư viện của NVIDIA mà Conv, BatchNorm gọi xuống. Nhóm **không đo** tới mức này. |
+| **Depthwise conv** | Conv tách theo kênh, mỗi kênh một bộ lọc riêng, nên rất ít phép tính. MobileNetV3 dùng nhiều loại này. |
+
+### A4. Số phải thuộc
 
-## Vị trí trong buổi trình bày
+| Slide | Số |
+| :-: | :-- |
+| 6 | Điểm gãy: laptop CPU **~19**, T4 **~25** FLOP/byte (T4: 8.1 TFLOPS ÷ 320 GB/s) |
+| 7 | XSP, ResNet-50, batch 256, V100: **275.1 ms**; overhead **157 ms** (đo thêm layer), **215.2 ms** (đo thêm kernel); 65 mô hình |
+| 10 | CPU: Conv **73–85%** ở CNN; Linear + Attention **95–96%** ở Transformer. MobileNetV3: Conv **73 → 47%**, chuẩn hoá **14 → 25%**, kích hoạt **5 → 17%** |
+| 11 | Transformer **×8.8–9.5**; CNN **×3.0–5.8**; MLP **×1.0** |
+| 12 | Layer lớn đạt **30–55%** sức máy; depthwise **~15%** |
+| 13 | Sai lệch: CPU **0.35% / 0.27%**, T4 **7.5% / 0.8%** (đo lại 18/10: **7.8% / 0.04%**). Overhead T4 **110–210%**. Ngoài layer **4–10%**. Sàn CUDA Event **~6 µs** |
+| 14 | MobileNetV3: CPU **8.48 ms**, T4 **2.81 ms**, **×3.0** |
 
-- Bạn Trí chuyển sang bằng câu: *"Trước khi vào thiết kế, bạn Quân sẽ trình bày các nghiên cứu đi trước…"*
-- Bạn kết thúc ở slide 13 bằng câu chuyển cho Trí.
-- Thứ tự cả nhóm: Trí (1–3) → Quân (4–13) → Trí (14–20) → Tuân (21–30); slide 31 là phụ lục tài liệu tham khảo.
+### A5. Vị trí trong buổi trình bày
 
-## Tóm tắt các slide
+- Trí trình bày slide 1–4 rồi mời bạn: *"Trước khi vào thiết kế, bạn Quân sẽ trình bày các nghiên cứu đi trước…"*
+- Bạn trình bày slide 5–14, kết thúc bằng câu chuyển cho Trí.
+- Thứ tự cả nhóm: Trí (1–4) → **Quân (5–14)** → Trí (15–21) → Tuân (22–31). Slide 32 là phụ lục tài liệu tham khảo.
 
-| Slide | Tiêu đề | Thời gian | Ý chính |
-| :-: | :--- | :-: | :--- |
-| 4 | Hiệu năng phụ thuộc cả chồng phần mềm và phần cứng | 60 giây | MLModelScope L1–L5: nhóm đo L1 (Model, Giai đoạn) và L2–L3 (Layer), không đo L4–L5. |
-| 5 | Roofline: nghẽn do tính toán hay do bộ nhớ? | 30 giây | Hiệu năng = min(đỉnh tính toán, băng thông × FLOP/byte); điểm gãy ~19 (CPU), ~25 (T4). |
-| 6 | XSP: đo càng sâu, công cụ đo càng làm chậm | 30 giây | Đo càng sâu overhead càng lớn → nhóm tự đo overhead (TN2), tổng thời gian lấy ở mức Model. |
-| 7 | So sánh và khoảng trống nhóm lấp | 60 giây | Bảng 6 công trình; khoảng trống: gộp 3 mức trong một công cụ nhẹ; hạn chế: không đo kernel GPU. |
-| 8 | Đo thời gian trên GPU không đơn giản | 75 giây | CPU chỉ gửi lệnh; 4 kỹ thuật: CUDA Event, đồng bộ 1 lần, lấp hàng đợi, ngăn xếp. |
-| 9 | Thời gian tập trung ở loại layer nào? | 75 giây | CNN: Conv 73–85%; Transformer: 95–96%; MobileNetV3 trên T4: Conv 47%, chuẩn hoá 25%, kích hoạt 17%. |
-| 10 | GPU nhanh hơn CPU bao nhiêu lần? | 40 giây | Transformer ×8.8–9.5; CNN ×3.0–5.8; MLP ×1.0. |
-| 11 | Vì sao layer lớn chưa nhanh hơn nữa? | 35 giây | Layer lớn chỉ đạt 30–55% sức máy; depthwise ~15%; ít FLOPs ≠ nhanh (ShuffleNet V2, G4). |
-| 12 | Công cụ đo có đúng không? | 75 giây | Sai lệch CPU 0.35% / 0.27%, T4 7.5% / 0.8% (đo lại 7.8% / 0.04%); overhead T4 110–210%; ngoài layer 4–10%. |
-| 13 | Tab Layer: thời gian đi vào loại layer nào | 15 giây | Tab Layer: MobileNetV3 8.48 → 2.81 ms (×3.0). Kết thúc bằng câu chuyển cho Trí. |
+---
 
-## Lời thoại từng slide
+## B. Từng slide
 
-### Slide 4. Hiệu năng phụ thuộc cả chồng phần mềm và phần cứng
-*khoảng 60 giây · Ý chính: MLModelScope L1–L5: nhóm đo L1 (Model, Giai đoạn) và L2–L3 (Layer), không đo L4–L5.*
+### Slide 5 · MLModelScope: chạy một mô hình đi qua 5 tầng · ~60 giây
 
-Em xin trình bày các nghiên cứu liên quan. Bức tranh chung đến từ MLModelScope của Dakkak và cộng sự, năm 2020: khi chạy một mô hình học sâu, hiệu năng phụ thuộc cả chồng từ mô hình, framework, layer, thư viện như cuDNN, xuống tới phần cứng. Họ gọi là 5 mức, L1 đến L5.
+**Slide nói gì:** khi chạy một mô hình, thời gian đi qua 5 tầng, từ mô hình xuống tới phần cứng.
 
-Vấn đề là các công cụ trước đây thường chỉ nhìn một mức. Nhìn ở mức mô hình thì không biết layer nào chậm; nhìn ở mức kernel thì không biết kernel đó thuộc layer nào.
+**Đọc hình bên trái (Hình 1 của bài báo):**
 
-VisionProf đặt mình vào bức tranh này như sau: mức Model và Giai đoạn của nhóm ứng với L1; mức Layer ứng với L2, L3. Nhóm không đo L4, L5 tức kernel GPU và hardware counter. Đây là hạn chế, em sẽ nói rõ ở slide so sánh.
+| Tầng | Trong hình có | Nói dễ hiểu |
+| :-- | :-- | :-- |
+| L1 Model | Pre-process → Model Inference → Post-process | Cả mô hình, gồm bước chuẩn bị đầu vào và xử lý đầu ra |
+| L2 Framework | Conv, BN, ReLU, Concat, Softmax | Từng layer trong PyTorch, TensorFlow… |
+| L3 Layer | Malloc, CUDNN, Transpose, Free | Các lời gọi thư viện **bên trong** một layer |
+| L4 Library | Malloc, Kernel, Free | Các kernel chạy thật trên GPU |
+| L5 Hardware | L$ Access, DRAM Access, SP Flops | Phần cứng: đọc cache, đọc bộ nhớ, phép tính |
 
-### Slide 5. Roofline: nghẽn do tính toán hay do bộ nhớ?
-*khoảng 30 giây · Ý chính: Hiệu năng = min(đỉnh tính toán, băng thông × FLOP/byte); điểm gãy ~19 (CPU), ~25 (T4).*
+**Hiểu sâu:** "chậm" có thể do bất kỳ tầng nào. Đứng ở L1 chỉ biết mô hình mất 10 ms, không biết layer nào tốn. Đứng ở L4 thấy hàng nghìn kernel, nhưng không biết kernel nào thuộc layer nào. Vì vậy cần đo nhiều tầng và ghép lại.
 
-Nền tảng đầu tiên là mô hình Roofline của Williams, Waterman và Patterson, năm 2009.
+> ⚠️ **Chỗ cần thống nhất trên slide.** Ô "VisionProf áp dụng" trên link hiện ghi **"L2-L3 → mức Layer · L4–L5 chưa đo"**, còn ghi chú người nói ghi "L2 → mức Layer, L3–L5 chưa đo".
+> Theo đúng hình gốc, bộ đo của nhóm gắn hook vào từng layer PyTorch (Conv, BN, ReLU), tức là **L2**. **L3** là các lời gọi cuDNN, Malloc **bên trong** layer, nhóm không đo.
+> Tên "L3 Layer" dễ làm tưởng là mức Layer của nhóm, nhưng nội dung của L3 không phải thứ nhóm đo. Nên sửa slide về **"L2 → mức Layer · L3–L5 chưa đo"**.
+> Nếu vẫn giữ "L2-L3" mà thầy hỏi "nhóm có đo cuDNN không?", câu trả lời thật là **không**.
 
-Ý tưởng rất gọn: hiệu năng đạt được bằng giá trị nhỏ hơn giữa đỉnh tính toán của máy và băng thông bộ nhớ nhân với cường độ số học, tức số FLOP trên mỗi byte đọc ghi.
+### Slide 6 · Roofline: nghẽn do tính toán hay do bộ nhớ? · ~60 giây
 
-Trên hình, điểm nằm dưới phần mái dốc là bị giới hạn bởi băng thông bộ nhớ; điểm dưới phần mái bằng là bị giới hạn bởi tính toán. Điểm gãy trên laptop của em khoảng 19 FLOP mỗi byte, trên T4 khoảng 25.
+**Slide nói gì:** một hình duy nhất cho biết một phép tính bị chặn bởi sức tính của máy hay bởi tốc độ đọc bộ nhớ.
 
-Nhóm dùng đúng công thức này cho từng layer, để biết mỗi layer đạt bao nhiêu phần trăm sức tối đa của máy.
+**Đọc hình:**
+- Trục ngang là FLOP/byte, trục dọc là tốc độ tính đạt được (GFLOP/s).
+- Đường "mái nhà" có 2 đoạn:
+  - **mái dốc** bên trái: bộ nhớ không cấp dữ liệu kịp;
+  - **mái bằng** bên phải: máy đã tính hết sức (Opteron X2 là 16 GFLOP/s).
+- **Điểm gãy** là chỗ hai mái gặp nhau.
 
-### Slide 6. XSP: đo càng sâu, công cụ đo càng làm chậm
-*khoảng 30 giây · Ý chính: Đo càng sâu overhead càng lớn → nhóm tự đo overhead (TN2), tổng thời gian lấy ở mức Model.*
+**Hiểu sâu, có ví dụ:**
+- Công thức: **tốc độ đạt được = min(đỉnh sức tính, băng thông × FLOP/byte)**.
+- Với T4: đỉnh 8.1 TFLOPS, băng thông 320 GB/s. Điểm gãy = 8 100 ÷ 320 ≈ **25** FLOP/byte.
+  - Một layer chỉ có 10 FLOP/byte thì nhiều nhất đạt 320 × 10 = 3.2 TFLOPS, chưa tới một nửa sức T4. Layer đó **nghẽn bộ nhớ**, mua GPU tính mạnh hơn cũng không giúp.
+  - Một layer có 100 FLOP/byte thì chạm mái bằng, tức **nghẽn tính toán**.
+- Hình bên phải của bài báo so Opteron X4 với X2. X4 có mái bằng cao hơn, nhưng ở vùng ít FLOP/byte hai đường gần trùng nhau, nên phép tính đang chờ bộ nhớ gần như không nhanh hơn. Ý này **không còn ghi trên slide** nhưng có trong ghi chú, bạn có thể nói miệng.
 
-Công trình thứ hai là XSP của Li và cộng sự, IPDPS 2020. XSP ghép 3 mức là mô hình, layer và kernel GPU thành một dòng thời gian, và phân tích 65 mô hình.
+**Nối sang:** slide 12 đặt từng layer của nhóm lên Roofline này.
 
-Điểm quan trọng nhất họ chỉ ra, như trên hình: bật đo ở mức càng sâu thì overhead của chính công cụ đo càng lớn, nên số đo ở mức trên bị sai. XSP giải bằng cách đo lần lượt từng mức, mỗi mức một lượt chạy riêng.
+### Slide 7 · XSP: đo càng sâu, công cụ đo càng làm chậm · ~60 giây
 
-Nhóm gặp đúng vấn đề này và giải theo cách tương tự: tự đo overhead và sai lệch của công cụ so với torch.profiler trong thí nghiệm TN2; mức Layer chỉ dùng để phân rã tỷ lệ, còn tổng thời gian sạch lấy ở mức Model, đo không gắn hook.
+**Slide nói gì:** đo càng chi tiết thì chính công cụ đo càng chen thêm thời gian, nên không được lấy tổng thời gian từ lượt đo chi tiết.
 
-### Slide 7. So sánh và khoảng trống nhóm lấp
-*khoảng 60 giây · Ý chính: Bảng 6 công trình; khoảng trống: gộp 3 mức trong một công cụ nhẹ; hạn chế: không đo kernel GPU.*
+**Đọc hình** (ResNet-50, batch 256, GPU V100):
 
-Bảng này so sánh 6 công trình với VisionProf. Lưu ý dấu gạch nghĩa là nội dung đó không phải trọng tâm của paper, không có nghĩa paper hoàn toàn không nhắc tới.
+| Dòng | Đo gì | Kết quả |
+| :-- | :-- | :-- |
+| M | Chỉ đo cả mô hình | Suy luận 275.1 ms |
+| M/L | Đo thêm từng layer | Công cụ chen thêm 157 ms (ô đen "Profiling Overhead") |
+| M/L/G | Đo thêm kernel GPU | Phần chen thêm tăng lên 215.2 ms |
 
-XSP và PRoof mạnh ở mức Layer và kernel, có Roofline. MLPerf chuẩn hoá cách đo độ trễ mức Model theo phân vị. AI Tax chỉ ra rằng trong ứng dụng thật, dưới 60% độ trễ là phần AI, còn lại là các bước xung quanh. Data Stalls chỉ ra training thường phải chờ dữ liệu.
+Ô **xanh** là thời gian thật của mô hình, ô **đen** là thời gian do công cụ đo sinh ra.
 
-Khoảng trống nhóm muốn lấp: mỗi công trình tập trung một mức, hoặc là hệ thống lớn chạy trên cụm máy, cần hardware counter. VisionProf gộp cả 3 mức vào một công cụ nhẹ cho PyTorch, đo cả suy luận, training và pipeline thật, trên laptop và GPU T4, và có thí nghiệm tự kiểm chứng độ chính xác.
+**Hiểu sâu:**
+- Mỗi lần gắn đo vào một layer là thêm một lần gọi hàm và ghi mốc thời gian. Mô hình có hàng trăm layer thì phần thêm này cộng dồn lại.
+- Cách của XSP: **mỗi mức lấy số ở lượt chạy của đúng mức đó**, rồi ghép lại. Tổng thời gian lấy từ lượt M; tỷ lệ giữa các layer lấy từ lượt M/L.
 
-Em cũng nói trước hạn chế: nhóm không đo kernel GPU và không dùng hardware counter, đó là thế mạnh của XSP và PRoof.
+**Nhóm áp dụng y hệt:**
+- Trí đo tổng thời gian ở lượt **không gắn hook**.
+- Mức Layer của bạn chỉ dùng để **chia tỷ lệ** giữa các layer.
+- Overhead của nhóm được tự đo ở **TN2, slide 13**.
 
-> ➡️ **Chuyển: Bắt đầu từ mức sâu nhất, mức Layer.**
+### Slide 8 · So sánh và khoảng trống nhóm lấp · ~60 giây
 
-### Slide 8. Đo thời gian trên GPU không đơn giản
-*khoảng 75 giây · Ý chính: CPU chỉ gửi lệnh; 4 kỹ thuật: CUDA Event, đồng bộ 1 lần, lấp hàng đợi, ngăn xếp.*
+**Slide nói gì:** mỗi công trình trước mạnh ở một mức. VisionProf gộp 3 mức vào một công cụ nhẹ, đổi lại không đo sâu tới kernel.
 
-Thách thức đầu tiên của mức Layer là đo trên GPU. CPU không đợi GPU: nó chỉ xếp lệnh vào hàng đợi rồi chạy tiếp. Như hình bên trái, CPU gửi lệnh cho 3 layer rất nhanh, còn GPU chạy chúng sau đó. Nếu dùng đồng hồ CPU, ta chỉ đo được thời gian gửi lệnh, gần như bằng 0 và sai hoàn toàn.
+**Đọc bảng:** "Có" là trọng tâm của bài báo đó. "–" là **không phải trọng tâm**, không có nghĩa là bài hoàn toàn không nhắc tới. Câu này có ghi ở chân slide, nên nói rõ khi trình bày.
 
-Cách dễ nhất là đồng bộ sau mỗi layer. Đo từng layer thì đúng, nhưng GPU phải dừng chờ CPU sau mỗi layer, nên tổng thời gian bị đội lên.
+| Công trình | Mạnh ở |
+| :-- | :-- |
+| XSP, PRoof | Thời gian từng layer, kernel GPU, Roofline |
+| MLPerf | Chuẩn cách đo độ trễ mức Model theo phân vị P50–P99 |
+| MLModelScope | Đo lặp lại được trên nhiều framework, nhiều phần cứng |
+| AI Tax | Trong ứng dụng thật, phần AI chỉ chiếm dưới 60% độ trễ, còn lại là các bước xung quanh |
+| Data Stalls | Training thường phải chờ nạp dữ liệu |
 
-VisionProf làm 4 việc. Một: ghi CUDA Event ngay trong hook trước và sau mỗi layer; event được ghi trên chính dòng lệnh GPU nên đo đúng thời gian GPU chạy. Hai: chỉ đồng bộ một lần ở cuối mỗi vòng rồi mới đọc tất cả event. Ba: trước khi đo, cho GPU một việc nhỏ để hàng đợi luôn đầy, GPU chạy liền mạch thay vì chờ CPU gửi lệnh. Bốn: dùng ngăn xếp để xử lý layer được gọi nhiều lần trong một vòng.
+- **Khoảng trống:** chưa có công cụ nhẹ nào cho PyTorch gộp cả Layer, Model, Giai đoạn, chạy được trên laptop và Colab T4, lại có thí nghiệm tự kiểm chứng (TN2).
+- **Hạn chế, nói trước để thầy không bắt lỗi:** không đo kernel GPU, không dùng hardware counter (bộ đếm phần cứng như số lần đọc cache).
 
-Người dùng chỉ cần khoảng 5 dòng code như bên dưới, không phải sửa mô hình.
+**Câu chuyển:** *"Bắt đầu từ mức sâu nhất, mức Layer."*
 
-### Slide 9. Thời gian tập trung ở loại layer nào?
-*khoảng 75 giây · Ý chính: CNN: Conv 73–85%; Transformer: 95–96%; MobileNetV3 trên T4: Conv 47%, chuẩn hoá 25%, kích hoạt 17%.*
+### Slide 9 · Đo thời gian trên GPU · ~75 giây
 
-Câu hỏi CH1: thời gian tập trung ở loại layer nào. Hình bên trái là tỷ trọng thời gian theo nhóm layer của 7 mô hình, mỗi mô hình 2 thanh: CPU laptop và GPU T4, batch 1.
+**Slide nói gì:** đo thời gian trên GPU khó vì CPU không chờ GPU. Nhóm giải bằng 4 kỹ thuật.
 
-Trên CPU, câu trả lời khá rõ: mô hình CNN dồn 73 đến 85% thời gian vào Conv; Transformer dồn 95 đến 96% vào Linear và Attention.
+**Đọc sơ đồ bên trái:** dòng CPU có 3 ô "gửi" ngắn, dòng GPU có 3 ô Layer dài, chạy sau đó. Đồng hồ CPU chỉ đo được mấy ô "gửi", gần như bằng 0.
 
-Điều thú vị là khi lên GPU. Với ResNet-50 và Transformer, tỷ trọng gần như không đổi. Nhưng với mô hình nhẹ MobileNetV3, Conv giảm từ 73% xuống 47%, trong khi chuẩn hoá tăng từ 14 lên 25%, kích hoạt từ 5 lên 17%.
+**Hai cách sai:**
+1. Dùng đồng hồ CPU: chỉ đo thời gian gửi lệnh, sai hoàn toàn.
+2. Đồng bộ sau mỗi layer: số từng layer đúng, nhưng GPU phải dừng chờ sau mỗi layer nên tổng thời gian bị đội lên.
 
-Lý do: GPU tăng tốc mạnh các phép tính lớn, còn các layer nhỏ như BatchNorm, hàm kích hoạt thì hầu như không nhanh hơn được bao nhiêu, vì thời gian của chúng chủ yếu là chi phí khởi chạy. Nên trên GPU, layer nhỏ chiếm tỷ trọng lớn hơn.
+**4 kỹ thuật của nhóm:**
 
-Lưu ý: CPU ở đây là laptop x86 của em.
+| # | Kỹ thuật | Để làm gì |
+| :-: | :-- | :-- |
+| 1 | CUDA Event trong hook trước và sau mỗi layer | GPU tự ghi mốc khi chạy tới, nên đo đúng thời gian GPU tính |
+| 2 | Đồng bộ **một lần** ở cuối vòng | Không chặn GPU giữa các layer, chạy xong mới đọc hết các mốc |
+| 3 | Lấp hàng đợi GPU trước khi đo | Hàng đợi luôn có việc, GPU chạy liền mạch, không ngồi chờ CPU gửi lệnh |
+| 4 | Ngăn xếp | Một layer được gọi nhiều lần trong một vòng thì mỗi lần vào, ra được ghép đúng cặp |
 
-### Slide 10. GPU nhanh hơn CPU bao nhiêu lần?
-*khoảng 40 giây · Ý chính: Transformer ×8.8–9.5; CNN ×3.0–5.8; MLP ×1.0.*
+**Khung code:** chỉ khoảng 5 dòng: `attach` → `start` / `stop` quanh mỗi vòng → `save`. Ý cần nói: **không sửa mã mô hình**.
 
-Hình này lấy tổng thời gian các layer trên CPU chia cho trên T4, tức GPU nhanh hơn bao nhiêu lần.
+### Slide 10 · CH1: thời gian tập trung ở loại layer nào? · ~75 giây
 
-Transformer được tăng tốc mạnh nhất: ViT 9.5 lần, BERT 9.0, DistilBERT 8.8. Lý do như slide trước: 94 đến 96% thời gian của chúng là nhân ma trận lớn, đúng loại việc GPU làm tốt nhất.
+**Slide nói gì:** trên CPU thời gian dồn vào phép tính lớn. Lên GPU, layer nhỏ chiếm phần lớn hơn, rõ nhất ở MobileNetV3.
 
-CNN được tăng tốc ít hơn: ResNet-50 5.8, YOLOv8n 5.5, và thấp nhất là MobileNetV3 chỉ 3.0 lần, vì nó có nhiều layer nhỏ.
+**Đọc hình:** mỗi mô hình có 2 thanh ngang, thanh CPU và thanh T4. Mỗi màu là một loại layer, độ dài là % thời gian.
 
-MLP gần như không nhanh hơn, vì mô hình quá nhỏ để tận dụng GPU.
+**Bảng trên slide:**
 
-### Slide 11. Vì sao layer lớn chưa nhanh hơn nữa?
-*khoảng 35 giây · Ý chính: Layer lớn chỉ đạt 30–55% sức máy; depthwise ~15%; ít FLOPs ≠ nhanh (ShuffleNet V2, G4).*
+| Mô hình · loại layer | CPU | T4 |
+| :-- | :-: | :-: |
+| ResNet-50 · Conv | 85% | 83% |
+| MobileNetV3 · Conv | 73% | **47%** |
+| MobileNetV3 · Chuẩn hoá | 14% | **25%** |
+| MobileNetV3 · Kích hoạt | 5% | **17%** |
+| BERT-base · Linear | 95% | 95% |
+| ViT-B/16 · Linear + Attention | 96% | 94% |
 
-Vậy vì sao các layer lớn chưa nhanh hơn nữa? Đây là Roofline của các layer Conv, Linear và Attention, bên trái là CPU, bên phải là T4.
+**Vì sao lên GPU thì layer nhỏ chiếm nhiều hơn?**
+- GPU tăng tốc rất mạnh phép tính lớn như Conv lớn, nhân ma trận.
+- Layer nhỏ như BatchNorm, ReLU có rất ít việc. Thời gian của chúng chủ yếu là **chi phí khởi chạy** mỗi lần gọi GPU, nên gần như không nhanh hơn.
+- Phần lớn co lại mạnh, phần nhỏ đứng yên, nên tỷ trọng của phần nhỏ tăng lên.
+- MobileNetV3 vốn nhiều layer nhỏ nên thấy rõ nhất. ResNet-50 và Transformer có layer lớn chiếm áp đảo nên tỷ trọng gần như không đổi.
 
-Phần lớn các layer nằm ở vùng giới hạn bởi tính toán, nhưng chỉ đạt khoảng 30 đến 55% sức tối đa của máy. Lý do là batch 1: các phép nhân ma trận còn nhỏ nên phần cứng chưa được dùng hết.
+**Chân slide:** CPU là laptop x86, batch 1, FP32.
 
-Depthwise conv của MobileNetV3 còn thấp hơn, chỉ khoảng 15%, vì có rất ít phép tính trên mỗi byte dữ liệu.
+### Slide 11 · CH1: GPU nhanh hơn CPU bao nhiêu lần? · ~40 giây
 
-Điều này khớp với nguyên tắc G4 trong bài ShuffleNet V2 của Ma và cộng sự, ECCV 2018: phép toán ít FLOPs vẫn tốn thời gian thật trên GPU. Nên chỉ đếm FLOPs thì không đủ để đoán tốc độ.
+**Slide nói gì:** mô hình càng nhiều phép nhân ma trận lớn thì GPU càng giúp nhiều.
 
-### Slide 12. Công cụ đo có đúng không?
-*khoảng 75 giây · Ý chính: Sai lệch CPU 0.35% / 0.27%, T4 7.5% / 0.8% (đo lại 7.8% / 0.04%); overhead T4 110–210%; ngoài layer 4–10%.*
+**Cách tính:** tổng thời gian các layer trên CPU laptop ÷ trên T4.
 
-Câu hỏi CH2: công cụ đo của nhóm có đúng không. Nhóm so với torch.profiler, công cụ chính thức của PyTorch, trên ResNet-50 và BERT-base.
+| Nhóm | Speedup | Lý do |
+| :-- | :-- | :-- |
+| Transformer: ViT 9.5, BERT 9.0, DistilBERT 8.8 | **×8.8–9.5** | 94–96% thời gian là nhân ma trận lớn, đúng việc GPU làm giỏi nhất |
+| CNN: ResNet-50 5.8, YOLOv8n 5.5, MobileNetV3 3.0 | **×3.0–5.8** | Có nhiều layer nhỏ; MobileNetV3 nhiều nhất nên thấp nhất |
+| MLP | **×1.0** | Mô hình quá nhỏ, chi phí gọi GPU lấn hết lợi ích |
 
-Sai lệch tổng thời gian: trên CPU chỉ 0.35% và 0.27%; trên T4 là 7.5% và 0.8%. Hôm 18/10 nhóm đo lại trên T4 bằng code hiện tại, kết quả gần như y hệt: 7.8% và 0.04%.
+**Nối với slide 10:** slide 10 nói layer nhỏ không nhanh lên trên GPU. Mô hình nào nhiều layer nhỏ thì speedup thấp.
 
-Có hai điểm phải nói thẳng. Thứ nhất, overhead trên GPU ở batch 1 lớn: gắn hook làm mô hình chạy chậm hơn khoảng 110 đến 210% tuỳ phiên Colab. Đó là chi phí ghi event và gọi hook giữa các layer. Vì vậy nhóm chỉ dùng mức Layer để phân rã tỷ lệ, còn tổng thời gian sạch thì lấy ở mức Model, đo không gắn hook. Đây đúng là bài học của XSP ở slide 6.
+### Slide 12 · CH1: vì sao layer lớn chưa nhanh hơn nữa? · ~35 giây
 
-Thứ hai, khoảng 4 đến 10% thời gian không thuộc layer nào: đó là các phép toán dạng hàm như phép cộng shortcut hay torch.cat, không phải module nên không có hook. Nhóm đo và báo cáo con số này thay vì bỏ qua.
+**Slide nói gì:** đây là Roofline của slide 6 áp lên layer thật của nhóm. Layer lớn chỉ dùng được 30–55% sức máy.
 
-Ngoài ra, layer chỉ chạy vài micro giây như ReLU, BatchNorm ở batch 1 bị đo dư vì CUDA Event có ngưỡng sàn khoảng 6 micro giây.
+**Đọc hình:** bên trái CPU, bên phải T4. Mỗi chấm là một layer Conv, Linear hoặc Attention có FLOPs đếm được. Đường mái là giới hạn của máy. Chấm càng xa mái thì càng phí sức máy.
 
-Tổng kết mức Layer: đủ chính xác để phân rã, và biết rõ giới hạn của mình.
+**Ba ý trên slide:**
+1. **Chỉ 30–55% sức máy:** phần lớn layer nằm bên phải điểm gãy, tức về lý thuyết là nghẽn tính toán, nhưng vẫn dưới mái xa. Lý do là batch 1, ma trận còn nhỏ, GPU chưa có đủ việc để chạy hết các nhân.
+2. **Depthwise conv ~15%:** rất ít phép tính trên mỗi byte, nằm bên trái điểm gãy, tức nghẽn bộ nhớ.
+3. **Ít FLOPs không có nghĩa là nhanh:** khớp với nguyên tắc **G4** trong bài ShuffleNet V2 (Ma và cộng sự, ECCV 2018). G4 nói các phép toán theo từng phần tử như ReLU, cộng tensor có FLOPs rất nhỏ nhưng vẫn tốn thời gian thật, vì phải đọc ghi bộ nhớ nhiều. Nên chỉ đếm FLOPs thì không đoán được tốc độ.
 
-Trước khi chuyển phần, em cho xem kết quả này trên dashboard của nhóm.
+### Slide 13 · CH2: công cụ đo có đúng không? · ~75 giây
 
-### Slide 13. Tab Layer: thời gian đi vào loại layer nào
-*khoảng 15 giây · Ý chính: Tab Layer: MobileNetV3 8.48 → 2.81 ms (×3.0). Kết thúc bằng câu chuyển cho Trí.*
+**Slide nói gì:** so với torch.profiler, công cụ của nhóm đủ chính xác để chia tỷ lệ giữa các layer. Nhóm cũng nói rõ 3 giới hạn.
 
-Các kết quả mức Layer xem được trực tiếp trên dashboard của nhóm, chạy bằng một lệnh streamlit. Chọn một mô hình, ví dụ MobileNetV3: dashboard cho ngay tổng thời gian các layer trên CPU là 8.48 mili giây, trên T4 là 2.81, GPU nhanh hơn 3 lần.
+**Bảng trên slide** (TN2, batch 1, FP32):
 
-Biểu đồ bên dưới chính là kết quả CH1 em vừa trình bày: thanh trên là CPU, thanh dưới là T4; Conv giảm từ 73 xuống 47%. Kéo xuống nữa có top-10 layer chậm nhất và Roofline.
+| So với torch.profiler | ResNet-50 CPU | BERT CPU | ResNet-50 T4 | BERT T4 |
+| :-- | :-: | :-: | :-: | :-: |
+| Sai lệch tổng thời gian | 0.35% | 0.27% | 7.5% | 0.8% |
+| Đo lại bằng code hiện tại (18/10) | – | – | 7.8% | 0.04% |
+| Overhead khi gắn hook | 11% | 5% | 166% | 109% |
+| Thời gian không thuộc layer nào | 3.9% | 9.2% | 9.0% | 10.3% |
 
-> ➡️ **Chuyển: Đo tổng thời gian sạch của cả mô hình là phần của bạn Trí.**
+**Cách hiểu từng dòng:**
+- **Sai lệch tổng thời gian:** tổng thời gian các layer theo VisionProf so với theo torch.profiler. CPU dưới 1%, T4 dưới 8%, đo lại vẫn ra gần như vậy. **Kết luận: đủ chính xác để phân rã tỷ lệ.**
+- **Overhead:** gắn hook làm mô hình chậm thêm bao nhiêu. Trên CPU nhỏ (5–11%). Trên T4 ở batch 1 rất lớn, khoảng 110–210% tuỳ phiên Colab.
+  - Lý do: mỗi layer trên GPU chỉ chạy vài chục micro giây, nên chi phí gọi hook và ghi event tính ra phần trăm thành lớn.
+  - Vì vậy nhóm **không lấy tổng thời gian từ lượt gắn hook**. Đúng bài học XSP ở slide 7.
+- **Không thuộc layer nào (4–10%):** phép cộng shortcut `x + y`, `torch.cat`… là hàm, không phải layer nên không có hook. Nhóm đo và báo con số này, không giấu đi.
+- **Sàn ~6 µs:** CUDA Event không đo chính xác việc ngắn hơn khoảng 6 micro giây, nên ReLU, BatchNorm ở batch 1 bị đo dư. Chỉ dùng số này để so sánh tương đối.
 
-## Câu hỏi có thể gặp
+**Câu chốt:** *"Mức Layer đủ chính xác để phân rã, và biết rõ giới hạn của mình."*
 
-**H: Overhead trên GPU ở batch 1 tới 110–210%, sao vẫn tin số đo?**
+### Slide 14 · Dashboard, tab Layer · ~15 giây
 
-Đ: Overhead làm cả mô hình chạy chậm hơn, nhưng sai lệch **tổng thời gian các layer** so với `torch.profiler` vẫn dưới 8% (đo lại 18/10 vẫn vậy). Overhead nằm ở chi phí ghi event và gọi hook giữa các layer. Vì vậy mức Layer chỉ dùng để phân rã tỷ lệ; tổng thời gian sạch lấy ở mức Model, đo không gắn hook.
+**Slide nói gì:** kết quả CH1 xem trực tiếp được trên dashboard của nhóm.
 
-**H: Phép toán dạng hàm như `x + shortcut`, `torch.cat` đi đâu?**
+**3 điểm đánh số trên ảnh:**
+1. Chọn mô hình MobileNetV3: tổng thời gian CPU **8.48 ms**, T4 **2.81 ms**, nhanh hơn **×3.0**.
+2. Thanh trên là CPU, dưới là T4: Conv **73% → 47%**, đúng kết quả slide 10.
+3. Kéo xuống có top-10 layer chậm nhất và Roofline.
 
-Đ: Không phải module nên không có hook. Nhóm đo thành chỉ số "thời gian không thuộc layer nào": 3.9–9.2% trên CPU, 9–10% trên T4 (ResNet-50, BERT-base). Cuối kỳ sẽ bắt bằng `TorchDispatchMode`.
+**Nếu thầy muốn xem thật:** chạy `streamlit run src/dashboard/app.py` → mở tab **"3. Leaf Layer Breakdown"**. Chi tiết trong [`../HUONG_DAN_CHAY_DASHBOARD.md`](../HUONG_DAN_CHAY_DASHBOARD.md). Lần đầu chạy Streamlit có thể hỏi email, bấm Enter để bỏ qua.
 
-**H: Sao không dùng luôn `torch.profiler`?**
+**Câu chuyển cho Trí:** *"Đo tổng thời gian sạch của cả mô hình là phần của bạn Trí."*
 
-Đ: `torch.profiler` dùng làm chuẩn để kiểm chứng (TN2). Nhóm cần thêm FLOPs, Roofline, tổng hợp theo layer và gắn được vào training, pipeline với file kết quả gọn, nên viết bộ đo riêng nhẹ hơn.
+---
+
+## C. Câu hỏi có thể gặp
+
+**H: Overhead trên GPU tới 110–210%, sao vẫn tin số đo?**
+Đ:
+- Overhead làm cả mô hình chạy chậm hơn, nhưng **sai lệch tổng thời gian các layer** so với torch.profiler vẫn dưới 8%. Đo lại ngày 18/10 vẫn ra như vậy.
+- Mức Layer chỉ dùng để chia tỷ lệ. Tổng thời gian sạch lấy ở mức Model, đo không gắn hook.
+
+**H: Phép cộng shortcut, `torch.cat` đi đâu?**
+Đ: Chúng không phải module nên không có hook. Nhóm đo thành chỉ số "thời gian không thuộc layer nào": 3.9–9.2% trên CPU, 9–10% trên T4. Cuối kỳ sẽ bắt bằng `TorchDispatchMode`.
+
+**H: Sao không dùng luôn torch.profiler?**
+Đ: torch.profiler là thước chuẩn để kiểm chứng (TN2). Nhóm cần thêm FLOPs, Roofline, tổng hợp theo layer, và gắn được vào training, pipeline với file kết quả gọn, nên viết bộ đo riêng nhẹ hơn.
 
 **H: Chỉ đồng bộ một lần cuối vòng thì làm sao biết thời gian từng layer?**
-
-Đ: CUDA Event được ghi ngay trên dòng lệnh GPU, mốc thời gian do GPU ghi khi chạy tới đó. Đồng bộ cuối vòng chỉ để chờ GPU chạy xong rồi đọc `elapsed_time` giữa các cặp event.
+Đ: CUDA Event do GPU ghi khi chạy tới, nên mốc thời gian đã nằm sẵn trên GPU. Đồng bộ cuối vòng chỉ để chờ GPU xong rồi đọc khoảng cách giữa từng cặp mốc.
 
 **H: Layer chỉ chạy vài micro giây có đo đúng không?**
-
-Đ: Không chính xác tuyệt đối: CUDA Event có ngưỡng sàn khoảng 6 µs nên ReLU, BatchNorm ở batch 1 bị đo dư. Nhóm chỉ dùng số này để so sánh tương đối và nói rõ là hạn chế.
+Đ: Không tuyệt đối. Sàn CUDA Event khoảng 6 µs nên ReLU, BatchNorm ở batch 1 bị đo dư. Nhóm chỉ dùng số này để so sánh tương đối và ghi rõ là hạn chế.
 
 **H: Đỉnh Roofline của máy lấy từ đâu?**
-
-Đ: T4 theo datasheet: 8.1 TFLOPS FP32, 320 GB/s, điểm gãy ~25 FLOP/byte. CPU ước lượng theo số nhân × xung nhịp × 32 FLOP/chu kỳ, băng thông 51.2 GB/s, điểm gãy ~19.
+Đ:
+- T4 theo thông số của NVIDIA: 8.1 TFLOPS FP32, 320 GB/s, điểm gãy ~25.
+- CPU ước lượng theo số nhân × xung nhịp × 32 phép tính mỗi chu kỳ, băng thông 51.2 GB/s, điểm gãy ~19.
 
 **H: Số CPU ở mức Layer đo trên máy nào?**
+Đ: Laptop x86 của em (TN1, TN2). Nhóm không so số này với CPU ở TN3, TN4 vì đó là MacBook chip Apple.
 
-Đ: Laptop x86 của em (TN1, TN2). Nhóm không so số này với số CPU của TN3, TN4 vì đó là MacBook chip Apple.
+**H: Nhóm đo ở tầng nào trong 5 tầng MLModelScope?**
+Đ:
+- L1 (cả mô hình, tiền và hậu xử lý) ứng với mức Model và mức Giai đoạn.
+- L2 (từng layer PyTorch) ứng với mức Layer.
+- Lời gọi cuDNN, kernel GPU và bộ đếm phần cứng thì chưa đo, đây là hạn chế.
 
-## Trước giờ trình bày
+**H: Sao đo ở batch 1?**
+Đ: Batch 1 giống lúc dùng thật, ví dụ xử lý từng ảnh một, và là trường hợp khó nhất cho GPU. Ảnh hưởng của batch lớn hơn là phần CH4 của Trí.
 
-- [ ] Đọc to một lượt, bấm giờ.
-- [ ] Thuộc các con số trong cột "Ý chính".
-- [ ] Tập câu chuyển phần với người nói trước và sau.
+## D. Trước giờ trình bày
+
+- [ ] Đọc phần A một lượt, nói lại được mạch 5 → 14 không cần nhìn.
+- [ ] Thuộc bảng A4.
+- [ ] Tập to một lượt với slide, bấm giờ khoảng 9 phút.
+- [ ] Mở sẵn dashboard ở tab "3. Leaf Layer Breakdown".
+- [ ] Tập câu nhận lời từ Trí (cuối slide 4) và câu chuyển cho Trí (cuối slide 14).

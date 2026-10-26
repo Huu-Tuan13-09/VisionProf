@@ -80,8 +80,8 @@ mã mô hình; đo cả **suy luận lẫn training và pipeline thật**; so **
 - **Ý chính:** nền tảng phân tán, độc lập framework / phần cứng; mô tả việc chạy một mô hình qua 5 mức
   L1 Model → L2 Framework → L3 Layer → L4 Library → L5 Hardware; chỉ ra thay đổi nhỏ trong pipeline (thứ tự
   kênh màu, cách giải mã ảnh) làm đổi kết quả.
-- **VisionProf:** 3 mức của nhóm tương ứng L1 (Model + Giai đoạn) và L2–L3 (Layer). Nhóm không đo L4–L5
-  (kernel, hardware counter): đó là hạn chế cần nói rõ.
+- **VisionProf:** 3 mức của nhóm tương ứng L1 (Model + Giai đoạn) và L2 (các layer Conv, BN, ReLU trong framework).
+  Nhóm không đo L3–L5 (lời gọi cuDNN trong mỗi layer, kernel GPU, hardware counter): đó là hạn chế cần nói rõ.
 - **Hình:** `06_mlmodelscope_fig1_L1_L5.png` (**hình nên dùng làm nền cho slide "bức tranh chung"**),
   `08_mlmodelscope_fig8_layer_timeline.png` · Nguồn: Dakkak et al., arXiv:2002.08295.
 

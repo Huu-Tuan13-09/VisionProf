@@ -10,16 +10,16 @@
 
 ## ⏱️ Tổng quan phân bổ thời gian & Phân vai (cập nhật 20/10)
 
-> Bộ slide HTML 31 trang: mỗi người 10 slide; thời gian Trí > Quân > Tuân, chênh khoảng 1 phút. Mỗi người tự trình bày ảnh chụp dashboard của phần mình. Số slide dưới đây theo bộ HTML; các mục chi tiết bên dưới vẫn giữ đánh số dàn ý cũ.
+> Bộ slide HTML 32 trang: Trí 11 slide, Quân và Tuân mỗi người 10 slide; thời gian Trí > Quân > Tuân, chênh khoảng 1 phút. Mỗi người tự trình bày ảnh chụp dashboard của phần mình. Số slide dưới đây theo bộ HTML; các mục chi tiết bên dưới vẫn giữ đánh số dàn ý cũ.
 
 | Phần | Người trình bày | Slide (HTML) | Thời lượng | Trọng tâm |
 | :--- | :---: | :---: | :---: | :--- |
-| **Mở đầu & Khung bài toán** | 🟦 **Trương Công Trí** | **1–3** | 2.5' | Định vị Profiling, 3 mức đo, sợi chỉ đỏ |
-| **Nghiên cứu liên quan** | 🟧 **Võ Trần Anh Quân** | **4–7** | 3.0' | MLModelScope, Roofline, XSP, bảng so sánh |
-| **Mức Layer + dashboard** | 🟧 **Võ Trần Anh Quân** | **8–13** | 5.2' | Đo GPU, CH1, CH2, tab Layer |
-| **Mức Model + dashboard** | 🟦 **Trương Công Trí** | **14–20** | 6.7' | Đo sạch 2 pha, P50–P99, CH3, CH4, tab FP16 |
-| **Giai đoạn, chẩn đoán, tổng kết + dashboard** | 🟩 **Phạm Hữu Tuân** | **21–30** | 7.3' | CH5, CH6, 19 luật, A/B, 4 tab dashboard, kết luận |
-| **Tổng cộng** | Trí 9.2' · Quân 8.2' · Tuân 7.3' | **30 + phụ lục** | **~25'** | Q&A: mở dashboard thật (`docs/HUONG_DAN_CHAY_DASHBOARD.md`) |
+| **Mở đầu, Khung bài toán, 6 câu hỏi** | 🟦 **Trương Công Trí** | **1–4** | 3.2' | Định vị Profiling, 3 mức đo, sợi chỉ đỏ |
+| **Nghiên cứu liên quan** | 🟧 **Võ Trần Anh Quân** | **5–8** | 3.0' | MLModelScope, Roofline, XSP, bảng so sánh |
+| **Mức Layer + dashboard** | 🟧 **Võ Trần Anh Quân** | **9–14** | 5.2' | Đo GPU, CH1, CH2, tab Layer |
+| **Mức Model + dashboard** | 🟦 **Trương Công Trí** | **15–21** | 6.7' | Đo sạch 2 pha, P50–P99, CH3, CH4, tab FP16 |
+| **Giai đoạn, chẩn đoán, tổng kết + dashboard** | 🟩 **Phạm Hữu Tuân** | **22–31** | 7.3' | CH5, CH6, 19 luật, A/B, 4 tab dashboard, kết luận |
+| **Tổng cộng** | Trí 9.9' · Quân 8.2' · Tuân 7.3' | **31 + phụ lục** | **~25.4'** | Q&A: mở dashboard thật (`docs/HUONG_DAN_CHAY_DASHBOARD.md`) |
 
 --- | :---: | :---: | :---: | :--- |
 | **Phần 1: Mở đầu & Khung bài toán** | 🟩 **TV3** | **1–3** | **2.5'** | Định vị Profiling, 3 mức đo, 2 mô hình xuyên suốt |
@@ -55,7 +55,7 @@
 ## 🟧 TV1: Phần 2. Nghiên cứu liên quan (Slide 4–6 · 3.0')
 
 ### Slide 4. Profiling học sâu: nhìn ở nhiều mức
-- **Bố cục:** Hình `docs/research/figures/06_mlmodelscope_fig1_L1_L5.png`, đánh dấu phần nhóm đo: L1 (Model + pipeline), L2–L3 (Layer).
+- **Bố cục:** Hình `docs/research/figures/06_mlmodelscope_fig1_L1_L5.png`, đánh dấu phần nhóm đo: L1 (Model + pipeline), L2 (Layer); L3–L5 (cuDNN, kernel GPU, phần cứng) chưa đo.
 - **Nội dung:** Hiệu năng phụ thuộc cả chồng phần mềm, phần cứng (model → framework → layer → thư viện → phần cứng). Các công cụ trước thường chỉ nhìn một tầng.
 - **Nguồn:** Dakkak et al., MLModelScope, arXiv:2002.08295.
 
@@ -215,7 +215,7 @@
 - **Nội dung:** 4 nhóm luật: bộ nhớ RA (5), tính toán RB (5), nạp dữ liệu RC (4), kiến trúc RD (5); RB-04 dùng ms/GFLOP (ngưỡng 2.0); mỗi luật kèm gợi ý sửa code trên tab Chẩn đoán (ví dụ RC-01: chờ dữ liệu > 20% → `DataLoader(num_workers=2, pin_memory=True)`). A/B bằng Mann-Whitney U (p < 0.05) và Cliff's delta, speedup tính trên tổng thời gian mỗi vòng.
 
 ### Slide 21. Demo dashboard (6 slide ảnh chụp, khoảng 90 giây)
-- **Bố cục:** Mỗi slide 1 ảnh chụp dashboard to + 3 ý cần chỉ vào: tab Layer, FP16 (CPU và T4), DataLoader, Pipeline, Chẩn đoán (mở RB-04), A/B (ViT FP32 so với FP16). Trong bộ slide HTML là trang 23–28.
+- **Bố cục:** Mỗi slide 1 ảnh chụp dashboard to + 3 ý cần chỉ vào: tab Layer, FP16 (CPU và T4), DataLoader, Pipeline, Chẩn đoán (mở RB-04), A/B (ViT FP32 so với FP16). Trong bộ slide HTML là các trang 14, 21, 24, 26, 28, 29.
 - **Nội dung:** Dashboard `streamlit run src/dashboard/app.py` chạy sẵn để mở trực tiếp khi thầy hỏi; cách chạy và tab ứng với từng slide: `docs/HUONG_DAN_CHAY_DASHBOARD.md`.
 
 ### Slide 22. Tổng kết 6 câu hỏi nghiên cứu
