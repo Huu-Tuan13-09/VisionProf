@@ -250,7 +250,7 @@ flowchart LR
 **Hiểu:**
 - **Ví dụ MobileNetV3:** CPU **8.48 ms**, T4 **2.81 ms**, nhanh hơn **×3.0**. Conv **73 → 47%**.
 - **Nếu thầy muốn xem thật:**
-  - Chạy `streamlit run src/dashboard/app.py`, mở tab **"3. Leaf Layer Breakdown"**.
+  - Chạy `streamlit run src/dashboard/app.py`, mở mục **"3. Phân tích layer"** trên thanh bên.
   - Lần đầu chạy, nếu Streamlit hỏi email thì bấm Enter để bỏ qua.
 
 **Nói:**
