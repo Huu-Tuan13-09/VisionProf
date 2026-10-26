@@ -6,6 +6,8 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
+from src.dashboard.utils import page_header, show_chart
+
 try:
     import plotly.graph_objects as go
 except ImportError:
@@ -25,7 +27,7 @@ MODEL_LABELS = {
 DEVICE_LABELS = {CPU_HW: "CPU laptop", GPU_HW: "GPU Colab T4"}
 
 _PALETTE = {
-    "light": ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7"],
+    "light": ["#B4480F", "#2456A6", "#1E7A4C", "#9C740D", "#AB3270", "#54717C", "#7757A6"],
     "dark":  ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300", "#9085e9"],
 }
 _ROOF_INK = {"light": "#52514e", "dark": "#c3c2b7"}
@@ -144,7 +146,7 @@ def _fig_roofline(summary: pd.DataFrame, hardware: dict) -> Optional[Any]:
         )
     fig.update_layout(
         height=420, margin=dict(l=10, r=10, t=30, b=10),
-        xaxis=dict(type="log", title="Arithmetic intensity (FLOP / byte)"),
+        xaxis=dict(type="log", title="Cường độ tính toán (FLOP / byte)"),
         yaxis=dict(type="log", title="Tốc độ tính đạt được (GFLOP/s)"),
         legend=dict(orientation="h", y=1.12, x=0),
         title=dict(text=f"{hardware.get('name', 'Device')} · trần {peak / 1000:.1f} TFLOP/s, {bw:.0f} GB/s · điểm gãy ≈ {ridge:.0f} FLOP/byte", font=dict(size=13)),
@@ -183,7 +185,7 @@ def render_layer_tab(results_dir: Path) -> None:
     """Render Tab 3: Detailed leaf layer breakdown, Roofline curve, and CPU vs GPU comparison."""
     if st is None:
         return
-    st.header("🟧 Leaf Layer Breakdown & Hotspot Identification")
+    page_header("Phân tích layer", "layer")
     models = _available_models(results_dir)
     if not models:
         st.info("Chưa có kết quả TN1. Chạy `python experiments/tn1_layer_breakdown.py --analyze` trước.")
@@ -191,7 +193,7 @@ def render_layer_tab(results_dir: Path) -> None:
 
     c1, c2 = st.columns([2, 1])
     model = c1.selectbox("Mô hình", models, format_func=MODEL_LABELS.get, key="layer_tab_model")
-    hw = c2.radio("Máy (cho biểu đồ chi tiết)", [GPU_HW, CPU_HW], format_func=DEVICE_LABELS.get, horizontal=True, key="layer_tab_hw")
+    hw = c2.radio("Thiết bị cho biểu đồ chi tiết", [GPU_HW, CPU_HW], format_func=DEVICE_LABELS.get, horizontal=True, key="layer_tab_hw")
 
     share_path = _find_tn1_path(results_dir, "analysis", "TN1", model, "compare_type_share.csv")
     top_path = _find_tn1_path(results_dir, "analysis", "TN1", model, "compare_top10.csv")
@@ -203,23 +205,29 @@ def render_layer_tab(results_dir: Path) -> None:
         k = st.columns(4)
         k[0].metric("Tổng thời gian layer · CPU", f"{t_cpu:.2f} ms")
         k[1].metric("Tổng thời gian layer · GPU T4", f"{t_gpu:.2f} ms")
-        k[2].metric("GPU nhanh hơn", f"×{t_cpu / t_gpu:.1f}" if t_gpu > 0 else "—")
+        k[2].metric("Tăng tốc CPU / T4", f"×{t_cpu / t_gpu:.1f}" if t_gpu > 0 else "—")
         meta = meta_gpu or meta_cpu
         if meta and meta.get("total_flops_counter"):
             flops = meta["total_flops_counter"]
             k[3].metric("FLOPs / 1 lần forward", f"{flops / 1e9:.2f} G" if flops >= 1e8 else f"{flops / 1e6:.2f} M")
 
-        st.markdown("##### Thời gian tập trung ở nhóm layer nào? (CH1)")
+        st.markdown("##### Tỷ trọng thời gian theo loại layer")
         fig_share = _fig_type_share(share)
         if fig_share is not None:
-            st.plotly_chart(fig_share, use_container_width=True, key="layer_tab_share")
-        with st.expander("Bảng tỷ trọng theo loại layer"):
-            st.dataframe(share.round(3), use_container_width=True, hide_index=True)
+            show_chart(fig_share, key="layer_tab_share")
+        with st.expander("Xem bảng số · tỷ trọng layer"):
+            st.dataframe(share.round(3), width="stretch", hide_index=True, column_config={
+                "layer_type": "Loại layer", "time_ms_cpu": "CPU (ms)", "time_ms_gpu": "T4 (ms)",
+                "pct_cpu": "CPU (%)", "pct_gpu": "T4 (%)", "speedup": "Tăng tốc (×)",
+            })
 
     if top is not None:
-        st.markdown("##### Top-10 layer chậm nhất — CPU và GPU đặt cạnh nhau")
+        st.markdown("##### Top-10 layer chậm · CPU và T4")
         cols = [c for c in ["layer_name", "layer_type", "time_ms_cpu", "rank_cpu", "time_ms_gpu", "rank_gpu", "speedup"] if c in top.columns]
-        st.dataframe(top[cols].round(3), use_container_width=True, hide_index=True)
+        st.dataframe(top[cols].round(3), width="stretch", hide_index=True, column_config={
+            "layer_name": "Layer", "layer_type": "Loại", "time_ms_cpu": "CPU (ms)",
+            "time_ms_gpu": "T4 (ms)", "rank_cpu": "Hạng CPU", "rank_gpu": "Hạng T4", "speedup": "Tăng tốc (×)",
+        })
 
     layers = _tn1(results_dir, hw, model, "layers.csv")
     summary = _tn1(results_dir, hw, model, "layers_summary.csv")
@@ -228,12 +236,12 @@ def render_layer_tab(results_dir: Path) -> None:
         st.markdown(f"##### Thời gian từng layer theo thứ tự chạy · {DEVICE_LABELS.get(hw, hw)}")
         fig_time = _fig_timeline(layers)
         if fig_time is not None:
-            st.plotly_chart(fig_time, use_container_width=True, key="layer_tab_timeline")
+            show_chart(fig_time, key="layer_tab_timeline")
     if summary is not None and meta and meta.get("hardware"):
-        st.markdown(f"##### Roofline · {DEVICE_LABELS.get(hw, hw)} — vì sao layer lớn chưa nhanh hơn?")
+        st.markdown(f"##### Roofline · {DEVICE_LABELS.get(hw, hw)}")
         fig_roof = _fig_roofline(summary, meta["hardware"])
         if fig_roof is not None:
-            st.plotly_chart(fig_roof, use_container_width=True, key="layer_tab_roof")
+            show_chart(fig_roof, key="layer_tab_roof")
 
 
 def render(results_dir: Path) -> None:

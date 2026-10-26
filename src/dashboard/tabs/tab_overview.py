@@ -3,6 +3,8 @@
 from pathlib import Path
 from typing import Any, Dict, List
 
+from src.dashboard.utils import page_header, show_chart
+
 try:
     import pandas as pd
     import plotly.express as px
@@ -29,11 +31,7 @@ def render(results_dir: Path) -> None:
     if not HAS_DEPS:
         return
 
-    st.header("📊 Model Overview & Macro Comparison")
-    st.markdown(
-        "Khảo sát toàn cảnh 12 chỉ số hiệu năng (Latency P50..P99, Thông lượng FPS, Peak VRAM, Process RSS, Đỉnh khởi động Cold-start) "
-        "giữa 8 mô hình đa lĩnh vực (CV, NLP, Tabular) trên CPU Laptop và Google Colab Tesla T4."
-    )
+    page_header("Tổng quan mô hình")
 
     summaries = load_all_run_summaries(results_dir)
     if not summaries:
@@ -47,13 +45,13 @@ def render(results_dir: Path) -> None:
     col_f1, col_f2, col_f3 = st.columns(3)
     with col_f1:
         devices = sorted(list(df["device"].dropna().unique()))
-        selected_devices = st.multiselect("💻 Thiết bị (Hardware)", options=devices, default=devices)
+        selected_devices = st.multiselect("Thiết bị", options=devices, default=devices)
     with col_f2:
         families = ["CV", "NLP", "Tabular"]
-        selected_families = st.multiselect("🧠 Nhóm mô hình (Family)", options=families, default=families)
+        selected_families = st.multiselect("Nhóm mô hình", options=families, default=families)
     with col_f3:
         experiments = sorted(list(df["experiment"].dropna().unique()))
-        selected_exps = st.multiselect("🔬 Thực nghiệm (Experiment)", options=experiments, default=["TN3"] if "TN3" in experiments else experiments)
+        selected_exps = st.multiselect("Thực nghiệm", options=experiments, default=["TN3"] if "TN3" in experiments else experiments)
 
     filtered_df = df[
         df["device"].isin(selected_devices)
@@ -66,7 +64,6 @@ def render(results_dir: Path) -> None:
         return
 
     # Metric Table Display
-    st.subheader("📋 Bảng Tổng Hợp 12 Chỉ Số Hiệu Năng")
     columns_12 = [
         "device", "model", "family", "config",
         "p50_ms", "mean_ms", "std_ms", "p90_ms", "p99_ms",
@@ -74,10 +71,23 @@ def render(results_dir: Path) -> None:
         "peak_vram_mb", "rss_mb", "cold_start_ms",
     ]
     avail_cols = [c for c in columns_12 if c in filtered_df.columns]
-    st.dataframe(filtered_df[avail_cols].sort_values(by=["device", "p50_ms"]), use_container_width=True)
+    k1, k2, k3 = st.columns(3)
+    k1.metric("Mô hình", filtered_df["model"].nunique())
+    k2.metric("Thiết bị", filtered_df["device"].nunique())
+    k3.metric("Lượt đo", len(filtered_df))
+    with st.expander("Xem bảng số", expanded=False):
+        st.dataframe(filtered_df[avail_cols].sort_values(by=["device", "p50_ms"]),
+                     width="stretch", hide_index=True, column_config={
+                         "device": "Thiết bị", "model": "Mô hình", "family": "Nhóm", "config": "Cấu hình",
+                         "p50_ms": "P50 (ms)", "mean_ms": "Trung bình (ms)", "std_ms": "Độ lệch chuẩn (ms)",
+                         "p90_ms": "P90 (ms)", "p99_ms": "P99 (ms)", "tail_ratio": "P99 / P50",
+                         "throughput_fps": "Thông lượng (FPS)", "params_m": "Tham số (triệu)",
+                         "peak_vram_mb": "Peak VRAM (MB)", "rss_mb": "Process RSS (MB)", "cold_start_ms": "Cold-start (ms)",
+                     })
+
 
     # Macro Visualizations
-    st.subheader("📈 Phân Tích Đánh Đổi: Tham Số vs Độ Trễ (CH3)")
+    st.subheader("Tham số và độ trễ")
     if "params_m" in filtered_df.columns and "p50_ms" in filtered_df.columns:
         fig_scatter = px.scatter(
             filtered_df,
@@ -89,20 +99,22 @@ def render(results_dir: Path) -> None:
             hover_data=["family", "throughput_fps", "tail_ratio", "peak_vram_mb"],
             log_x=True,
             log_y=True,
-            title="Đánh đổi: Số tham số (M) vs Latency P50 (ms) [Kích thước điểm: FPS]",
-            labels={"params_m": "Tham số (Triệu - Log scale)", "p50_ms": "P50 Latency (ms - Log scale)"},
+            title="Tham số và P50 · kích thước điểm theo FPS",
+            labels={"params_m": "Tham số (triệu, thang log)", "p50_ms": "P50 (ms, thang log)",
+                    "device": "Thiết bị", "family": "Nhóm", "throughput_fps": "Thông lượng (FPS)",
+                    "tail_ratio": "P99 / P50", "peak_vram_mb": "Peak VRAM (MB)"},
             template="plotly_white",
         )
-        st.plotly_chart(fig_scatter, use_container_width=True)
+        show_chart(fig_scatter)
 
     c1, c2 = st.columns(2)
     with c1:
         if "p50_ms" in filtered_df.columns:
-            fig_lat = make_bar_chart(filtered_df, x_col="model", y_col="p50_ms", color_col="device", title="Median Latency P50 (ms)")
+            fig_lat = make_bar_chart(filtered_df, x_col="model", y_col="p50_ms", color_col="device", title="Độ trễ P50 (ms)")
             if fig_lat:
-                st.plotly_chart(fig_lat, use_container_width=True)
+                show_chart(fig_lat)
     with c2:
         if "throughput_fps" in filtered_df.columns:
-            fig_fps = make_bar_chart(filtered_df, x_col="model", y_col="throughput_fps", color_col="device", title="Thông lượng Throughput (FPS)")
+            fig_fps = make_bar_chart(filtered_df, x_col="model", y_col="throughput_fps", color_col="device", title="Thông lượng (FPS)")
             if fig_fps:
-                st.plotly_chart(fig_fps, use_container_width=True)
+                show_chart(fig_fps)

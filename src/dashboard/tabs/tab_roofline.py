@@ -3,6 +3,8 @@
 from pathlib import Path
 from typing import Any
 
+from src.dashboard.utils import page_header, show_chart
+
 try:
     import pandas as pd
     import streamlit as st
@@ -13,15 +15,15 @@ except ImportError:
 
 def render(results_dir: Path) -> None:
     """Render Tab 4: Roofline hardware efficiency evaluation."""
-    st.header("📈 Roofline Model & Hardware Peak Efficiency")
-    st.markdown("Đánh giá mức độ tiệm cận công suất tính toán đỉnh (% Peak TFLOPs) của Colab T4 và Xeon CPU.")
+    page_header("Roofline", "layer")
+    st.caption("Hiệu suất tính toán so với đỉnh phần cứng.")
 
     layer_files = list(results_dir.glob("**/layers.csv"))
     if not layer_files:
         st.info("Cần dữ liệu `layers.csv` để tính toán Roofline efficiency.")
         return
 
-    selected_file = st.selectbox("Chọn file layers.csv:", layer_files, format_func=lambda p: str(p.relative_to(results_dir)))
+    selected_file = st.selectbox("Chọn lượt đo", layer_files, format_func=lambda p: str(p.relative_to(results_dir)))
     if not selected_file or selected_file.stat().st_size == 0:
         st.warning("File layers.csv rỗng.")
         return
@@ -51,6 +53,6 @@ def render(results_dir: Path) -> None:
     eff_pct = calculate_roofline_efficiency(avg_flops, avg_time_ms, device)
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("GFLOPs / Iteration", f"{avg_flops:.2f} GFLOPs")
-    col2.metric("Thời Gian Layers / Pass", f"{avg_time_ms:.2f} ms")
-    col3.metric("Hiệu Suất vs Peak", f"{eff_pct:.2f}%")
+    col1.metric("GFLOPs / iteration", f"{avg_flops:.2f} GFLOPs")
+    col2.metric("Thời gian layer / pass", f"{avg_time_ms:.2f} ms")
+    col3.metric("Hiệu suất so với đỉnh", f"{eff_pct:.2f}%")

@@ -1,18 +1,11 @@
-"""Tab 6 — TN7: Real-World Pipeline Phase Breakdown (CH6) [Owned by TV3].
-
-Visualises preprocess / model_forward / postprocess ratios for 3 pipelines:
-  • YOLO   : preprocess (resize) → model_forward → postprocess_nms
-  • BERT   : tokenize → model_forward → decode_pooling
-  • XGBoost: csv_parse → predict
-
-Answers CH6: "Ngoài model (tiền/hậu xử lý) chiếm bao nhiêu %?"
-Expected: YOLO batch-1 on GPU: preprocess + NMS > 30% total.
-"""
+"""Tab 6: Tỷ trọng, overhead và thời gian các pipeline TN7."""
 
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, Dict, List
+
+from src.dashboard.utils import page_header, show_chart
 
 try:
     import pandas as pd
@@ -23,16 +16,8 @@ try:
 except ImportError:
     HAS_DEPS = False
 
-# ── Colour maps ──────────────────────────────────────────────────────────────
-_PHASE_COLORS: Dict[str, str] = {
-    "preprocess":      "#F59E0B",   # amber — overhead
-    "tokenize":        "#F59E0B",   # same amber for NLP pre
-    "csv_parse":       "#F59E0B",   # same amber for tabular
-    "model_forward":   "#3B82F6",   # blue — model
-    "postprocess_nms": "#EF4444",   # red — overhead
-    "decode_pooling":  "#10B981",   # green — small post
-    "predict":         "#3B82F6",   # blue — predict (XGB)
-}
+from src.dashboard.utils import DEVICE_COLORS, PHASE_COLORS as _PHASE_COLORS
+
 _MODEL_LABELS: Dict[str, str] = {
     "yolov8n":  "YOLO v8-nano (CV)",
     "bert_base": "BERT-base (NLP)",
@@ -42,8 +27,6 @@ _OVERHEAD_PHASES = {
     "preprocess", "tokenize", "csv_parse", "postprocess_nms", "decode_pooling"
 }
 
-
-# ── Data helpers ─────────────────────────────────────────────────────────────
 
 def _load_tn7_phases(results_dir: Path) -> pd.DataFrame:
     """Scan **/TN7/**/phases.csv and aggregate per (device, model, phase)."""
@@ -84,15 +67,9 @@ def _compute_overhead_pct(df: pd.DataFrame) -> pd.DataFrame:
     return merged
 
 
-# ── Section renderers ────────────────────────────────────────────────────────
-
 def _render_pie_breakdown(df: pd.DataFrame) -> None:
     """Pie/donut chart per model showing phase proportion."""
-    st.subheader("🥧 Tỷ Lệ % Giai Đoạn (Donut Chart)")
-    st.caption(
-        "Phần màu vàng/đỏ = overhead ngoài model. "
-        "Phần màu xanh dương = thời gian model thực sự."
-    )
+    st.subheader("Tỷ trọng thời gian theo giai đoạn")
 
     devices = sorted(df["device"].unique())
     sel_dev = st.radio("Thiết bị:", devices, horizontal=True, key="tn7_dev_pie")
@@ -117,21 +94,18 @@ def _render_pie_breakdown(df: pd.DataFrame) -> None:
                 hovertemplate="%{label}<br>%{value:.2f} ms<br>%{percent}<extra></extra>",
             ))
             fig.update_layout(
-                title=f"{_MODEL_LABELS.get(model, model)}<br><sup>Total: {total:.1f} ms</sup>",
+                title=f"{_MODEL_LABELS.get(model, model)}<br><sup>Tổng: {total:.1f} ms</sup>",
                 height=320,
                 margin=dict(t=60, b=20, l=10, r=10),
                 showlegend=False,
                 template="plotly_white",
             )
-            st.plotly_chart(fig, use_container_width=True)
+            show_chart(fig)
 
 
 def _render_overhead_bar(df: pd.DataFrame) -> None:
     """Grouped bar: overhead% across models and devices."""
-    st.subheader("📊 % Thời Gian Overhead Ngoài Model (CH6)")
-    st.caption(
-        "CH6 kỳ vọng: YOLO batch-1 trên GPU → preprocess + NMS **> 30%** tổng thời gian."
-    )
+    st.subheader("Overhead ngoài mô hình")
     df_pct = _compute_overhead_pct(df)
     if df_pct.empty:
         return
@@ -141,21 +115,21 @@ def _render_overhead_bar(df: pd.DataFrame) -> None:
         x="model_label", y="overhead_pct", color="device",
         barmode="group",
         text="overhead_pct",
-        title="% Thời Gian Ngoài Model (preprocess + postprocess)",
-        labels={"overhead_pct": "Overhead (%)", "model_label": "Model"},
-        color_discrete_map={"colab_t4": "#7C3AED", "colab_cpu": "#0EA5E9", "cpu_laptop": "#64748B"},
+        title="Tiền xử lý và hậu xử lý trong tổng thời gian",
+        labels={"overhead_pct": "Overhead (%)", "model_label": "Mô hình", "device": "Thiết bị"},
+        color_discrete_map=DEVICE_COLORS,
         template="plotly_white",
     )
     fig.add_hline(y=30, line_dash="dot", line_color="#F59E0B",
-                  annotation_text="30% threshold (CH6)", annotation_position="top right")
+                  annotation_text="Mốc 30% (CH6)", annotation_position="top right")
     fig.update_traces(texttemplate="%{text:.1f}%", textposition="outside")
     fig.update_layout(height=400, yaxis=dict(range=[0, 100]))
-    st.plotly_chart(fig, use_container_width=True)
+    show_chart(fig)
 
 
 def _render_stacked_absolute(df: pd.DataFrame) -> None:
     """Stacked absolute ms bar: model × device."""
-    st.subheader("⏱ Thời Gian Tuyệt Đối Mỗi Giai Đoạn (ms)")
+    st.subheader("Thời gian mỗi giai đoạn")
 
     devices = sorted(df["device"].unique())
     sel_dev = st.radio("Thiết bị:", devices, horizontal=True, key="tn7_dev_abs")
@@ -179,23 +153,19 @@ def _render_stacked_absolute(df: pd.DataFrame) -> None:
         ))
     fig.update_layout(
         barmode="stack",
-        title=f"Thời Gian Tuyệt Đối Mỗi Giai Đoạn — {sel_dev}",
-        xaxis_title="Model",
+        title=f"Thời gian theo giai đoạn · {sel_dev}",
+        xaxis_title="Mô hình",
         yaxis_title="Thời gian trung bình (ms)",
         template="plotly_white",
-        legend_title="Phase",
+        legend_title="Giai đoạn",
         height=420,
     )
-    st.plotly_chart(fig, use_container_width=True)
+    show_chart(fig)
 
 
 def _render_cpu_vs_gpu_overhead(df: pd.DataFrame) -> None:
     """Side-by-side comparison: how overhead % differs CPU vs GPU."""
-    st.subheader("🖥️ ↔ ⚡ CPU vs GPU: Overhead Thay Đổi Như Thế Nào?")
-    st.caption(
-        "Trên GPU, model_forward nhanh hơn nhiều nhưng overhead "
-        "(preprocess/NMS) vẫn chạy trên CPU → tỷ lệ overhead **tăng**."
-    )
+    st.subheader("Overhead trên CPU và T4")
     df_pct = _compute_overhead_pct(df)
     if df_pct.empty or df_pct["device"].nunique() < 2:
         st.info("Cần dữ liệu từ ít nhất 2 thiết bị để so sánh.")
@@ -207,27 +177,24 @@ def _render_cpu_vs_gpu_overhead(df: pd.DataFrame) -> None:
         barmode="group",
         facet_col=None,
         text="overhead_pct",
-        title="Overhead % — CPU vs GPU",
-        labels={"overhead_pct": "Overhead (%)", "model_label": "Model"},
-        color_discrete_map={"colab_t4": "#7C3AED", "colab_cpu": "#0EA5E9"},
+        title="Overhead · CPU và T4",
+        labels={"overhead_pct": "Overhead (%)", "model_label": "Mô hình", "device": "Thiết bị"},
+        color_discrete_map=DEVICE_COLORS,
         template="plotly_white",
     )
     fig.update_traces(texttemplate="%{text:.1f}%", textposition="outside")
     fig.add_hline(y=30, line_dash="dot", line_color="gray",
                   annotation_text="30%")
     fig.update_layout(height=400, yaxis=dict(range=[0, 100]))
-    st.plotly_chart(fig, use_container_width=True)
+    show_chart(fig)
 
 
 def _render_raw_table(df: pd.DataFrame) -> None:
     """Raw mean/P50/P95 table for all phases."""
-    st.subheader("📋 Bảng Tổng Hợp Thô")
     disp = df[["device", "model_label", "phase", "mean_ms", "p50_ms", "p95_ms", "n_iter"]].copy()
-    disp.columns = ["Device", "Model", "Phase", "Mean (ms)", "P50 (ms)", "P95 (ms)", "N Iter"]
-    st.dataframe(disp.sort_values(["Device", "Model", "Phase"]), use_container_width=True)
+    disp.columns = ["Thiết bị", "Mô hình", "Giai đoạn", "Trung bình (ms)", "P50 (ms)", "P95 (ms)", "Số iteration"]
+    st.dataframe(disp.sort_values(["Thiết bị", "Mô hình", "Giai đoạn"]), width="stretch", hide_index=True)
 
-
-# ── Main render ──────────────────────────────────────────────────────────────
 
 def render(results_dir: Path) -> None:
     """Render Tab 6: TN7 Real-World Pipeline Phase Breakdown — answers CH6."""
@@ -235,16 +202,7 @@ def render(results_dir: Path) -> None:
         st.error("Thiếu thư viện: pandas, plotly, streamlit.")
         return
 
-    st.header("🟩 TN7 — Real-World Pipeline Breakdown (CH6)")
-    st.markdown(
-        "**CH6**: Trong ứng dụng thật, **ngoài model** (tiền xử lý, NMS, tokenize) "
-        "chiếm bao nhiêu % tổng thời gian pipeline?"
-    )
-    st.info(
-        "**Kỳ vọng**: YOLO batch-1 trên GPU → preprocess + NMS **> 30%** "
-        "| BERT: tokenize rất nhỏ (<5%) | XGBoost: csv_parse chiếm ~50%"
-    )
-
+    page_header("Pipeline TN7", "phase")
     df = _load_tn7_phases(results_dir)
     if df.empty:
         st.info(
@@ -253,29 +211,24 @@ def render(results_dir: Path) -> None:
         )
         return
 
-    # ── KPI row ───────────────────────────────────────────────────────────────
     df_pct = _compute_overhead_pct(df)
     if not df_pct.empty:
         yolo_t4 = df_pct[(df_pct["model"] == "yolov8n") & (df_pct["device"] == "colab_t4")]
         bert_t4 = df_pct[(df_pct["model"] == "bert_base") & (df_pct["device"] == "colab_t4")]
         xgb_t4  = df_pct[(df_pct["model"] == "xgboost")  & (df_pct["device"] == "colab_t4")]
         c1, c2, c3 = st.columns(3)
-        c1.metric("🎯 YOLO Overhead (T4)",
-                  f"{yolo_t4['overhead_pct'].values[0]:.1f}%" if not yolo_t4.empty else "N/A",
-                  delta="CH6: >30%?" if not yolo_t4.empty else None)
-        c2.metric("💬 BERT Overhead (T4)",
-                  f"{bert_t4['overhead_pct'].values[0]:.1f}%" if not bert_t4.empty else "N/A")
-        c3.metric("📊 XGBoost Overhead (T4)",
-                  f"{xgb_t4['overhead_pct'].values[0]:.1f}%" if not xgb_t4.empty else "N/A")
+        c1.metric("Overhead YOLO · T4",
+                  f"{yolo_t4['overhead_pct'].values[0]:.1f}%" if not yolo_t4.empty else "—")
+        c2.metric("Overhead BERT · T4",
+                  f"{bert_t4['overhead_pct'].values[0]:.1f}%" if not bert_t4.empty else "—")
+        c3.metric("Overhead XGBoost · T4",
+                  f"{xgb_t4['overhead_pct'].values[0]:.1f}%" if not xgb_t4.empty else "—")
 
-    st.markdown("---")
-
-    tab_pie, tab_bar, tab_abs, tab_cmp, tab_tbl = st.tabs([
-        "🥧 Donut (% Tỷ Lệ)",
-        "📊 Overhead % Bar",
-        "⏱ Tuyệt Đối (ms)",
-        "🖥️↔⚡ CPU vs GPU",
-        "📋 Bảng Thô",
+    tab_pie, tab_bar, tab_abs, tab_cmp = st.tabs([
+        "Tỷ trọng (%)",
+        "Overhead % Bar",
+        "Thời gian (ms)",
+        "CPU và T4",
     ])
     with tab_pie:
         _render_pie_breakdown(df)
@@ -285,5 +238,5 @@ def render(results_dir: Path) -> None:
         _render_stacked_absolute(df)
     with tab_cmp:
         _render_cpu_vs_gpu_overhead(df)
-    with tab_tbl:
+    with st.expander("Xem bảng số · giai đoạn pipeline"):
         _render_raw_table(df)

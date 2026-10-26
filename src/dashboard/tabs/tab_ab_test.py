@@ -1,7 +1,9 @@
-"""Tab 7: A/B comparison and statistical hypothesis testing [Owned by TV3]."""
+"""Tab 8: A/B comparison and statistical hypothesis testing [Owned by TV3]."""
 
 from pathlib import Path
 from typing import Any
+
+from src.dashboard.utils import page_header, show_chart
 
 try:
     import pandas as pd
@@ -13,9 +15,9 @@ except ImportError:
 
 
 def render(results_dir: Path) -> None:
-    """Render Tab 7: Rigorous A/B comparison with Mann-Whitney U test."""
-    st.header("🧪 A/B Comparison & Statistical Significance")
-    st.markdown("So sánh hai cấu hình (ví dụ: FP32 vs FP16, Batch 1 vs Batch 32) với kiểm định Mann-Whitney U & Cliff's Delta.")
+    """Render Tab 8: Rigorous A/B comparison with Mann-Whitney U test."""
+    page_header("So sánh A/B", "phase")
+    st.caption("Tăng tốc giữa hai lượt đo; kiểm định Mann-Whitney U và Cliff’s Delta.")
 
     bench_files = list(results_dir.glob("**/benchmark.csv"))
     if len(bench_files) < 2:
@@ -24,9 +26,12 @@ def render(results_dir: Path) -> None:
 
     col1, col2 = st.columns(2)
     with col1:
-        run_a = st.selectbox("Chọn Cấu hình A (Baseline):", bench_files, key="run_a", format_func=lambda p: str(p.parent.relative_to(results_dir)))
+        run_a = st.selectbox("A · Cấu hình gốc", bench_files, key="run_a", format_func=lambda p: str(p.parent.relative_to(results_dir)))
     with col2:
-        run_b = st.selectbox("Chọn Cấu hình B (Optimized):", bench_files, key="run_b", format_func=lambda p: str(p.parent.relative_to(results_dir)))
+        run_b = st.selectbox("B · Cấu hình so sánh", bench_files, key="run_b", format_func=lambda p: str(p.parent.relative_to(results_dir)))
+
+    if run_a == run_b:
+        st.info("A và B đang cùng một lượt đo. Chọn hai cấu hình khác nhau để so sánh.")
 
     if run_a and run_b:
         if run_a.stat().st_size == 0 or run_b.stat().st_size == 0:
@@ -49,16 +54,16 @@ def render(results_dir: Path) -> None:
             res = ABComparisonEngine.compare_runs(lats_a, lats_b)
 
             c1, c2, c3 = st.columns(3)
-            c1.metric("Overall Speedup", f"{res['speedup']}x")
+            c1.metric("Tăng tốc A/B", f"{res['speedup']}x")
             c2.metric("Cliff's Delta", f"{res['cliffs_delta']}")
             c3.metric("p-value", f"{res['p_value']:.4e}")
 
             # Combined box plot
-            df_a["Variant"] = "A (Baseline)"
-            df_b["Variant"] = "B (Optimized)"
+            df_a["Variant"] = "A · Gốc"
+            df_b["Variant"] = "B · So sánh"
             combined = pd.concat([df_a, df_b])
-            fig_box = make_box_plot(combined, x_col="Variant", y_col="latency_ms", title="Phân Phối Độ Trễ A vs B (ms)")
+            fig_box = make_box_plot(combined, x_col="Variant", y_col="latency_ms", title="Phân phối độ trễ A và B")
             if fig_box:
-                st.plotly_chart(fig_box, use_container_width=True)
+                show_chart(fig_box)
         except Exception as exc:
             st.error(f"Lỗi khi xử lý dữ liệu A/B test: {exc}")

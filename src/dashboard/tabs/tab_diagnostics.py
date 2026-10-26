@@ -1,57 +1,62 @@
-"""Tab 6: Heuristic diagnostic rules v2.0 assessment report [Owned by TV3]."""
+"""Tab 7: Kết quả và khuyến nghị từ 19 luật chẩn đoán."""
 
 from pathlib import Path
-from typing import Any
 
-try:
-    import pandas as pd
-    import streamlit as st
-    from src.analyzer.engine import DiagnosticEngine
-except ImportError:
-    pass
+import pandas as pd
+import streamlit as st
+
+from src.analyzer.engine import DiagnosticEngine
+from src.dashboard.tabs.diagnostic_text import RULE_LABELS, STATUS_LABELS, translate_message
+from src.dashboard.utils import page_header
 
 
 def render(results_dir: Path) -> None:
-    """Render Tab 6: 19 heuristic rules diagnostic report."""
-    st.header("🩺 Diagnostic Engine v2.0 (19 Heuristic Rules)")
-    st.markdown("Hệ thống cảnh báo tự động phát hiện nghẽn cổ chai bộ nhớ, tính toán, và kiến trúc.")
-
+    """Chọn lượt đo, xem một luật và tra bảng đầy đủ của engine."""
+    page_header("Chẩn đoán", "phase")
     subdirs = [p for p in results_dir.glob("*/*/*/*") if p.is_dir()]
     if not subdirs:
-        st.info("Chưa có thư mục kết quả trong `results/`.")
+        st.info("Chưa có lượt đo để chẩn đoán.")
         return
 
-    selected_dir = st.selectbox("Chọn thư mục thực nghiệm để chẩn đoán:", subdirs, format_func=lambda p: str(p.relative_to(results_dir)))
+    selected_dir = st.selectbox("Chọn lượt đo", subdirs,
+                                format_func=lambda p: str(p.relative_to(results_dir)), key="diagnostic_run")
     if not selected_dir:
         return
+    results = DiagnosticEngine().evaluate_directory(selected_dir)
+    if not results:
+        st.info("Lượt đo này chưa có kết quả chẩn đoán.")
+        return
 
-    engine = DiagnosticEngine()
-    results = engine.evaluate_directory(selected_dir)
+    for col, status in zip(st.columns(4), STATUS_LABELS):
+        count = sum(r.status.value == status for r in results)
+        col.metric(f"{STATUS_LABELS[status]} · {status}", count)
 
-    records = [r.to_dict() for r in results]
-    df = pd.DataFrame(records)
+    rules = {r.rule_id: r for r in results}
+    rule_ids = sorted(rules)
+    selected_rule = st.selectbox(
+        "Xem luật", rule_ids, index=rule_ids.index("RB-04") if "RB-04" in rule_ids else 0,
+        format_func=lambda rid: f"{rid} · {RULE_LABELS.get(rid, rid)}", key="diagnostic_rule",
+    )
+    rule = rules[selected_rule]
+    with st.container(border=True):
+        st.subheader(f"{rule.rule_id} · {RULE_LABELS.get(rule.rule_id, rule.title)}")
+        status = rule.status.value
+        message = f"**{STATUS_LABELS[status]} ({status})** · {translate_message(rule.message)}"
+        presenter = {"PASS": st.success, "WARN": st.warning, "FAIL": st.error, "SKIPPED": st.info}[status]
+        presenter(message)
+        if rule.recommendation:
+            st.markdown(f"**Đề xuất:** {rule.recommendation}")
 
-    # Status summary
-    pass_cnt = sum(1 for r in results if r.status.value == "PASS")
-    warn_cnt = sum(1 for r in results if r.status.value == "WARN")
-    fail_cnt = sum(1 for r in results if r.status.value == "FAIL")
-    skip_cnt = sum(1 for r in results if r.status.value == "SKIPPED")
+    actionable = [r for r in results if r.status.value in ("WARN", "FAIL") and r.recommendation]
+    if actionable:
+        st.subheader("Các điểm cần chú ý")
+        for r in actionable:
+            with st.expander(f"{r.rule_id} · {RULE_LABELS.get(r.rule_id, r.title)} · {STATUS_LABELS[r.status.value]}"):
+                st.write(translate_message(r.message))
+                st.markdown(f"**Đề xuất:** {r.recommendation}")
 
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("PASS", pass_cnt)
-    c2.metric("WARN", warn_cnt)
-    c3.metric("FAIL", fail_cnt)
-    c4.metric("SKIPPED", skip_cnt)
-
-    st.subheader("Chi Tiết Từng Quy Tắc & Đề Xuất Khắc Phục")
-    display_cols = ["rule_id", "status", "title", "message", "recommendation"]
-    st.dataframe(df[display_cols], use_container_width=True)
-
-    actionable_rules = [r for r in results if r.status.value in ("WARN", "FAIL") and r.recommendation]
-    if actionable_rules:
-        st.subheader("💡 Khuyến Nghị Kỹ Thuật & Đoạn Mã Mẫu (Actionable Code Suggestions)")
-        for r in actionable_rules:
-            icon = "⚠️" if r.status.value == "WARN" else "🚨"
-            with st.expander(f"{icon} [{r.rule_id}] {r.title} — {r.status.value}"):
-                st.markdown(f"**Triệu chứng**: {r.message}")
-                st.info(f"**Hành động đề xuất**: {r.recommendation}")
+    with st.expander("Xem bảng số · toàn bộ 19 luật"):
+        records = [{"Mã luật": r.rule_id, "Trạng thái": f"{STATUS_LABELS[r.status.value]} ({r.status.value})",
+                    "Nội dung": RULE_LABELS.get(r.rule_id, r.title), "Kết quả": translate_message(r.message),
+                    "Đề xuất": r.recommendation} for r in results]
+        st.dataframe(pd.DataFrame(records), width="stretch", hide_index=True)

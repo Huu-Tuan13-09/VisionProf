@@ -1,35 +1,20 @@
-"""Tab 5a — TN6: Training Phase Breakdown (CH5) [Owned by TV3].
-
-Visualises forward / backward / optimizer step durations across 5 training
-models on colab_t4 and colab_cpu.  Answers CH5:
-  - Backward ≈ 2× forward?
-  - Memory train vs inference?
-  - DataLoader starvation at num_workers=0?
-"""
+"""Tab 5: Giai đoạn training, VRAM và DataLoader của TN6."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
-try:
-    import pandas as pd
-    import plotly.express as px
-    import plotly.graph_objects as go
-    import streamlit as st
-    HAS_DEPS = True
-except ImportError:
-    HAS_DEPS = False
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import streamlit as st
 
-_PHASE_COLORS: Dict[str, str] = {
-    "forward": "#3B82F6", "backward": "#EF4444", "optimizer": "#10B981",
-    "dataloader": "#F59E0B", "data_load": "#F59E0B", "fit": "#8B5CF6",
-}
-_DEVICE_COLORS: Dict[str, str] = {"colab_t4": "#7C3AED", "colab_cpu": "#0EA5E9", "cpu_laptop": "#64748B"}
+from src.dashboard.utils import (
+    DEVICE_COLORS as _DEVICE_COLORS, PHASE_COLORS as _PHASE_COLORS, page_header, show_chart,
+)
 
-
-# ── Data loading helpers ─────────────────────────────────────────────────────
 
 def _load_tn6_phases(results_dir: Path) -> pd.DataFrame:
     """Scan results/**TN6**/phases.csv and dataloader_phases.csv and return aggregated DataFrame."""
@@ -78,12 +63,10 @@ def _load_memory_ratio(results_dir: Path) -> pd.DataFrame:
     return pd.DataFrame(rows) if rows else pd.DataFrame()
 
 
-# ── Section renderers ────────────────────────────────────────────────────────
-
 def _render_stacked_breakdown(df: pd.DataFrame) -> None:
     """Stacked bar: each model coloured by phase — shows total and breakdown."""
-    st.subheader("📊 Phân Rã Bước Training (Stacked Bar)")
-    st.caption("Mỗi thanh = tổng một iteration. Màu thể hiện giai đoạn.")
+    st.subheader("Thời gian mỗi bước training")
+    st.caption("Thời gian trung bình theo giai đoạn; mỗi màu ứng với một giai đoạn.")
 
     devices = sorted(df["device"].unique())
     sel_dev = st.radio("Thiết bị:", devices, horizontal=True, key="tn6_dev_stacked")
@@ -92,7 +75,6 @@ def _render_stacked_breakdown(df: pd.DataFrame) -> None:
         st.info("Không có dữ liệu TN6 cho thiết bị này.")
         return
 
-    # Pivot: model × phase → mean_ms
     pivot = sub.pivot_table(index="model", columns="phase", values="mean_ms", aggfunc="mean").fillna(0)
     pivot["total_ms"] = pivot.sum(axis=1)
     pivot = pivot.sort_values("total_ms", ascending=False).drop(columns="total_ms")
@@ -101,31 +83,23 @@ def _render_stacked_breakdown(df: pd.DataFrame) -> None:
     for phase in pivot.columns:
         color = _PHASE_COLORS.get(phase, "#94A3B8")
         fig.add_trace(go.Bar(
-            name=phase,
-            x=pivot.index.tolist(),
-            y=pivot[phase].tolist(),
+            name=phase, x=pivot.index.tolist(), y=pivot[phase].tolist(),
             marker_color=color,
             text=[f"{v:.1f}" for v in pivot[phase]],
             textposition="inside",
         ))
     fig.update_layout(
-        barmode="stack",
-        title=f"Training Step Breakdown — {sel_dev}",
-        xaxis_title="Model",
-        yaxis_title="Thời gian trung bình (ms)",
-        template="plotly_white",
-        legend_title="Phase",
-        height=420,
+        barmode="stack", title=f"Thời gian theo giai đoạn · {sel_dev}",
+        xaxis_title="Mô hình", yaxis_title="Thời gian trung bình (ms)",
+        template="plotly_white", legend_title="Giai đoạn", height=420,
     )
-    st.plotly_chart(fig, use_container_width=True)
+    show_chart(fig)
 
 
 def _render_bwd_fwd_ratio(df: pd.DataFrame) -> None:
     """Bar chart: backward/forward ratio to answer CH5."""
-    st.subheader("🔄 Tỷ Lệ Backward / Forward (CH5)")
-    st.caption("Kỳ vọng: backward ≈ 2× forward. GPU backward = accumulate gradients → ≥ 2×.")
+    st.subheader("Tỷ lệ backward / forward")
 
-    # Pivot so we can compute ratio
     pivot = df.pivot_table(
         index=["device", "model"], columns="phase", values="mean_ms", aggfunc="mean"
     ).reset_index()
@@ -147,52 +121,51 @@ def _render_bwd_fwd_ratio(df: pd.DataFrame) -> None:
             fig = px.bar(
                 sub.sort_values("bwd_fwd_ratio", ascending=False),
                 x="model", y="bwd_fwd_ratio",
-                title=f"Backward/Forward Ratio — {dev}",
+                title=f"Backward / forward · {dev}",
                 color_discrete_sequence=[color],
                 text="bwd_fwd_ratio",
-                labels={"bwd_fwd_ratio": "Ratio (×)", "model": "Model"},
+                labels={"bwd_fwd_ratio": "Tỷ lệ (×)", "model": "Mô hình"},
                 template="plotly_white",
             )
             fig.add_hline(y=2.0, line_dash="dot", line_color="gray",
                           annotation_text="Kỳ vọng 2×", annotation_position="top right")
             fig.update_layout(height=350)
-            st.plotly_chart(fig, use_container_width=True)
+            show_chart(fig)
 
 
 def _render_memory_ratio(df_mem: pd.DataFrame) -> None:
     """Show train/infer VRAM ratio from memory_ratio.json."""
-    st.subheader("💾 Bộ Nhớ Training vs Inference (CH5)")
+    st.subheader("VRAM training và inference")
     if df_mem.empty:
         st.info("Chưa có file `memory_ratio.json` (chỉ xuất hiện khi chạy trên GPU CUDA).")
         return
 
-    st.caption("Kỳ vọng: bộ nhớ training gấp 2–4× inference (activations + gradients).")
     fig = px.bar(
         df_mem.dropna(subset=["memory_ratio"]).sort_values("memory_ratio", ascending=False),
         x="model", y="memory_ratio", color="device",
         barmode="group",
         text="memory_ratio",
-        title="Memory Ratio: Train / Inference Peak VRAM",
-        labels={"memory_ratio": "Train/Infer (×)", "model": "Model"},
+        title="Tỷ lệ peak VRAM · training / inference",
+        labels={"memory_ratio": "Train / infer (×)", "model": "Mô hình"},
         color_discrete_map=_DEVICE_COLORS,
         template="plotly_white",
     )
     fig.add_hline(y=2.0, line_dash="dash", line_color="#F59E0B",
-                  annotation_text="×2 baseline")
+                  annotation_text="Mốc tham chiếu ×2")
     fig.update_layout(height=380)
-    st.plotly_chart(fig, use_container_width=True)
+    show_chart(fig)
 
 
 def _render_latency_dist(results_dir: Path) -> None:
     """Box plot: iteration-level time_ms distribution per phase."""
-    st.subheader("📦 Phân Phối Thời Gian Theo Giai Đoạn (Box Plot)")
+    st.subheader("Phân phối thời gian theo giai đoạn")
 
     phase_files = sorted(list(results_dir.glob("**/TN6/**/phases.csv")) + list(results_dir.glob("**/TN6/**/dataloader_phases.csv")))
     if not phase_files:
         return
 
     file_opts = {str(p.relative_to(results_dir)): p for p in phase_files}
-    sel = st.selectbox("Chọn file phases.csv hoặc dataloader_phases.csv:", list(file_opts.keys()),
+    sel = st.selectbox("Chọn lượt đo", list(file_opts.keys()),
                        key="tn6_box_sel")
     if not sel:
         return
@@ -207,19 +180,17 @@ def _render_latency_dist(results_dir: Path) -> None:
 
     fig = px.box(
         df_raw, x="phase", y="time_ms", color="phase",
-        points="all",
-        title=f"Phân Phối Thời Gian Theo Phase — {sel}",
+        points="all", title=f"Phân phối thời gian · {sel}",
         labels={"time_ms": "Thời gian (ms)", "phase": "Giai đoạn"},
-        color_discrete_map=_PHASE_COLORS,
-        template="plotly_white",
+        color_discrete_map=_PHASE_COLORS, template="plotly_white",
     )
     fig.update_layout(height=380, showlegend=False)
-    st.plotly_chart(fig, use_container_width=True)
+    show_chart(fig)
 
 
 def _render_dataloader_workers(results_dir: Path) -> None:
     """Render DataLoader num_workers sweep analysis (CH5)."""
-    st.subheader("🚚 Ảnh Hưởng Của DataLoader Workers & GPU Starvation (CH5)")
+    st.subheader("DataLoader và thời gian chờ dữ liệu")
     st.caption("Dữ liệu đo thật với ảnh JPEG + Transforms trên Colab T4 (2 vCPU, Batch 32).")
     dl_rows = []
     for p in results_dir.glob("**/TN6/**/dataloader_summary.json"):
@@ -236,25 +207,17 @@ def _render_dataloader_workers(results_dir: Path) -> None:
     if not dl_rows:
         st.info("Chưa có kết quả dataloader_summary.json.")
         return
-    st.dataframe(pd.DataFrame(dl_rows).sort_values(by=["model", "num_workers"]), use_container_width=True)
-    st.info(
-        "💡 **Kết luận khoa học:**\n"
-        "- Khi `num_workers = 0`, GPU mất tới **62.6% thời gian chờ CPU nạp ảnh** (kích hoạt luật RC-03 GPU Starvation).\n"
-        "- Tăng lên `num_workers = 2` giảm thời gian chờ xuống **3.3%**, tăng gấp đôi thông lượng MobileNetV3 (132 -> 274 ảnh/s).\n"
-        "- `num_workers = 4` không tăng tốc hơn do Colab chỉ có 2 vCPU, worker phụ tranh chấp CPU với luồng chính (khớp Data Stalls)."
-    )
+    st.dataframe(pd.DataFrame(dl_rows).sort_values(by=["model", "num_workers"]),
+                 width="stretch", hide_index=True, column_config={
+                     "model": "Mô hình", "num_workers": "Workers", "data_load_ms": "Nạp dữ liệu (ms)",
+                     "step_ms": "Bước training (ms)", "data_load_%": "Thời gian chờ (%)",
+                     "throughput_img_s": "Thông lượng (ảnh/s)",
+                 })
 
-
-# ── Main render function ─────────────────────────────────────────────────────
 
 def render(results_dir: Path) -> None:
     """Render Tab 5: TN6 Training Phase Breakdown — answers CH5."""
-    if not HAS_DEPS:
-        st.error("Thiếu thư viện: pandas, plotly, streamlit.")
-        return
-
-    st.header("🟩 TN6 — Training Phase Breakdown (CH5)")
-    st.markdown("**CH5**: Khi training, backward tốn gấp mấy lần forward? Bộ nhớ tăng bao nhiêu? Nạp dữ liệu có làm GPU phải chờ?")
+    page_header("Training TN6", "phase")
 
     df = _load_tn6_phases(results_dir)
     if df.empty:
@@ -263,25 +226,21 @@ def render(results_dir: Path) -> None:
 
     df_std = df[~df["config"].str.contains("_w")].copy() if "config" in df.columns else df
 
-    # ── KPI metrics row ───────────────────────────────────────────────────────
-    st.markdown("---")
     t4 = df_std[df_std["device"] == "colab_t4"]
     if not t4.empty:
         t4_piv = t4.pivot_table(index="model", columns="phase", values="mean_ms", aggfunc="mean")
         if "forward" in t4_piv.columns and "backward" in t4_piv.columns:
             ratios = (t4_piv["backward"] / t4_piv["forward"]).dropna()
             col_k1, col_k2, col_k3 = st.columns(3)
-            col_k1.metric("⚡ Backward/Forward TB (T4)", f"{ratios.mean():.2f}×")
-            col_k2.metric("🔝 Model Cao Nhất", ratios.idxmax(), f"{ratios.max():.2f}×")
-            col_k3.metric("🔬 Số Model Chuẩn", f"{t4['model'].nunique()}")
-    st.markdown("---")
+            col_k1.metric("Backward / forward TB · T4", f"{ratios.mean():.2f}×")
+            col_k2.metric("Mô hình có tỷ lệ cao nhất", ratios.idxmax(), delta=f"{ratios.max():.2f}×", delta_color="off", delta_arrow="off")
+            col_k3.metric("Mô hình training chuẩn", f"{t4['model'].nunique()}")
 
     tab_bkd, tab_mem, tab_dl, tab_dist = st.tabs([
-        "📊 Phân Rã Giai Đoạn", "💾 Bộ Nhớ Train/Infer", "🚚 DataLoader & Workers", "📦 Phân Phối Latency",
+        "Thời gian giai đoạn", "VRAM train / infer", "DataLoader & Workers", "Phân phối độ trễ",
     ])
     with tab_bkd:
         _render_stacked_breakdown(df_std)
-        st.divider()
         _render_bwd_fwd_ratio(df_std)
     with tab_mem:
         _render_memory_ratio(_load_memory_ratio(results_dir))
