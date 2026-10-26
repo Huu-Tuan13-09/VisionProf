@@ -55,7 +55,7 @@
 ## 🟧 TV1: Phần 2. Nghiên cứu liên quan (Slide 4–6 · 3.0')
 
 ### Slide 4. Profiling học sâu: nhìn ở nhiều mức
-- **Bố cục:** Hình `docs/research/figures/06_mlmodelscope_fig1_L1_L5.png`, đánh dấu phần nhóm đo: L1 (Model + pipeline), L2 (Layer); L3–L5 (cuDNN, kernel GPU, phần cứng) chưa đo.
+- **Bố cục:** Hình `docs/research/figures/06_mlmodelscope_fig1_L1_L5.png`, đánh dấu phần nhóm đo: L1 (Model + pipeline), L2 (Layer); L3–L5 (cuDNN, kernel GPU, phần cứng) bổ sung ở cuối kỳ.
 - **Nội dung:** Hiệu năng phụ thuộc cả chồng phần mềm, phần cứng (model → framework → layer → thư viện → phần cứng). Các công cụ trước thường chỉ nhìn một tầng.
 - **Nguồn:** Dakkak et al., MLModelScope, arXiv:2002.08295.
 
@@ -71,7 +71,7 @@
 - **Nội dung:**
   - Mỗi công trình đo **một** mức hoặc là hệ thống lớn (cụm máy, hardware counter). AI Tax: dưới 60% độ trễ ứng dụng thật là AI. Data Stalls: training thường phải chờ dữ liệu.
   - **Khoảng trống:** gom cả 3 mức vào một công cụ nhẹ cho PyTorch; đo suy luận, training và pipeline thật; CPU laptop và GPU T4; tự kiểm chứng độ chính xác.
-  - Nói luôn hạn chế: không đo kernel GPU, không dùng hardware counter (thế mạnh của XSP, PRoof).
+  - Nói phần bổ sung cuối kỳ: đo kernel GPU, hardware counter (thế mạnh của XSP, PRoof); giữa kỳ đo tới từng layer.
 - **Lời chuyển:** *"Bắt đầu từ mức sâu nhất: mức Layer."*
 
 ---
@@ -230,7 +230,7 @@
 
 ### Slide 23. Hạn chế, hướng phát triển & Q&A
 - **Nội dung:**
-  - *Hạn chế:* không đo kernel GPU / hardware counter; khoảng 4–10% thời gian không thuộc layer nào (phép toán dạng hàm); 1 GPU; PyTorch eager; mô hình dùng trọng số khởi tạo ngẫu nhiên (đủ cho đo tốc độ, không dùng cho độ chính xác).
+  - *Hạn chế:* mới đo tới từng layer, kernel GPU / hardware counter bổ sung cuối kỳ; khoảng 4–10% thời gian không thuộc layer nào (phép toán dạng hàm); 1 GPU; PyTorch eager; mô hình dùng trọng số khởi tạo ngẫu nhiên (đủ cho đo tốc độ, không dùng cho độ chính xác).
   - *Hướng phát triển (cuối kỳ):* `torch.compile`, bắt toán tử bằng `TorchDispatchMode`, thí nghiệm ablation, đo VRAM training của DistilBERT. (Gợi ý sửa code cho 19 luật đã xong 18/10.)
   - Tài liệu tham khảo (IEEE) ở slide phụ lục; mã QR tới repo.
 

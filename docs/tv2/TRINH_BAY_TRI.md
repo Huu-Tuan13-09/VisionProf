@@ -16,8 +16,8 @@
 | :-: | :--- | :-: | :--- |
 | 1 | VisionProf | 40 giây | Chào, giới thiệu đề tài, nói thứ tự trình bày. |
 | 2 | Evaluation, Benchmarking hay Profiling? | 50 giây | Evaluation ngoài phạm vi · Benchmarking là mức Model · Profiling là trọng tâm. |
-| 3 | 3 mức đo, 6 câu hỏi nghiên cứu | 60 giây | 3 mức ↔ 3 người ↔ CH1–CH6; 8 mô hình; GPU T4 trên Colab; sợi chỉ đỏ ResNet-50 so với ViT, BERT. |
-| 4 | 6 câu hỏi nghiên cứu và thí nghiệm trả lời | 40 giây | CH1–CH2 mức Layer (TN1, TN2) · CH3–CH4 mức Model (TN3–TN5) · CH5–CH6 mức Giai đoạn (TN6, TN7). |
+| 3 | 6 câu hỏi nghiên cứu và thí nghiệm trả lời | 40 giây | CH1–CH2 mức Layer (TN1, TN2) · CH3–CH4 mức Model (TN3–TN5) · CH5–CH6 mức Giai đoạn (TN6, TN7). |
+| 4 | 3 mức đo, 6 câu hỏi nghiên cứu | 60 giây | 3 mức ↔ 3 người ↔ CH1–CH6; 8 mô hình; GPU T4 trên Colab; sợi chỉ đỏ ResNet-50 so với ViT, BERT. |
 | 15 | 8 mô hình, một cách đo chung, tách 2 pha | 60 giây | ModelAdapter 3 hàm; pha 1 đo sạch không hook (15 vòng khởi động + 50 vòng đo); pha 2 mới gắn hook. |
 | 16 | Báo cáo phân vị, không dùng trung bình | 60 giây | Báo P50–P99 theo MLPerf; ResNet-50 P99 = 1.76 × P50; ViT ổn định; 2 máy CPU khác nhau. |
 | 17 | Ít tham số có chắc nhanh hơn? | 75 giây | T4: ResNet-50 ≈ MobileNetV3 ≈ 6 ms dù FLOPs chênh 19×; MLP GPU 0.28 ms, CPU 0.04 ms; MobileNetV3 176 ms trên chip Apple. |
@@ -50,7 +50,16 @@ Profiling đi xa hơn: thời gian và bộ nhớ thực sự đi vào đâu. La
 
 Câu chốt: benchmark cho biết bao lâu, profiling cho biết ở đâu và vì sao. Đề tài của nhóm tập trung vào profiling.
 
-### Slide 3. 3 mức đo, 6 câu hỏi nghiên cứu
+### Slide 3. 6 câu hỏi nghiên cứu và thí nghiệm trả lời
+*khoảng 40 giây · Ý chính: CH1–CH2 mức Layer (TN1, TN2) · CH3–CH4 mức Model (TN3–TN5) · CH5–CH6 mức Giai đoạn (TN6, TN7).*
+
+Từ đó, nhóm đặt ra 6 câu hỏi nghiên cứu. Mức Layer trả lời CH1: thời gian tập trung ở loại layer nào, và CH2: công cụ đo có đúng không. Mức Model trả lời CH3: ít tham số có chắc nhanh hơn, và CH4: tăng batch, độ dài câu, FP16 thì thay đổi ra sao. Mức Giai đoạn trả lời CH5: training tốn ở đâu, GPU có phải chờ dữ liệu không, và CH6: trong ứng dụng thật, phần ngoài mô hình chiếm bao nhiêu.
+
+Mỗi câu hỏi có một thí nghiệm riêng, đánh số TN1 đến TN7; các slide sau sẽ gọi tắt như vậy.
+
+> ➡️ **Chuyển: Để trả lời 6 câu hỏi này, nhóm chia việc đo thành 3 mức như sau.**
+
+### Slide 4. 3 mức đo, 6 câu hỏi nghiên cứu
 *khoảng 60 giây · Ý chính: 3 mức ↔ 3 người ↔ CH1–CH6; 8 mô hình; GPU T4 trên Colab; sợi chỉ đỏ ResNet-50 so với ViT, BERT.*
 
 VisionProf đo ở 3 mức, mỗi thành viên phụ trách một mức và trả lời 2 câu hỏi nghiên cứu.
@@ -64,15 +73,6 @@ Mức Giai đoạn do bạn Tuân làm: tách một bước training thành forw
 Nhóm đo 8 mô hình thuộc 3 loại dữ liệu. GPU là Tesla T4 trên Google Colab. Số đo CPU lấy từ laptop của nhóm và Colab CPU; slide nào dùng máy nào sẽ ghi rõ ở chân slide.
 
 Sợi chỉ đỏ xuyên suốt là so sánh CNN, đại diện là ResNet-50, với Transformer là ViT và BERT.
-
-> ➡️ **Chuyển: Cụ thể 6 câu hỏi như sau.**
-
-### Slide 4. 6 câu hỏi nghiên cứu và thí nghiệm trả lời
-*khoảng 40 giây · Ý chính: CH1–CH2 mức Layer (TN1, TN2) · CH3–CH4 mức Model (TN3–TN5) · CH5–CH6 mức Giai đoạn (TN6, TN7).*
-
-Cụ thể, 6 câu hỏi nghiên cứu là thế này. Mức Layer trả lời CH1: thời gian tập trung ở loại layer nào, và CH2: công cụ đo có đúng không. Mức Model trả lời CH3: ít tham số có chắc nhanh hơn, và CH4: tăng batch, độ dài câu, FP16 thì thay đổi ra sao. Mức Giai đoạn trả lời CH5: training tốn ở đâu, GPU có phải chờ dữ liệu không, và CH6: trong ứng dụng thật, phần ngoài mô hình chiếm bao nhiêu.
-
-Mỗi câu hỏi có một thí nghiệm riêng, đánh số TN1 đến TN7; các slide sau sẽ gọi tắt như vậy.
 
 > ➡️ **Chuyển: Trước khi vào thiết kế, bạn Quân sẽ trình bày các nghiên cứu đi trước và khoảng trống nhóm muốn lấp.**
 

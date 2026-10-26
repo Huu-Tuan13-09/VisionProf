@@ -125,7 +125,7 @@ Nếu gom lại thành một câu: trên GPU, thứ làm chậm thường không
 ### Slide 31. Hạn chế và hướng phát triển
 *khoảng 50 giây · Ý chính: 4 hạn chế, 4 hướng cuối kỳ; cảm ơn và mời câu hỏi.*
 
-Nhóm nói rõ các hạn chế. Một: không đo đến kernel GPU và không dùng hardware counter; đó là thế mạnh của XSP và PRoof mà bạn Quân đã nêu. Hai: khoảng 4 đến 10% thời gian thuộc các phép toán dạng hàm, không gán được cho layer nào. Ba: chỉ có một GPU là T4, chạy PyTorch eager, và hai máy CPU khác nhau nên không so số CPU chéo. Bốn: mô hình dùng trọng số khởi tạo ngẫu nhiên, đủ cho đo tốc độ và bộ nhớ, nhưng không dùng để nói về độ chính xác.
+Nhóm nói rõ các hạn chế. Một: giữa kỳ nhóm mới đo tới từng layer; phần đo sâu tới kernel GPU và hardware counter, thế mạnh của XSP và PRoof mà bạn Quân đã nêu, nhóm sẽ bổ sung ở cuối kỳ. Hai: khoảng 4 đến 10% thời gian thuộc các phép toán dạng hàm, không gán được cho layer nào. Ba: chỉ có một GPU là T4, chạy PyTorch eager, và hai máy CPU khác nhau nên không so số CPU chéo. Bốn: mô hình dùng trọng số khởi tạo ngẫu nhiên, đủ cho đo tốc độ và bộ nhớ, nhưng không dùng để nói về độ chính xác.
 
 Hướng phát triển cho cuối kỳ: so sánh torch.compile với eager; bắt các phép toán dạng hàm bằng TorchDispatchMode để giảm phần thời gian không thuộc layer nào; làm thí nghiệm ablation về số vòng khởi động và overhead; đo bổ sung VRAM training của DistilBERT và thêm phần cứng.
 
