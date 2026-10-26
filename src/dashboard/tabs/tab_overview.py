@@ -1,7 +1,7 @@
 """Tab 1: Overview and macro comparison across 8 models [Owned by TV2]."""
 
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Dict
 
 from src.dashboard.utils import page_header, show_chart
 
@@ -23,6 +23,13 @@ FAMILY_MAP: Dict[str, str] = {
     "bert_base": "NLP",
     "mlp": "Tabular",
     "xgboost": "Tabular",
+}
+
+
+MODEL_NAMES = {
+    "mobilenet_v3_large": "MobileNetV3-Large", "resnet50": "ResNet-50",
+    "vit_b_16": "ViT-B/16", "yolov8n": "YOLOv8n", "distilbert": "DistilBERT",
+    "bert_base": "BERT-base", "mlp": "MLP", "xgboost": "XGBoost",
 }
 
 
@@ -89,23 +96,41 @@ def render(results_dir: Path) -> None:
     # Macro Visualizations
     st.subheader("Tham số và độ trễ")
     if "params_m" in filtered_df.columns and "p50_ms" in filtered_df.columns:
+        scatter_df = filtered_df.assign(display_name=filtered_df["model"].map(MODEL_NAMES).fillna(filtered_df["model"]))
         fig_scatter = px.scatter(
-            filtered_df,
+            scatter_df,
             x="params_m",
             y="p50_ms",
             color="device",
-            size=filtered_df["throughput_fps"].clip(lower=1.0),
-            hover_name="model",
+            text="display_name",
+            symbol="device",
+            hover_name="display_name",
             hover_data=["family", "throughput_fps", "tail_ratio", "peak_vram_mb"],
             log_x=True,
             log_y=True,
-            title="Tham số và P50 · kích thước điểm theo FPS",
+            title="Tham số và P50",
             labels={"params_m": "Tham số (triệu, thang log)", "p50_ms": "P50 (ms, thang log)",
                     "device": "Thiết bị", "family": "Nhóm", "throughput_fps": "Thông lượng (FPS)",
                     "tail_ratio": "P99 / P50", "peak_vram_mb": "Peak VRAM (MB)"},
             template="plotly_white",
         )
+        fig_scatter.update_traces(
+            marker=dict(size=14, opacity=0.85, line=dict(width=1.5, color="#FFFFFF")),
+            textposition="top center", textfont=dict(size=11), cliponaxis=False,
+        )
+        for trace in fig_scatter.data:
+            positions = {"BERT-base": "middle right", "ViT-B/16": "top left", "DistilBERT": "bottom left"}
+            trace.textposition = [positions.get(name, "top center" if trace.name == "colab_t4" else "bottom center")
+                                  for name in trace.text]
+        fig_scatter.update_layout(height=480, margin=dict(l=45, r=85, t=90, b=65))
+        fig_scatter.update_xaxes(dtick=1, exponentformat="none", gridcolor="#EDF1F6")
+        fig_scatter.update_yaxes(dtick=1, exponentformat="none", gridcolor="#EDF1F6")
+        st.caption("Mỗi điểm là một lượt đo; màu và ký hiệu phân biệt thiết bị. "
+                   "Hai trục dùng thang log. Di chuột để xem FPS, VRAM và P99 / P50.")
         show_chart(fig_scatter)
+        if ((filtered_df["params_m"] <= 0) | (filtered_df["p50_ms"] <= 0)).any():
+            st.caption("Lượt đo có tham số hoặc P50 bằng 0 không hiển thị trên thang log; "
+                       "xem số liệu trong bảng và các biểu đồ bên dưới.")
 
     c1, c2 = st.columns(2)
     with c1:

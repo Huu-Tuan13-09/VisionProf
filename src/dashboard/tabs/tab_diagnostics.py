@@ -13,12 +13,14 @@ from src.dashboard.utils import page_header
 def render(results_dir: Path) -> None:
     """Chọn lượt đo, xem một luật và tra bảng đầy đủ của engine."""
     page_header("Chẩn đoán", "phase")
-    subdirs = [p for p in results_dir.glob("*/*/*/*") if p.is_dir()]
+    subdirs = sorted(p for p in results_dir.glob("*/*/*/*") if p.is_dir())
     if not subdirs:
         st.info("Chưa có lượt đo để chẩn đoán.")
         return
 
-    selected_dir = st.selectbox("Chọn lượt đo", subdirs,
+    preferred = results_dir / "colab_t4/mobilenet_v3_large/TN3/bs1_fp32"
+    default_index = subdirs.index(preferred) if preferred in subdirs else 0
+    selected_dir = st.selectbox("Chọn lượt đo", subdirs, index=default_index,
                                 format_func=lambda p: str(p.relative_to(results_dir)), key="diagnostic_run")
     if not selected_dir:
         return

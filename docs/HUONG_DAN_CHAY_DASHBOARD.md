@@ -65,3 +65,25 @@ Các ô chọn có tìm kiếm: bấm rồi gõ một phần tên lượt đo, v
 - Kiểm tra lại A và B đã chọn đúng hai lượt đo; speedup dùng kết quả từ engine A/B hiện có.
 - Để sẵn dashboard bên cạnh slide trong trình duyệt.
 - Dashboard chỉ mở tại `127.0.0.1` trên máy trình bày.
+
+## 6. Điều hướng và cách đọc giao diện
+
+Thanh bên dùng điều hướng gốc `st.navigation` / `st.Page`, có icon và chia thành
+**Mức Model**, **Mức Layer**, **Mức Giai đoạn**, **Chẩn đoán**. Bấm tên mục để chuyển trang;
+mục đang mở có nền nổi bật và vạch màu. Số thứ tự 1–8 vẫn khớp với slide.
+Mỗi trang có đường dẫn riêng (ví dụ `/layers`, `/roofline`, `/diagnostics`), có thể đánh dấu
+trang trên trình duyệt. Giữ nguyên bộ lọc khi chuyển trang không được bảo đảm;
+kiểm tra lại lựa chọn trước khi trình bày.
+
+- Biểu đồ **Tham số và P50** dùng điểm 14 px, kèm nhãn mô hình; màu và ký hiệu
+  phân biệt thiết bị. FPS nằm trong tooltip. Kích thước điểm không còn biểu diễn FPS.
+  Hai trục vẫn dùng thang log và số liệu giữ nguyên.
+- **Roofline** mặc định mở `colab_t4/resnet50/TN1/bs1_fp32` nếu có.
+  Đồ thị dùng chung cách vẽ với mục 3, đọc `layers_summary.csv` và `layer_meta.json`.
+  Thẻ số vẫn dùng trung bình mỗi pass từ `layers.csv` như trước.
+- **Chẩn đoán** mặc định chọn lượt đo MobileNetV3-Large TN3 trên T4;
+  **So sánh A/B** mặc định chọn ViT-B/16 FP32 TN3 và FP16 TN5 nếu có dữ liệu.
+- Thẻ số và biểu đồ dùng màu nhận diện của mức đo. Plotly thống nhất font,
+  lưới nhạt và legend; nút tải ảnh hiện khi di chuột lên biểu đồ.
+- `.streamlit/config.toml` đặt `client.toolbarMode = "minimal"` để thu gọn toolbar
+  và ẩn nút Deploy. Khởi động lại Streamlit nếu vừa đổi cấu hình/theme.

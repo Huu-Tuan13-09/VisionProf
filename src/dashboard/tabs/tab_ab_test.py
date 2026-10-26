@@ -19,16 +19,20 @@ def render(results_dir: Path) -> None:
     page_header("So sánh A/B", "phase")
     st.caption("Tăng tốc giữa hai lượt đo; kiểm định Mann-Whitney U và Cliff’s Delta.")
 
-    bench_files = list(results_dir.glob("**/benchmark.csv"))
+    bench_files = sorted(results_dir.glob("**/benchmark.csv"))
     if len(bench_files) < 2:
         st.info("Cần ít nhất 2 file `benchmark.csv` trong `results/` để thực hiện kiểm định A/B.")
         return
 
+    preferred_a = results_dir / "colab_t4/vit_b_16/TN3/bs1_fp32/benchmark.csv"
+    preferred_b = results_dir / "colab_t4/vit_b_16/TN5/bs1_fp16/benchmark.csv"
+    index_a = bench_files.index(preferred_a) if preferred_a in bench_files else 0
+    index_b = bench_files.index(preferred_b) if preferred_b in bench_files else 1
     col1, col2 = st.columns(2)
     with col1:
-        run_a = st.selectbox("A · Cấu hình gốc", bench_files, key="run_a", format_func=lambda p: str(p.parent.relative_to(results_dir)))
+        run_a = st.selectbox("A · Cấu hình gốc", bench_files, index=index_a, key="run_a", format_func=lambda p: str(p.parent.relative_to(results_dir)))
     with col2:
-        run_b = st.selectbox("B · Cấu hình so sánh", bench_files, key="run_b", format_func=lambda p: str(p.parent.relative_to(results_dir)))
+        run_b = st.selectbox("B · Cấu hình so sánh", bench_files, index=index_b, key="run_b", format_func=lambda p: str(p.parent.relative_to(results_dir)))
 
     if run_a == run_b:
         st.info("A và B đang cùng một lượt đo. Chọn hai cấu hình khác nhau để so sánh.")

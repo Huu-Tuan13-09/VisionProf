@@ -8,7 +8,11 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
+import plotly.io as pio
 import streamlit as st
+
+from src.dashboard.styles import apply_styles
 
 logger = logging.getLogger(__name__)
 LAYER_COLOR = "#B4480F"
@@ -34,23 +38,22 @@ def configure_dashboard() -> None:
     """Áp dụng khoảng cách, thẻ số chính và bảng màu chung."""
     px.defaults.color_discrete_sequence = CHART_COLORS
     px.defaults.color_discrete_map = DEVICE_COLORS
-    st.markdown("""
-<style>
-.block-container {max-width: 1440px; padding-top: 4rem; padding-bottom: 2rem;}
-[data-testid="stSidebar"] {border-right: 1px solid #DCE3EB;}
-[data-testid="stSidebar"] .block-container {padding-top: 2rem;}
-[data-testid="stMetric"] {border: 1px solid #DCE3EB; border-radius: 12px;
-    padding: 16px 18px; background: var(--secondary-background-color, #F3F6FA);}
-[data-testid="stMetricValue"] {font-variant-numeric: tabular-nums; font-size: 1.65rem;}
-[data-testid="stMetricLabel"] {font-size: .85rem;}
-h1 {font-size: 2rem !important; letter-spacing: -.035em;}
-h2 {font-size: 1.35rem !important;}
-h3 {font-size: 1.1rem !important;}
-[data-testid="stTabs"] [role="tab"] {padding-left: 12px; padding-right: 12px;}
-.vp-level {font-size: .78rem; font-weight: 650; letter-spacing: .06em;
-    text-transform: uppercase; margin-bottom: .25rem;}
-</style>
-""", unsafe_allow_html=True)
+    template = go.layout.Template(pio.templates["plotly_white"])
+    template.layout.update(
+        font=dict(family="Arial, sans-serif", size=13, color="#253449"),
+        colorway=CHART_COLORS, paper_bgcolor="#FFFFFF", plot_bgcolor="#FFFFFF",
+        hoverlabel=dict(bgcolor="#FFFFFF", font_color="#253449"),
+        title=dict(font=dict(size=16), x=.02, xanchor="left"),
+        legend=dict(orientation="h", yanchor="bottom", y=1.03, x=0,
+                    title_text="", font=dict(size=12), tracegroupgap=8),
+        xaxis=dict(gridcolor="#EDF1F6", linecolor="#DCE3ED", zeroline=False,
+                   automargin=True, title_standoff=16),
+        yaxis=dict(gridcolor="#EDF1F6", linecolor="#DCE3ED", zeroline=False,
+                   automargin=True, title_standoff=12),
+    )
+    pio.templates["visionprof"] = template
+    px.defaults.template = "visionprof"
+    apply_styles()
 
 
 def page_header(title: str, level: str = "model") -> None:
@@ -58,19 +61,29 @@ def page_header(title: str, level: str = "model") -> None:
     labels = {"layer": ("Mức layer", LAYER_COLOR), "model": ("Mức model", MODEL_COLOR),
               "phase": ("Mức giai đoạn", PHASE_COLOR)}
     label, color = labels[level]
-    st.markdown(f'<div class="vp-level" style="color:{color}">{escape(label)}</div>', unsafe_allow_html=True)
+    descriptions = {
+        "Tổng quan mô hình": "Đọc nhanh P50, thông lượng và quy mô mô hình trên từng thiết bị.",
+        "CPU và T4": "So sánh phần cứng, batch size và FP16 từ các lượt đo đã lưu.",
+        "Phân tích layer": "Xác định layer chiếm thời gian và đối chiếu CPU với GPU T4.",
+        "Training TN6": "Theo dõi thời gian training, VRAM và chi phí nạp dữ liệu.",
+        "Pipeline TN7": "Tách thời gian mô hình khỏi tiền xử lý và hậu xử lý.",
+        "Chẩn đoán": "Đọc kết quả 19 luật và tìm điểm cần tối ưu cho từng lượt đo.",
+    }
+    st.markdown(f'<style>:root {{ --vp-accent: {color}; }}</style>'
+                f'<div class="vp-level" style="color:{color}">{escape(label)}</div>',
+                unsafe_allow_html=True)
     st.title(title)
+    if title in descriptions:
+        st.caption(descriptions[title])
 
 
 def show_chart(fig: Any, key: Optional[str] = None) -> None:
     """Hiển thị biểu đồ rõ chữ trên nền sáng, giữ nguyên dữ liệu."""
-    fig.update_layout(
-        template="plotly_white", font=dict(family="Arial, sans-serif", size=13, color="#253449"),
-        paper_bgcolor="#FFFFFF", plot_bgcolor="#FFFFFF",
-        hoverlabel=dict(bgcolor="#FFFFFF", font_color="#253449"),
-        title_font_size=16,
-    )
-    st.plotly_chart(fig, width="stretch", key=key, theme=None, config={"displaylogo": False})
+    fig.update_layout(template="visionprof", font=dict(family="Arial, sans-serif", size=13),
+                      paper_bgcolor="#FFFFFF", plot_bgcolor="#FFFFFF")
+    st.plotly_chart(fig, width="stretch", key=key, theme=None,
+                    config={"displaylogo": False, "displayModeBar": "hover",
+                            "modeBarButtonsToRemove": ["lasso2d", "select2d"]})
 
 
 def load_all_run_summaries(results_dir: Path) -> List[Dict[str, Any]]:

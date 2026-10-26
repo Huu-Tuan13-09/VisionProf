@@ -72,7 +72,7 @@ def _render_pie_breakdown(df: pd.DataFrame) -> None:
     st.subheader("Tỷ trọng thời gian theo giai đoạn")
 
     devices = sorted(df["device"].unique())
-    sel_dev = st.radio("Thiết bị:", devices, horizontal=True, key="tn7_dev_pie")
+    sel_dev = st.radio("Thiết bị:", devices, index=devices.index("colab_t4") if "colab_t4" in devices else 0, horizontal=True, key="tn7_dev_pie")
     models = sorted(df[df["device"] == sel_dev]["model"].unique())
     if not models:
         st.info(f"Không có dữ liệu TN7 cho {sel_dev}.")
@@ -90,14 +90,14 @@ def _render_pie_breakdown(df: pd.DataFrame) -> None:
                 values=sub["mean_ms"].tolist(),
                 hole=0.45,
                 marker_colors=[_PHASE_COLORS.get(p, "#94A3B8") for p in sub["phase"]],
-                textinfo="percent+label",
+                textinfo="percent", textposition="inside",
                 hovertemplate="%{label}<br>%{value:.2f} ms<br>%{percent}<extra></extra>",
             ))
             fig.update_layout(
                 title=f"{_MODEL_LABELS.get(model, model)}<br><sup>Tổng: {total:.1f} ms</sup>",
-                height=320,
-                margin=dict(t=60, b=20, l=10, r=10),
-                showlegend=False,
+                height=360, uniformtext=dict(minsize=11, mode="hide"),
+                margin=dict(t=65, b=65, l=15, r=15),
+                legend=dict(orientation="h", y=-.08, x=0, font=dict(size=10)),
                 template="plotly_white",
             )
             show_chart(fig)
@@ -132,7 +132,7 @@ def _render_stacked_absolute(df: pd.DataFrame) -> None:
     st.subheader("Thời gian mỗi giai đoạn")
 
     devices = sorted(df["device"].unique())
-    sel_dev = st.radio("Thiết bị:", devices, horizontal=True, key="tn7_dev_abs")
+    sel_dev = st.radio("Thiết bị:", devices, index=devices.index("colab_t4") if "colab_t4" in devices else 0, horizontal=True, key="tn7_dev_abs")
     sub = df[df["device"] == sel_dev]
     if sub.empty:
         st.info(f"Không có dữ liệu cho {sel_dev}.")

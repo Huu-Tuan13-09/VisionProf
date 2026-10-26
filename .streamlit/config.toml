@@ -1,7 +1,7 @@
 [theme]
 base = "light"
 primaryColor = "#2456A6"
-backgroundColor = "#FFFFFF"
+backgroundColor = "#F6F8FC"
 secondaryBackgroundColor = "#F3F6FA"
 textColor = "#253449"
 font = "sans serif"
@@ -11,3 +11,6 @@ address = "127.0.0.1"
 
 [browser]
 gatherUsageStats = false
+
+[client]
+toolbarMode = "minimal"

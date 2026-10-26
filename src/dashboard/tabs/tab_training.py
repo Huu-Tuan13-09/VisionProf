@@ -69,7 +69,7 @@ def _render_stacked_breakdown(df: pd.DataFrame) -> None:
     st.caption("Thời gian trung bình theo giai đoạn; mỗi màu ứng với một giai đoạn.")
 
     devices = sorted(df["device"].unique())
-    sel_dev = st.radio("Thiết bị:", devices, horizontal=True, key="tn6_dev_stacked")
+    sel_dev = st.radio("Thiết bị:", devices, index=devices.index("colab_t4") if "colab_t4" in devices else 0, horizontal=True, key="tn6_dev_stacked")
     sub = df[df["device"] == sel_dev].copy()
     if sub.empty:
         st.info("Không có dữ liệu TN6 cho thiết bị này.")

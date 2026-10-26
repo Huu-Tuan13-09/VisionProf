@@ -63,6 +63,7 @@ def render(results_dir: Path) -> None:
                         color_continuous_scale="Blues",
                         template="plotly_white",
                     )
+                    fig_speedup.update_layout(coloraxis_showscale=False)
                     fig_speedup.add_hline(y=1.0, line_dash="dash", line_color="#64748B", annotation_text="Ngang nhau (1×)")
                     fig_speedup.update_traces(texttemplate="%{text}x", textposition="outside")
                     show_chart(fig_speedup)
