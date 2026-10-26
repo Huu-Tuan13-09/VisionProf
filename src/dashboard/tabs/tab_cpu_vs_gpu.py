@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from src.dashboard.utils import page_header, show_chart
+from src.dashboard.utils import SHORT_MODEL_NAMES, page_header, show_chart
 
 try:
     import pandas as pd
@@ -52,6 +52,8 @@ def render(results_dir: Path) -> None:
                     with st.expander("Xem bảng số · CPU và T4"):
                         st.dataframe(pivot_lat, width="stretch", hide_index=True)
 
+                    pivot_lat = pivot_lat.assign(
+                        model=pivot_lat["model"].map(SHORT_MODEL_NAMES).fillna(pivot_lat["model"]))
                     fig_speedup = px.bar(
                         pivot_lat,
                         x="model",
@@ -64,8 +66,14 @@ def render(results_dir: Path) -> None:
                         template="plotly_white",
                     )
                     fig_speedup.update_layout(coloraxis_showscale=False)
-                    fig_speedup.add_hline(y=1.0, line_dash="dash", line_color="#64748B")
-                    fig_speedup.update_traces(texttemplate="%{text}x", textposition="outside")
+                    fig_speedup.add_hline(y=1.0, line_dash="dash", line_color="#64748B", layer="below")
+                    # Cột thấp hơn mốc 1×: ghi nhãn phía trên nét đứt thay vì để nét đứt cắt qua chữ.
+                    small = pivot_lat["Speedup_T4_vs_CPU"] < 1.5
+                    fig_speedup.update_traces(
+                        texttemplate=["" if s else "%{text}x" for s in small], textposition="outside")
+                    for model, value in pivot_lat.loc[small, ["model", "Speedup_T4_vs_CPU"]].itertuples(index=False):
+                        fig_speedup.add_annotation(x=model, y=1.0, text=f"{value}x", showarrow=False,
+                                                   yanchor="bottom", yshift=6)
                     show_chart(fig_speedup)
 
             except Exception as exc:

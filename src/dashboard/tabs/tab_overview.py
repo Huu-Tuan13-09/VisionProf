@@ -137,14 +137,12 @@ def render(results_dir: Path) -> None:
             st.caption("Lượt đo có tham số hoặc P50 bằng 0 không hiển thị trên thang log; "
                        "xem số liệu trong bảng và các biểu đồ bên dưới.")
 
-    c1, c2 = st.columns(2)
-    with c1:
-        if "p50_ms" in filtered_df.columns:
-            fig_lat = make_bar_chart(filtered_df, x_col="model", y_col="p50_ms", color_col="device", title="Độ trễ P50 (ms)")
-            if fig_lat:
-                show_chart(fig_lat)
-    with c2:
-        if "throughput_fps" in filtered_df.columns:
-            fig_fps = make_bar_chart(filtered_df, x_col="model", y_col="throughput_fps", color_col="device", title="Thông lượng (FPS)")
-            if fig_fps:
-                show_chart(fig_fps)
+    # Hai biểu đồ đặt rộng toàn trang để tên 8 mô hình nằm ngang, không phải xoay và đè nhau.
+    if "p50_ms" in filtered_df.columns:
+        fig_lat = make_bar_chart(filtered_df, x_col="model", y_col="p50_ms", color_col="device", title="Độ trễ P50 (ms)")
+        if fig_lat:
+            show_chart(fig_lat)
+    if "throughput_fps" in filtered_df.columns:
+        fig_fps = make_bar_chart(filtered_df, x_col="model", y_col="throughput_fps", color_col="device", title="Thông lượng (FPS)")
+        if fig_fps:
+            show_chart(fig_fps)

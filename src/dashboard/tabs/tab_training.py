@@ -110,27 +110,22 @@ def _render_bwd_fwd_ratio(df: pd.DataFrame) -> None:
 
     pivot["bwd_fwd_ratio"] = (pivot["backward"] / pivot["forward"]).round(2)
 
-    col1, col2 = st.columns(2)
-    for dev, col in zip(sorted(df["device"].unique()), [col1, col2]):
-        sub = pivot[pivot["device"] == dev].dropna(subset=["bwd_fwd_ratio"])
-        with col:
-            if sub.empty:
-                st.info(f"Không có dữ liệu cho {dev}.")
-                continue
-            color = _DEVICE_COLORS.get(dev, "#94A3B8")
-            fig = px.bar(
-                sub.sort_values("bwd_fwd_ratio", ascending=False),
-                x="model", y="bwd_fwd_ratio",
-                title=f"Backward / forward · {dev}",
-                color_discrete_sequence=[color],
-                text="bwd_fwd_ratio",
-                labels={"bwd_fwd_ratio": "Tỷ lệ (×)", "model": "Mô hình"},
-                template="plotly_white",
-            )
-            fig.add_hline(y=2.0, line_dash="dot", line_color="gray",
-                          annotation_text="Kỳ vọng 2×", annotation_position="top right")
-            fig.update_layout(height=350)
-            show_chart(fig)
+    sub = pivot.dropna(subset=["bwd_fwd_ratio"]).sort_values(["model", "device"])
+    if sub.empty:
+        st.info("Chưa đủ dữ liệu backward/forward để tính tỷ lệ.")
+        return
+    fig = px.bar(
+        sub, x="model", y="bwd_fwd_ratio", color="device", barmode="group",
+        title="Backward / forward theo thiết bị · nét chấm = kỳ vọng 2×",
+        color_discrete_map=_DEVICE_COLORS,
+        text="bwd_fwd_ratio",
+        labels={"bwd_fwd_ratio": "Tỷ lệ (×)", "model": "Mô hình", "device": "Thiết bị"},
+        template="plotly_white",
+    )
+    fig.add_hline(y=2.0, line_dash="dot", line_color="gray", layer="below")
+    fig.update_traces(textposition="outside", cliponaxis=False)
+    fig.update_layout(height=380)
+    show_chart(fig)
 
 
 def _render_memory_ratio(df_mem: pd.DataFrame) -> None:

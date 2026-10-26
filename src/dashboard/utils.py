@@ -77,6 +77,24 @@ def page_header(title: str, level: str = "model") -> None:
         st.caption(descriptions[title])
 
 
+SHORT_MODEL_NAMES = {
+    "mobilenet_v3_large": "MobileNetV3", "resnet50": "ResNet-50", "vit_b_16": "ViT-B/16",
+    "yolov8n": "YOLOv8n", "distilbert": "DistilBERT", "bert_base": "BERT-base",
+    "mlp": "MLP", "xgboost": "XGBoost",
+}
+
+
+def _short_model_names(fig: Any) -> None:
+    """Đổi mã mô hình trên trục danh mục sang tên ngắn để nhãn trục không đè nhau."""
+    for trace in fig.data:
+        axis = "y" if getattr(trace, "orientation", None) == "h" else "x"
+        values = getattr(trace, axis, None)
+        if values is None or len(values) == 0:
+            continue
+        if all(isinstance(v, str) and v in SHORT_MODEL_NAMES for v in values):
+            trace.update({axis: [SHORT_MODEL_NAMES[v] for v in values]})
+
+
 def _stack_header(fig: Any) -> None:
     """Xếp tiêu đề rồi tới chú thích từ trên xuống để chữ không đè nhau."""
     layout = fig.layout
@@ -103,7 +121,10 @@ def show_chart(fig: Any, key: Optional[str] = None) -> None:
     """Hiển thị biểu đồ rõ chữ trên nền sáng, giữ nguyên dữ liệu."""
     fig.update_layout(template="visionprof", font=dict(family="Arial, sans-serif", size=13),
                       paper_bgcolor="#FFFFFF", plot_bgcolor="#FFFFFF")
+    _short_model_names(fig)
     _stack_header(fig)
+    # Nhãn số không đủ chỗ trong cột thì ẩn, thay vì hiện chữ li ti không đọc được.
+    fig.update_layout(uniformtext_minsize=9, uniformtext_mode="hide")
     st.plotly_chart(fig, width="stretch", key=key, theme=None,
                     config={"displaylogo": False, "displayModeBar": "hover",
                             "modeBarButtonsToRemove": ["lasso2d", "select2d"]})
