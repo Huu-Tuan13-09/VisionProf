@@ -123,7 +123,7 @@ def _render_overhead_bar(df: pd.DataFrame) -> None:
     fig.add_hline(y=30, line_dash="dot", line_color="#F59E0B",
                   annotation_text="Mốc 30% (CH6)", annotation_position="top right")
     fig.update_traces(texttemplate="%{text:.1f}%", textposition="outside")
-    fig.update_layout(height=400, yaxis=dict(range=[0, 100]))
+    fig.update_layout(height=400, yaxis=dict(range=[0, 110]))
     show_chart(fig)
 
 
@@ -185,7 +185,7 @@ def _render_cpu_vs_gpu_overhead(df: pd.DataFrame) -> None:
     fig.update_traces(texttemplate="%{text:.1f}%", textposition="outside")
     fig.add_hline(y=30, line_dash="dot", line_color="gray",
                   annotation_text="30%")
-    fig.update_layout(height=400, yaxis=dict(range=[0, 100]))
+    fig.update_layout(height=400, yaxis=dict(range=[0, 110]))
     show_chart(fig)
 
 

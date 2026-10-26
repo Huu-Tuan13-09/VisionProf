@@ -57,14 +57,14 @@ def render(results_dir: Path) -> None:
                         x="model",
                         y="Speedup_T4_vs_CPU",
                         text="Speedup_T4_vs_CPU",
-                        title="Tăng tốc T4 so với CPU · batch 1, FP32",
+                        title="Tăng tốc T4 so với CPU · batch 1, FP32 · nét đứt = ngang nhau (1×)",
                         labels={"Speedup_T4_vs_CPU": "Tăng tốc (×)", "model": "Mô hình"},
                         color="Speedup_T4_vs_CPU",
                         color_continuous_scale="Blues",
                         template="plotly_white",
                     )
                     fig_speedup.update_layout(coloraxis_showscale=False)
-                    fig_speedup.add_hline(y=1.0, line_dash="dash", line_color="#64748B", annotation_text="Ngang nhau (1×)")
+                    fig_speedup.add_hline(y=1.0, line_dash="dash", line_color="#64748B")
                     fig_speedup.update_traces(texttemplate="%{text}x", textposition="outside")
                     show_chart(fig_speedup)
 

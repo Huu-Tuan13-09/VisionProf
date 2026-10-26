@@ -118,10 +118,15 @@ def render(results_dir: Path) -> None:
             marker=dict(size=14, opacity=0.85, line=dict(width=1.5, color="#FFFFFF")),
             textposition="top center", textfont=dict(size=11), cliponaxis=False,
         )
+        # Điểm cao hơn của cùng mô hình ghi nhãn phía trên, điểm thấp hơn ghi phía dưới;
+        # các mô hình có số tham số gần nhau ghi nhãn sang hai bên để chữ không đè nhau.
+        highest = scatter_df.groupby("display_name")["p50_ms"].max().to_dict()
+        sideways = {"YOLOv8n": "middle left", "MobileNetV3-Large": "middle right",
+                    "DistilBERT": "middle left", "BERT-base": "middle right", "ViT-B/16": "top center"}
         for trace in fig_scatter.data:
-            positions = {"BERT-base": "middle right", "ViT-B/16": "top left", "DistilBERT": "bottom left"}
-            trace.textposition = [positions.get(name, "top center" if trace.name == "colab_t4" else "bottom center")
-                                  for name in trace.text]
+            trace.textposition = [
+                sideways.get(name, "top center" if y >= highest.get(name, y) else "bottom center")
+                for name, y in zip(trace.text, trace.y)]
         fig_scatter.update_layout(height=480, margin=dict(l=45, r=85, t=90, b=65))
         fig_scatter.update_xaxes(dtick=1, exponentformat="none", gridcolor="#EDF1F6")
         fig_scatter.update_yaxes(dtick=1, exponentformat="none", gridcolor="#EDF1F6")

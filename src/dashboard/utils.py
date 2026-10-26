@@ -77,10 +77,33 @@ def page_header(title: str, level: str = "model") -> None:
         st.caption(descriptions[title])
 
 
+def _stack_header(fig: Any) -> None:
+    """Xếp tiêu đề rồi tới chú thích từ trên xuống để chữ không đè nhau."""
+    layout = fig.layout
+    height = layout.height or 450
+    top = 14
+    if layout.title.text:
+        fig.update_layout(title=dict(yref="container", y=1 - top / height, yanchor="top",
+                                     x=.02, xanchor="left", font=dict(size=15)))
+        top += 30
+    legend_below = layout.legend.y is not None and layout.legend.y < 0
+    has_legend = layout.showlegend is not False and sum(
+        1 for t in fig.data if t.showlegend is not False and t.name) > 1
+    if layout.showlegend is not False and not has_legend:
+        fig.update_layout(showlegend=False)
+    if has_legend and not legend_below:
+        fig.update_layout(legend=dict(orientation="h", yref="container", y=1 - top / height,
+                                      yanchor="top", x=0, xanchor="left", title_text=""))
+        top += 30
+    current = layout.margin.t if layout.margin.t is not None else 0
+    fig.update_layout(margin=dict(t=max(current, top + 12)))
+
+
 def show_chart(fig: Any, key: Optional[str] = None) -> None:
     """Hiển thị biểu đồ rõ chữ trên nền sáng, giữ nguyên dữ liệu."""
     fig.update_layout(template="visionprof", font=dict(family="Arial, sans-serif", size=13),
                       paper_bgcolor="#FFFFFF", plot_bgcolor="#FFFFFF")
+    _stack_header(fig)
     st.plotly_chart(fig, width="stretch", key=key, theme=None,
                     config={"displaylogo": False, "displayModeBar": "hover",
                             "modeBarButtonsToRemove": ["lasso2d", "select2d"]})
